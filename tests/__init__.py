@@ -1,4 +1,4 @@
-"""Test package bootstrap: ensure the project root is importable as ``src``."""
+"""Test package bootstrap: make the project root importable as ``src``."""
 
 import os
 import sys

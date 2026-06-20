@@ -1,44 +1,31 @@
-"""Orbital Stability Platform -- Phase 1: orbital rendezvous.
+"""Orbital rendezvous research engine.
 
-A small, modular toolkit for 2D orbital dynamics and Clohessy-Wiltshire
-relative-motion rendezvous, built on numpy / scipy / matplotlib / pandas.
+CW-based spacecraft rendezvous with a PD controller, validated against a
+higher-fidelity (J2 + drag) orbital model. SI units throughout; 3D LVLH
+relative-motion state ``[x, y, z, vx, vy, vz]``.
 
-Layout
-------
-constants          shared SI constants and default LEO geometry
-physics            2D two-body dynamics, energy / angular momentum, period
-orbital_elements   Cartesian <-> classical (planar) orbital elements
-integrators        Euler, RK4, velocity-Verlet steppers and the integrate driver
-cw                 Clohessy-Wiltshire / Hill dynamics, STM and LVLH transforms
-controllers        PD rendezvous controller and APF obstacle avoidance
-simulation         high-level propagation drivers + non-linear truth model
-analysis           conservation tracking, error metrics, validation tables
-plotting           headless matplotlib helpers
+Modules
+-------
+orbit          two-body dynamics, RK4 propagation, orbital elements, energy/period
+perturbations  J2 and atmospheric drag with selectable force-model toggles
+lvlh           inertial <-> LVLH frame transforms, relative position/velocity
+cw             Clohessy-Wiltshire dynamics, state-transition matrix, propagation
+controller     configurable PD rendezvous controller
+validation     conservation checks, error metrics, gain sweep, CW-vs-high-fidelity
+plotting       headless matplotlib helpers
 """
 
-__version__ = "0.1.0"
+__version__ = "1.0.0"
 
-from . import (
-    analysis,
-    constants,
-    controllers,
-    cw,
-    integrators,
-    orbital_elements,
-    physics,
-    plotting,
-    simulation,
-)
+from . import controller, cw, lvlh, orbit, perturbations, plotting, validation
 
 __all__ = [
-    "analysis",
-    "constants",
-    "controllers",
+    "orbit",
+    "perturbations",
+    "lvlh",
     "cw",
-    "integrators",
-    "orbital_elements",
-    "physics",
+    "controller",
+    "validation",
     "plotting",
-    "simulation",
     "__version__",
 ]

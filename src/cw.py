@@ -1,71 +1,69 @@
-"""Clohessy-Wiltshire / Hill linearised relative motion (planar).
+"""Clohessy-Wiltshire (Hill) linearised relative motion -- 3D.
 
-The chaser's motion is expressed in the target's Local-Vertical/Local-Horizontal
-(LVLH) frame, centred on a target moving on a circular reference orbit:
+Relative state in the target LVLH frame: ``[x, y, z, vx, vy, vz]`` with
+x = radial, y = along-track, z = cross-track. For a circular reference orbit of
+mean motion ``n`` the linearised equations of relative motion are::
 
-    x  : radial      (R-bar, positive away from Earth)
-    y  : along-track (V-bar, positive along the velocity direction)
-    state = [x, y, vx, vy]            (SI)
+    x'' =  3 n^2 x  + 2 n y'  + ax     # radial:  centrifugal/gravity-gradient (3 n^2 x)
+                                       #          + Coriolis coupling (2 n y')
+    y'' =            -2 n x'   + ay     # along-track: Coriolis coupling (-2 n x')
+    z'' = -   n^2 z           + az      # cross-track: decoupled simple-harmonic
+                                       #              oscillator at the orbit rate
 
-For a circular reference orbit with mean motion ``n`` the linearised equations
-of relative motion (with control accelerations ``[ax, ay]``) are::
-
-    x'' - 2 n y' - 3 n^2 x = ax
-    y'' + 2 n x'           = ay
-
-This module also provides the closed-form state-transition matrix (for
-validating the numerical integration) and the exact non-linear LVLH frame
-transforms used to compare CW against full two-body propagation.
+The in-plane (x, y) motion is coupled through the Coriolis terms; the
+cross-track (z) motion is an independent oscillator with period equal to the
+orbital period. ``ax, ay, az`` are control accelerations.
 """
 
 import numpy as np
 
+from .orbit import MU_EARTH, mean_motion
 
-def mean_motion_circular(radius, mu):
-    """Mean motion of a circular reference orbit: n = sqrt(mu / r^3) [rad/s]."""
-    return np.sqrt(mu / radius**3)
+
+def cw_mean_motion(radius, mu=MU_EARTH):
+    """Mean motion of the circular reference orbit: n = sqrt(mu/r^3)."""
+    return mean_motion(radius, mu)
 
 
 def cw_system_matrices(n):
-    """State-space matrices (A, B) such that ``state' = A @ state + B @ u``.
+    """Continuous-time state-space matrices (A, B): ``state' = A state + B u``.
 
-    state = [x, y, vx, vy], u = [ax, ay].
+    state = [x, y, z, vx, vy, vz], control u = [ax, ay, az].
     """
-    A = np.array(
-        [
-            [0.0, 0.0, 1.0, 0.0],
-            [0.0, 0.0, 0.0, 1.0],
-            [3.0 * n * n, 0.0, 0.0, 2.0 * n],
-            [0.0, 0.0, -2.0 * n, 0.0],
-        ],
-        dtype=float,
-    )
-    B = np.array(
-        [
-            [0.0, 0.0],
-            [0.0, 0.0],
-            [1.0, 0.0],
-            [0.0, 1.0],
-        ],
-        dtype=float,
-    )
+    A = np.zeros((6, 6))
+    # Position derivatives are the velocities.
+    A[0, 3] = 1.0
+    A[1, 4] = 1.0
+    A[2, 5] = 1.0
+    # Radial:      x'' = 3 n^2 x + 2 n vy
+    A[3, 0] = 3.0 * n * n
+    A[3, 4] = 2.0 * n
+    # Along-track: y'' = -2 n vx
+    A[4, 3] = -2.0 * n
+    # Cross-track: z'' = -n^2 z
+    A[5, 2] = -n * n
+
+    B = np.zeros((6, 3))
+    B[3, 0] = 1.0
+    B[4, 1] = 1.0
+    B[5, 2] = 1.0
     return A, B
 
 
 def _resolve_control(control, state, t):
-    """Normalise a control specification to a length-2 acceleration vector."""
+    """Normalise a control spec to a length-3 acceleration vector."""
     if control is None:
-        return np.zeros(2)
+        return np.zeros(3)
     if callable(control):
         return np.asarray(control(state, t), dtype=float)
     return np.asarray(control, dtype=float)
 
 
 def cw_derivatives(state, t, n, control=None):
-    """First-order RHS of the CW equations: ``d(state)/dt``.
+    """First-order RHS of the CW equations: d(state)/dt.
 
-    ``control`` may be ``None``, a fixed length-2 acceleration, or a callable
-    ``control(state, t) -> [ax, ay]`` (e.g. a feedback controller).
+    ``control`` may be None, a fixed length-3 acceleration, or a callable
+    ``control(state, t) -> [ax, ay, az]`` (e.g. a feedback controller).
     """
     state = np.asarray(state, dtype=float)
     A, B = cw_system_matrices(n)
@@ -74,99 +72,75 @@ def cw_derivatives(state, t, n, control=None):
 
 
 def cw_state_transition(n, t):
-    """Closed-form CW state-transition matrix Phi(t) for unforced motion.
+    """Closed-form CW state-transition matrix Phi(t): ``state(t)=Phi(t) state0``.
 
-    ``state(t) = Phi(t) @ state(0)`` with state ordered [x, y, vx, vy].
+    Built from the standard in-plane 4x4 solution plus the decoupled cross-track
+    2x2 harmonic-oscillator block, reordered into [x, y, z, vx, vy, vz].
     """
     nt = n * t
-    s = np.sin(nt)
-    c = np.cos(nt)
-    return np.array(
-        [
-            [4.0 - 3.0 * c, 0.0, s / n, 2.0 * (1.0 - c) / n],
-            [6.0 * (s - nt), 1.0, -2.0 * (1.0 - c) / n, (4.0 * s - 3.0 * nt) / n],
-            [3.0 * n * s, 0.0, c, 2.0 * s],
-            [-6.0 * n * (1.0 - c), 0.0, -2.0 * s, 4.0 * c - 3.0],
-        ],
-        dtype=float,
-    )
+    s, c = np.sin(nt), np.cos(nt)
+    phi = np.zeros((6, 6))
+
+    # In-plane block, state order [x, y, vx, vy] -> indices (0,1,3,4).
+    ip_idx = [0, 1, 3, 4]
+    ip = np.array([
+        [4.0 - 3.0 * c, 0.0, s / n, 2.0 * (1.0 - c) / n],
+        [6.0 * (s - nt), 1.0, -2.0 * (1.0 - c) / n, (4.0 * s - 3.0 * nt) / n],
+        [3.0 * n * s, 0.0, c, 2.0 * s],
+        [-6.0 * n * (1.0 - c), 0.0, -2.0 * s, 4.0 * c - 3.0],
+    ])
+    for a, ia in enumerate(ip_idx):
+        for b, ib in enumerate(ip_idx):
+            phi[ia, ib] = ip[a, b]
+
+    # Cross-track block, state order [z, vz] -> indices (2, 5).
+    phi[2, 2] = c
+    phi[2, 5] = s / n
+    phi[5, 2] = -n * s
+    phi[5, 5] = c
+    return phi
 
 
 def propagate_cw_analytic(state0, times, n):
-    """Propagate the unforced CW state analytically at each time in ``times``."""
+    """Propagate the unforced CW state analytically over ``times`` (uses Phi)."""
     state0 = np.asarray(state0, dtype=float)
-    out = np.empty((len(times), 4), dtype=float)
+    times = np.asarray(times, dtype=float)
+    out = np.empty((times.size, 6), dtype=float)
     for i, t in enumerate(times):
         out[i] = cw_state_transition(n, t) @ state0
     return out
 
 
-# --- Exact non-linear LVLH frame transforms -------------------------------
-# Used to convert between an inertial two-body state and the target-centred
-# rotating LVLH frame, so CW can be compared against high-fidelity truth.
+def propagate_cw(state0, times, n, controller=None):
+    """Propagate the CW relative state over ``times`` with RK4.
 
-
-def lvlh_basis(target_state):
-    """Return (radial_hat, alongtrack_hat, omega, r) for a target inertial state.
-
-    ``omega`` is the LVLH frame angular rate (theta-dot) about +z [rad/s];
-    ``r`` is the target's orbital radius [m].
+    Works with or without a controller. Returns ``(states, controls)`` where
+    ``states`` is (N, 6) and ``controls`` is (N, 3) (zeros when uncontrolled).
     """
-    target_state = np.asarray(target_state, dtype=float)
-    r_vec = target_state[:2]
-    v_vec = target_state[2:]
-    r = np.linalg.norm(r_vec)
-    radial_hat = r_vec / r
-    # +90 deg rotation of the radial direction -> along-track for a prograde
-    # (counter-clockwise) orbit.
-    alongtrack_hat = np.array([-radial_hat[1], radial_hat[0]])
-    omega = (r_vec[0] * v_vec[1] - r_vec[1] * v_vec[0]) / (r * r)
-    return radial_hat, alongtrack_hat, omega, r
+    state0 = np.asarray(state0, dtype=float)
+    times = np.asarray(times, dtype=float)
+    states = np.empty((times.size, 6), dtype=float)
+    controls = np.zeros((times.size, 3), dtype=float)
+    states[0] = state0
+    controls[0] = _resolve_control(controller, states[0], times[0])
 
-
-def inertial_to_lvlh(target_state, deputy_state):
-    """Express ``deputy_state`` in the target's rotating LVLH frame.
-
-    Returns the relative state ``[x, y, vx, vy]`` (radial, along-track).
-    """
-    radial_hat, alongtrack_hat, omega, _ = lvlh_basis(target_state)
-    rot = np.array([radial_hat, alongtrack_hat])  # inertial -> LVLH
-
-    dr = np.asarray(deputy_state, float)[:2] - np.asarray(target_state, float)[:2]
-    dv = np.asarray(deputy_state, float)[2:] - np.asarray(target_state, float)[2:]
-
-    p = rot @ dr
-    # Rotating-frame velocity: v_rot = R @ dv - omega x p   (omega along +z).
-    omega_cross_p = np.array([-omega * p[1], omega * p[0]])
-    v = rot @ dv - omega_cross_p
-    return np.array([p[0], p[1], v[0], v[1]])
-
-
-def lvlh_to_inertial(target_state, rel_state):
-    """Inverse of :func:`inertial_to_lvlh`: LVLH relative state -> inertial state."""
-    radial_hat, alongtrack_hat, omega, _ = lvlh_basis(target_state)
-    rot = np.array([radial_hat, alongtrack_hat])  # inertial -> LVLH
-    rot_t = rot.T  # LVLH -> inertial
-
-    rel_state = np.asarray(rel_state, dtype=float)
-    p = rel_state[:2]
-    v = rel_state[2:]
-
-    dr = rot_t @ p
-    omega_cross_p = np.array([-omega * p[1], omega * p[0]])
-    dv = rot_t @ (v + omega_cross_p)
-
-    target_state = np.asarray(target_state, dtype=float)
-    return np.concatenate((target_state[:2] + dr, target_state[2:] + dv))
+    deriv = lambda s, t: cw_derivatives(s, t, n, controller)
+    for i in range(times.size - 1):
+        dt = times[i + 1] - times[i]
+        k1 = deriv(states[i], times[i])
+        k2 = deriv(states[i] + 0.5 * dt * k1, times[i] + 0.5 * dt)
+        k3 = deriv(states[i] + 0.5 * dt * k2, times[i] + 0.5 * dt)
+        k4 = deriv(states[i] + dt * k3, times[i] + dt)
+        states[i + 1] = states[i] + (dt / 6.0) * (k1 + 2 * k2 + 2 * k3 + k4)
+        controls[i + 1] = _resolve_control(controller, states[i + 1], times[i + 1])
+    return states, controls
 
 
 __all__ = [
-    "mean_motion_circular",
+    "cw_mean_motion",
     "cw_system_matrices",
     "cw_derivatives",
     "cw_state_transition",
     "propagate_cw_analytic",
-    "lvlh_basis",
-    "inertial_to_lvlh",
-    "lvlh_to_inertial",
+    "propagate_cw",
 ]

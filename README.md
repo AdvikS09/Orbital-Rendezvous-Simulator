@@ -1,64 +1,62 @@
-# Orbital Stability Platform — Phase 1: Orbital Rendezvous
+# Orbital Rendezvous Research Engine
 
-A small, modular Python platform for 2D orbital dynamics and spacecraft
-rendezvous. Phase 1 covers two-body propagation with multiple integrators,
-Clohessy–Wiltshire (Hill) relative motion, a PD rendezvous controller,
-verification of the linear CW model against a higher-fidelity non-linear model,
-and a simple keep-out-zone avoidance scaffold.
+CW-based spacecraft rendezvous with a PD controller, validated against a
+higher-fidelity (J2 + atmospheric drag) orbital model. The engine is **3D**, uses
+**SI units** throughout, and depends only on **numpy / matplotlib / pandas**
+(integration is a hand-rolled RK4 — deterministic and reproducible). No GUI / web
+app / database — that comes later.
 
-All quantities are **SI** (metres, seconds, kilograms, Newtons). The only
-third-party dependencies are **numpy, scipy, matplotlib, pandas**. No GUI, web
-app, or database.
-
-## State-vector convention
-
-Everything uses the same planar layout:
+## State conventions
 
 ```
-state = [x, y, vx, vy]          position = state[:2], velocity = state[2:]
+inertial (ECI) state :  [x, y, z, vx, vy, vz]
+LVLH relative state  :  [x, y, z, vx, vy, vz]
+                         x = radial (R-bar), y = along-track (V-bar), z = cross-track (H-bar)
+position = state[:3], velocity = state[3:]
 ```
 
-* **Inertial two-body frame** — `x, y` are Earth-centred inertial coordinates.
-* **LVLH / Hill frame** (relative motion) — `x` is radial (R-bar, +outward),
-  `y` is along-track (V-bar, +velocity direction), centred on a target on a
-  circular reference orbit.
+## Project structure
 
-## Module layout (`src/`)
-
-| Module | Contents |
-| --- | --- |
-| `constants.py` | SI constants (`MU_EARTH`, `R_EARTH`, …) and default 400 km LEO geometry |
-| `physics.py` | 2D two-body dynamics, circular-orbit setup, specific energy / angular momentum, period & mean motion |
-| `orbital_elements.py` | Cartesian ↔ planar classical elements (a, e, ω, ν) |
-| `integrators.py` | Euler, RK4, and velocity-Verlet (leapfrog) steppers + `integrate` driver |
-| `cw.py` | Clohessy–Wiltshire dynamics, closed-form state-transition matrix, exact LVLH frame transforms |
-| `controllers.py` | PD rendezvous controller + artificial-potential-field keep-out avoidance |
-| `simulation.py` | High-level drivers: `propagate_two_body`, `simulate_cw`, `propagate_nonlinear_relative` (truth model) |
-| `analysis.py` | Conservation tracking, period measurement, error metrics, validation tables (pandas) |
-| `plotting.py` | Headless (Agg) matplotlib helpers |
+```
+src/
+  orbit.py          two-body dynamics, RK4 propagator, orbital elements, energy/period
+  perturbations.py  J2 + atmospheric drag, ForceModel toggles (two-body / J2 / drag / J2+drag)
+  lvlh.py           inertial <-> LVLH transforms, relative position/velocity
+  cw.py             Clohessy-Wiltshire 3D dynamics, state-transition matrix, propagation
+  controller.py     configurable PD rendezvous controller (Kp, Kd, saturation)
+  validation.py     conservation checks, error metrics, gain sweep, CW-vs-high-fidelity
+  plotting.py       headless matplotlib helpers
+experiments/
+  run_cw_rendezvous.py        closed-loop PD rendezvous
+  run_gain_sweep.py           Kp x Kd tuning study
+  run_cw_vs_high_fidelity.py  two-body validation + CW vs high-fidelity + toggle study
+outputs/
+  figures/          generated PNG plots
+  data/             generated CSV tables
+tests/              unittest suite (no extra dependencies)
+requirements.txt
+README.md
+old_project_backup/ snapshot of the previous (2D) src/ and scripts/
+```
 
 ## Setup
 
-The repository ships with a `.venv` that already has the dependencies. To
-recreate it from scratch:
+The repo ships with a `.venv` that already has the dependencies. To recreate it:
 
 ```powershell
 python -m venv .venv
 .venv\Scripts\python.exe -m pip install -r requirements.txt
 ```
 
-## Running
+## Running the experiments
 
-Each script is self-contained and writes figures to `outputs/figures/` and CSV
-tables to `outputs/tables/` (git-ignored, created on demand). On Windows with the
-bundled venv:
+Each experiment is self-contained and writes to `outputs/figures/` and
+`outputs/data/` (created on demand). On Windows with the bundled venv:
 
 ```powershell
-.venv\Scripts\python.exe scripts\run_orbit_validation.py        # two-body + integrator comparison
-.venv\Scripts\python.exe scripts\run_cw_rendezvous.py           # natural CW motion + STM validation
-.venv\Scripts\python.exe scripts\run_pd_rendezvous.py           # closed-loop PD rendezvous
-.venv\Scripts\python.exe scripts\run_cw_vs_nonlinear.py         # CW vs non-linear truth model
-.venv\Scripts\python.exe scripts\run_obstacle_avoidance_demo.py # keep-out-zone avoidance
+.venv\Scripts\python.exe experiments\run_cw_rendezvous.py
+.venv\Scripts\python.exe experiments\run_gain_sweep.py
+.venv\Scripts\python.exe experiments\run_cw_vs_high_fidelity.py
 ```
 
 Run the tests:
@@ -67,36 +65,60 @@ Run the tests:
 .venv\Scripts\python.exe -m unittest discover -s tests -p "test_*.py"
 ```
 
-## What each script produces
+## Features
 
-| Script | Figures | Table |
-| --- | --- | --- |
-| `run_orbit_validation.py` | `orbit_trajectory.png`, `energy_drift.png` | `integrator_validation.csv` |
-| `run_cw_rendezvous.py` | `cw_relative_trajectory.png` | `cw_stm_validation.csv` |
-| `run_pd_rendezvous.py` | `pd_relative_trajectory.png`, `pd_position_error.png`, `pd_velocity_error.png`, `pd_control_effort.png` | `pd_rendezvous_metrics.csv` |
-| `run_cw_vs_nonlinear.py` | `cw_vs_nonlinear_error.png`, `cw_vs_nonlinear_trajectory.png` | `cw_vs_nonlinear_error.csv` |
-| `run_obstacle_avoidance_demo.py` | `obstacle_avoidance_trajectory.png` | `obstacle_avoidance_metrics.csv` |
+1. **Core orbital mechanics** — two-body dynamics, RK4 integration, 3D classical
+   orbital-element conversion, and energy / angular-momentum / period validation.
+2. **Perturbations** — J2 oblateness and exponential-atmosphere drag, selectable
+   via `ForceModel` toggles: two-body only, J2 only, drag only, J2 + drag.
+3. **LVLH / relative motion** — inertial↔LVLH conversion (with the rotating-frame
+   transport term) and relative position / velocity helpers.
+4. **CW module** — the 3D Clohessy-Wiltshire equations (in-plane Coriolis coupling
+   + decoupled cross-track oscillator), a closed-form state-transition matrix,
+   propagation, and a configurable initial relative state. Each term is commented.
+5. **PD controller** — configurable `Kp` / `Kd` (scalar, per-axis, or matrix),
+   optional thrust saturation, with position/velocity-error and control tracking.
+6. **Gain-tuning study** — sweeps Kp × Kd and reports final position error, final
+   velocity error, convergence time, max control acceleration and delta-v.
+7. **CW vs high-fidelity validation** — runs the same scenario in CW and in the
+   full non-linear model and compares position/velocity error growth over time.
+8. **Plots** — LVLH relative trajectory, x/y/z position vs time, relative velocity
+   vs time, control acceleration vs time, gain comparison, CW-vs-HF error.
 
-## Representative results (400 km circular LEO)
+## Representative results (400 km circular LEO, i = 51.6°)
 
-* **Analytic period:** 5553.62 s (≈ 92.6 min).
-* **Integrator conservation** (2 orbits): Euler drifts ~3.7 % in energy; RK4 is
-  at machine precision (~6e-15); velocity-Verlet is symplectic with bounded
-  energy error (~1e-12) — see `integrator_validation.csv`.
-* **CW model:** numerical RK4 matches the closed-form CW state-transition matrix
-  to ~1e-10 m. A 100 m radial offset produces ≈ −3771 m of along-track secular
-  drift per orbit (the textbook `−6π·x₀`).
-* **PD rendezvous:** drives a 291 m initial offset to < 1 µm, settling in
-  ≈ 1541 s with a total Δv of ≈ 1.85 m/s.
-* **CW vs non-linear:** linearisation error grows from ~1 % of the separation at
-  100 m to >100 % at 10 km over one orbit — quantifying where CW stops being
-  trustworthy.
-* **Obstacle avoidance:** a plain PD path penetrates a keep-out zone by 28.8 m,
-  whereas the PD + artificial-potential-field controller keeps +8.5 m clearance
-  and still reaches the target (Δv 1.83 → 4.13 m/s for the detour).
+* **Two-body validation (RK4, 2 orbits):** specific-energy drift ~1.4e-14,
+  angular-momentum drift ~6.6e-15, measured period matches the analytic
+  5553.62 s (≈ 92.6 min) to ~1e-13 relative error.
+* **CW model:** numerical RK4 matches the closed-form 3D state-transition matrix
+  to ~4e-10 m over one orbit; the cross-track axis is a clean oscillator at the
+  orbital period.
+* **PD rendezvous** (start [200, −300, 80] m, ωₙ = 6n, 0.05 m/s² limit): drives a
+  369 m error to ~1.5e-7 m, converging in ≈ 1591 s with Δv ≈ 2.33 m/s.
+* **Gain sweep:** low Kp is sluggish / non-converging; the fastest converging
+  combination (Kp = 2e-4, Kd = 3e-2) settles in ≈ 702 s at Δv ≈ 3.9 m/s,
+  illustrating the speed-vs-fuel trade-off.
+* **CW vs high-fidelity** (1 km along-track free drift, 1 orbit): two-body
+  divergence ≈ 2.78 m; adding **J2** roughly doubles it to ≈ 5.81 m; adding
+  **drag** alone leaves it ≈ 2.78 m — common-mode drag largely cancels in
+  relative motion for identical vehicles, so **J2 is the dominant differential
+  perturbation**. Under closed-loop control the divergence is actively suppressed
+  to ~0.02 m.
 
-## Roadmap (beyond Phase 1)
+## Notes, assumptions, and limitations
 
-* Higher-fidelity dynamics: J2 oblateness, drag; 3D (out-of-plane) motion.
-* Optimal / impulsive rendezvous (two-impulse CW targeting, LQR).
-* APF local-minimum handling and multi-obstacle corridors.
+* **Atmosphere:** a single-scale-height exponential model (ρ₀ = 3.9e-12 kg/m³ at
+  400 km, H = 60 km) representing moderate solar activity — not a NRLMSISE-class
+  model. Default drag vehicle: Cd = 2.2, A = 1 m², m = 100 kg.
+* **Drag in relative motion:** with identical target/deputy ballistic
+  coefficients, common-mode drag nearly cancels; differential drag (different
+  Cd·A/m) would be needed to see a large drag effect on the relative trajectory.
+* **CW reference:** assumes a circular reference orbit; the linearisation degrades
+  as separation grows and as perturbations accumulate (quantified in experiment 3).
+* **Controller:** continuous-thrust PD with magnitude saturation — no impulsive or
+  optimal (e.g. LQR / two-impulse) targeting yet.
+* **Integration:** fixed-step RK4 everywhere for reproducibility (no adaptive
+  stepping). The high-fidelity comparison propagates the target (passive) and
+  deputy (controlled) as a combined non-linear system.
+* The previous 2D implementation is preserved under `old_project_backup/`.
+```

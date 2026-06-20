@@ -1,5 +1,6 @@
-# Orbital Stability Platform -- Phase 1 dependencies (SI, numerical stack only)
+# Orbital rendezvous research engine -- runtime dependencies (SI numerical stack).
+# Integration is a hand-rolled RK4 (deterministic / reproducible), so SciPy is
+# not required. Tests use the standard-library unittest module.
 numpy>=2.0
-scipy>=1.13
 matplotlib>=3.8
 pandas>=2.0
