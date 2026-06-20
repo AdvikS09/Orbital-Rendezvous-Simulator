@@ -81,6 +81,7 @@ position = state[:3],  velocity = state[3:]
 ## 4. Repository structure
 
 ```
+app.py              Streamlit MVP interface (thin UI; no physics — calls src/scenarios.py)
 src/
   orbit.py          two-body dynamics, RK4 propagator, orbital elements, energy/period
   perturbations.py  J2 + atmospheric drag, ForceModel toggles (two-body/J2/drag/J2+drag)
@@ -88,6 +89,7 @@ src/
   cw.py             Clohessy-Wiltshire 3D dynamics, state-transition matrix, propagation
   controller.py     configurable PD rendezvous controller (Kp, Kd, saturation)
   validation.py     conservation checks, error metrics, gain sweep, CW-vs-high-fidelity
+  scenarios.py      frontend-agnostic scenario API (plain-data results for any UI)
   plotting.py       headless matplotlib helpers
 experiments/
   run_cw_rendezvous.py        closed-loop PD rendezvous (trajectory + time histories)
@@ -196,6 +198,33 @@ python experiments\run_cw_vs_high_fidelity.py
 | `run_cw_rendezvous.py` | Closed-loop PD rendezvous from a configurable initial relative state. | `cw_rendezvous_lvlh_trajectory.png`, `cw_rendezvous_position.png`, `cw_rendezvous_velocity.png`, `cw_rendezvous_control.png`; `cw_rendezvous_timeseries.csv`, `cw_rendezvous_metrics.csv` |
 | `run_gain_sweep.py` | Sweeps a grid of Kp and Kd values, running the rendezvous for each. | `gain_sweep_comparison.png`; `gain_sweep.csv` (also printed to the terminal) |
 | `run_cw_vs_high_fidelity.py` | Two-body orbit validation, controlled CW-vs-high-fidelity comparison, and a perturbation-toggle free-drift study. | `cw_vs_high_fidelity_error.png`, `cw_vs_high_fidelity_toggles.png`; `orbit_validation.csv`, `cw_vs_high_fidelity_timeseries.csv`, `cw_vs_high_fidelity_toggles.csv` |
+
+## Interactive app (Streamlit MVP)
+
+An interactive Streamlit interface sits on top of the engine for exploration and
+demos. It is a **thin frontend**: it contains no physics — all computation goes
+through `src/scenarios.py`, which returns plain dicts / DataFrames — so the
+backend can be reused if the UI is later replaced by a polished web frontend.
+
+Streamlit and Plotly are pinned in `requirements.txt`. Install and launch:
+
+```powershell
+python -m pip install -r requirements.txt
+streamlit run app.py
+```
+
+It opens in your browser (default http://localhost:8501) with two modes:
+
+* **Learning Mode** — seven guided presets (basic circular orbit, J2 effect, drag
+  effect, CW relative motion, CW + PD rendezvous, gain tuning, CW vs
+  high-fidelity), each with a plain-English explanation, editable inputs, Run /
+  Reset buttons, interactive Plotly plots, key metrics, and an automatic
+  interpretation of the result.
+* **Research Mode** — full control of the initial relative state (x/y/z, vx/vy/vz),
+  target altitude, inclination, duration, timestep, Kp/Kd, J2/drag toggles, and
+  model choice (CW only / high-fidelity only / comparison), with relative-
+  trajectory, position, velocity and control-acceleration plots, error metrics
+  (final position/velocity error, convergence time, delta-v), and a CSV download.
 
 ## 9. Interpreting the outputs
 

@@ -12,12 +12,13 @@ lvlh           inertial <-> LVLH frame transforms, relative position/velocity
 cw             Clohessy-Wiltshire dynamics, state-transition matrix, propagation
 controller     configurable PD rendezvous controller
 validation     conservation checks, error metrics, gain sweep, CW-vs-high-fidelity
+scenarios      frontend-agnostic scenario API (plain-data results for any UI)
 plotting       headless matplotlib helpers
 """
 
 __version__ = "1.0.0"
 
-from . import controller, cw, lvlh, orbit, perturbations, plotting, validation
+from . import controller, cw, lvlh, orbit, perturbations, plotting, scenarios, validation
 
 __all__ = [
     "orbit",
@@ -26,6 +27,7 @@ __all__ = [
     "cw",
     "controller",
     "validation",
+    "scenarios",
     "plotting",
     "__version__",
 ]
