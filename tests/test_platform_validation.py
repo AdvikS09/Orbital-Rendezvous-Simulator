@@ -188,7 +188,7 @@ def test_participant_code_is_normalised_to_upper_case():
     ("", "Enter"),
     ("ab", "at least"),
     ("x" * 41, "at most"),
-    ("alice@school.org", "email"),
+    ("alice@example.org", "email"),
     ("Alice Smith", "letters, digits"),
 ])
 def test_participant_code_rejects_bad_input(bad, expected):

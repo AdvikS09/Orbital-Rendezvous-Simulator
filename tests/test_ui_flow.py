@@ -156,7 +156,7 @@ def test_entry_rejects_an_email_shaped_participant_code(app, pilot_env):
     _button(app, "Continue").click().run()
 
     app.text_input[0].set_value("TESTORG")
-    app.text_input[1].set_value("alice@school.org")
+    app.text_input[1].set_value("alice@example.org")
     _button(app, "Continue").click().run()
 
     assert any("email" in str(e.value).lower() for e in app.error)

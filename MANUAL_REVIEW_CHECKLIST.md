@@ -60,7 +60,7 @@ pass/fail.
 | # | Step | Expected |
 | --- | --- | --- |
 | C1 | Read the participant-code help | Tells the user to make one up, write it down, and not use a name or email |
-| C2 | Enter participant code `alice@school.org` | Rejected: "That looks like an email address…" |
+| C2 | Enter participant code `alice@example.org` | Rejected: "That looks like an email address…" |
 | C3 | Enter `ab` | Rejected: must be at least 3 characters |
 | C4 | Enter `Alice Smith` | Rejected: letters, digits, hyphens and underscores only |
 | C5 | Enter a 50-character code | Rejected: at most 40 characters |
