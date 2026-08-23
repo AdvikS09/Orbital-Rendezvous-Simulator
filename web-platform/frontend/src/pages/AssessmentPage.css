@@ -1,0 +1,205 @@
+/* Ten questions, one column, generous spacing between items. */
+
+.assessment-page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+  padding: var(--space-6) var(--space-5);
+  max-width: 48rem;
+  margin: 0 auto;
+  width: 100%;
+}
+
+.assessment-page--message {
+  gap: var(--space-4);
+  align-items: flex-start;
+}
+
+.assessment-page__header {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.assessment-page__subtitle {
+  color: var(--text-muted);
+  font-size: var(--text-sm);
+}
+
+.assessment-page__intro {
+  color: var(--text-secondary);
+  line-height: var(--leading-relaxed);
+  max-width: 76ch;
+}
+
+.assessment-page__caption {
+  color: var(--text-muted);
+  font-size: var(--text-xs);
+  line-height: var(--leading-normal);
+  max-width: 76ch;
+}
+
+.assessment-page__loading {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  color: var(--text-secondary);
+  padding: var(--space-6) 0;
+}
+
+/* ------------------------------------------------------------- items */
+.assessment-page__form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+
+/*
+ * The question number comes from the list marker rather than from rendered
+ * text, so no number in this page is produced by string interpolation.
+ */
+.assessment-page__items {
+  list-style: decimal;
+  margin: 0;
+  padding-left: var(--space-6);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+
+.assessment-page__items > li::marker {
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+}
+
+.assessment-page__item {
+  border: 0;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.assessment-page__question {
+  padding: 0;
+  margin: 0 0 var(--space-1);
+  color: var(--text-primary);
+  font-weight: 600;
+  line-height: var(--leading-normal);
+}
+
+.assessment-page__option {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  background: var(--surface-overlay);
+  transition: border-color var(--transition-fast), background var(--transition-fast);
+}
+
+.assessment-page__option:hover {
+  border-color: var(--border-default);
+  background: var(--surface-hover);
+}
+
+.assessment-page__option:has(input:checked) {
+  border-color: var(--accent-border);
+  background: var(--accent-muted);
+}
+
+.assessment-page__option input {
+  margin-top: 0.25em;
+  accent-color: var(--accent);
+  flex: none;
+}
+
+.assessment-page__option label {
+  flex: 1;
+  cursor: pointer;
+  font-size: var(--text-sm);
+  line-height: var(--leading-normal);
+}
+
+/* -------------------------------------------------------- confidence */
+.assessment-page__confidence {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-4);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-md);
+  background: var(--surface-raised);
+}
+
+.assessment-page__confidence label {
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+.assessment-page__confidence input[type='range'] {
+  width: 100%;
+  accent-color: var(--accent);
+}
+
+.assessment-page__confidence-value {
+  color: var(--accent);
+  font-size: var(--text-sm);
+}
+
+/* ------------------------------------------------------------ scores */
+.assessment-page__scores {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(8rem, 1fr));
+  gap: var(--space-4);
+  margin: 0 0 var(--space-3);
+}
+
+.assessment-page__score dt {
+  color: var(--text-muted);
+  font-size: var(--text-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.assessment-page__score dd {
+  margin: var(--space-1) 0 0;
+  font-size: var(--text-lg);
+  color: var(--text-primary);
+}
+
+.assessment-page__missing {
+  color: var(--text-muted);
+  font-size: var(--text-sm);
+}
+
+/* ----------------------------------------------------------- answers */
+.assessment-page__answers {
+  list-style: decimal;
+  margin: 0;
+  padding-left: var(--space-6);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.assessment-page__answers > li::marker {
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+}
+
+.assessment-page__correct {
+  color: var(--status-success);
+  font-size: var(--text-sm);
+  margin-bottom: var(--space-1);
+}
+
+.assessment-page__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  align-items: center;
+}

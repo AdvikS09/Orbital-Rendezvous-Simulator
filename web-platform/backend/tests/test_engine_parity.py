@@ -373,3 +373,56 @@ def test_identical_requests_give_identical_numbers(client, scenario_id):
     assert [m["value"] for m in first["metrics"]] == [
         m["value"] for m in second["metrics"]
     ]
+
+
+# --------------------------------------------------------------------------
+# Presentation: no machine notation may reach a participant
+# --------------------------------------------------------------------------
+@pytest.mark.parametrize("scenario_id", SCENARIO_IDS)
+def test_no_interpretation_contains_machine_notation(client, scenario_id):
+    """The defect this migration exists to fix.
+
+    The Streamlit interface rendered numbers with Python's %g, so an energy
+    drift appeared on screen as `2e-12`. Metric values are formatted by the
+    frontend, but interpretation *sentences* are composed here, and an
+    f-string would put machine notation straight back into the interface.
+    """
+    import re
+
+    scenario, params, _ = _engine_result(scenario_id)
+    payload = _api_result(client, scenario_id, params)
+
+    machine = re.compile(r"\d+(\.\d+)?[eE][+-]?\d+")
+    for interpretation in payload["interpretations"]:
+        assert not machine.search(interpretation["text"]), (
+            f"{scenario_id}: machine notation in an interpretation shown to a "
+            f"participant: {interpretation['text']!r}"
+        )
+
+
+@pytest.mark.parametrize("scenario_id", SCENARIO_IDS)
+def test_no_user_facing_text_contains_an_emoji(client, scenario_id):
+    """Emoji were removed from the interface; nothing may reintroduce them."""
+    import re
+
+    scenario, params, _ = _engine_result(scenario_id)
+    payload = _api_result(client, scenario_id, params)
+
+    pictographic = re.compile(
+        "[\U0001F000-\U0001FAFF☀-➿⬀-⯿️]"
+    )
+    blobs = (
+        [i["text"] for i in payload["interpretations"]]
+        + [i.get("title") or "" for i in payload["interpretations"]]
+        + payload["warnings"]
+        + payload["assumptions"]
+        + payload["limitations"]
+        + [payload["reading_guide"], payload["scenario_title"]]
+        + [m["label"] for m in payload["metrics"]]
+        + [m.get("help") or "" for m in payload["metrics"]]
+        + [p["title"] for p in payload["plots"]]
+        + [p.get("caption") or "" for p in payload["plots"]]
+    )
+    for blob in blobs:
+        found = pictographic.findall(blob)
+        assert not found, f"{scenario_id}: emoji {found} in {blob[:80]!r}"

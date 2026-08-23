@@ -1,0 +1,57 @@
+# Local development stack.
+#
+#   docker compose up --build
+#
+# Serves the whole application at http://localhost:8000 - API and frontend from
+# one origin, exactly as in production, so what you test is what you deploy.
+#
+# For a faster inner loop, run the two processes directly instead (Vite's hot
+# reload is worth having):
+#   terminal 1: cd web-platform/backend && uvicorn app.main:app --reload --port 8000
+#   terminal 2: cd web-platform/frontend && npm run dev
+
+services:
+  web:
+    build:
+      # Context is the repository root: the image needs orbital_core/ and pilot/.
+      context: ..
+      dockerfile: web-platform/Dockerfile
+    ports:
+      - "8000:8000"
+    environment:
+      # Anything other than "production" flags every record as demo data, which
+      # is what keeps local testing out of real pilot reporting.
+      PILOT_ENV: ${PILOT_ENV:-development}
+      PILOT_APP_VERSION: ${PILOT_APP_VERSION:-1.0.0}
+      PILOT_LOG_LEVEL: ${PILOT_LOG_LEVEL:-INFO}
+      # Points at the postgres service below. Override to use SQLite instead.
+      DATABASE_URL: ${DATABASE_URL:-postgresql+psycopg://orbital:orbital@db:5432/orbital}
+      PILOT_PARTICIPANT_SALT: ${PILOT_PARTICIPANT_SALT:-local-development-salt-not-a-secret}
+      PILOT_ADMIN_USERNAME: ${PILOT_ADMIN_USERNAME:-}
+      PILOT_ADMIN_PASSWORD_HASH: ${PILOT_ADMIN_PASSWORD_HASH:-}
+      PILOT_MAX_SIMULATION_STEPS: ${PILOT_MAX_SIMULATION_STEPS:-40000}
+      PILOT_MAX_ESTIMATED_SECONDS: ${PILOT_MAX_ESTIMATED_SECONDS:-20}
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: orbital
+      POSTGRES_PASSWORD: orbital
+      POSTGRES_DB: orbital
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U orbital -d orbital"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+    restart: unless-stopped
+    # Not published to the host by default: nothing outside the compose network
+    # needs it, and an exposed development database is a needless risk.
+
+volumes:
+  pgdata:

@@ -1,0 +1,131 @@
+/*
+ * Workspace layout.
+ *
+ * Desktop: a fixed-width parameter column beside a fluid results column, the
+ * parameters sticky so a long results page does not strand the Run button.
+ * Below 60rem the two stack, parameters first, because on a phone the sequence
+ * is set the values, then read what came back.
+ */
+
+.scenario-page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+  padding: var(--space-6) var(--space-5);
+  max-width: var(--content-max);
+  margin: 0 auto;
+  width: 100%;
+}
+
+.scenario-page--message {
+  gap: var(--space-4);
+}
+
+.scenario-page__header {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.scenario-page__tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.scenario-page__summary {
+  color: var(--text-secondary);
+  max-width: 76ch;
+}
+
+.scenario-page__references {
+  margin-top: var(--space-3);
+  color: var(--text-muted);
+  font-size: var(--text-xs);
+  max-width: 76ch;
+}
+
+/* ------------------------------------------------------------- layout */
+.scenario-page__layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-6);
+  align-items: start;
+}
+
+@media (min-width: 60rem) {
+  .scenario-page__layout {
+    grid-template-columns: var(--params-width) minmax(0, 1fr);
+  }
+
+  .scenario-page__controls {
+    position: sticky;
+    top: var(--space-4);
+  }
+}
+
+.scenario-page__controls > * {
+  display: flex;
+  flex-direction: column;
+}
+
+.scenario-page__results {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+  min-width: 0;
+}
+
+/* --------------------------------------------------------- preflight */
+.scenario-page__estimate {
+  margin-top: var(--space-4);
+  min-height: 1.4em;
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+}
+
+.scenario-page__estimate-text {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+
+.scenario-page__blocked {
+  margin-top: var(--space-2);
+  font-size: var(--text-xs);
+  color: var(--status-warning);
+}
+
+.scenario-page__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin-top: var(--space-4);
+}
+
+/* ----------------------------------------------------------- results */
+.scenario-page__loading {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-6) 0;
+  color: var(--text-secondary);
+}
+
+.scenario-page__completed {
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+}
+
+.scenario-page__error-list {
+  margin: 0;
+  padding-left: var(--space-5);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.scenario-page :where(.callout) + .callout {
+  margin-top: var(--space-2);
+}

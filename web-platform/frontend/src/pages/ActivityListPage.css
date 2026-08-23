@@ -1,0 +1,110 @@
+/* The three activities, one card each. */
+
+.activity-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+  padding: var(--space-6) var(--space-5);
+  max-width: 60rem;
+  margin: 0 auto;
+  width: 100%;
+}
+
+.activity-list__header {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.activity-list__subtitle {
+  color: var(--text-secondary);
+}
+
+.activity-list__loading {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  color: var(--text-secondary);
+  padding: var(--space-4) 0;
+}
+
+.activity-list__items {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.activity-list__summary {
+  color: var(--text-secondary);
+  max-width: 76ch;
+}
+
+/* ------------------------------------------------------------- facts */
+.activity-list__facts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr));
+  gap: var(--space-3) var(--space-5);
+  margin: var(--space-4) 0;
+  padding: var(--space-3) 0;
+  border-top: 1px solid var(--border-subtle);
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.activity-list__fact dt {
+  color: var(--text-muted);
+  font-size: var(--text-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.activity-list__fact dd {
+  margin: var(--space-1) 0 0;
+  color: var(--text-primary);
+  font-size: var(--text-sm);
+}
+
+.activity-list__points {
+  margin: 0;
+  padding-left: var(--space-5);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  color: var(--text-secondary);
+  max-width: 76ch;
+}
+
+.activity-list__points li::marker {
+  color: var(--text-muted);
+}
+
+/* -------------------------------------------------------------- foot */
+.activity-list__foot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  margin-top: var(--space-4);
+}
+
+.activity-list__start {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-4);
+  border: 1px solid var(--accent-border);
+  border-radius: var(--radius-md);
+  background: var(--accent);
+  color: var(--text-inverse);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.activity-list__start:hover {
+  background: var(--accent-strong);
+  color: var(--text-inverse);
+}

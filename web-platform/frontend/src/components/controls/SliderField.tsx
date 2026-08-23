@@ -17,7 +17,7 @@
 
 import { useEffect, useId, useState } from 'react'
 import type { ParamSpec } from '@/api/types'
-import { Icon } from '@/components/ui/Icon'
+import { Icon } from '@/components/ui'
 import { NumberValue, formatValueText } from '@/components/NumberValue'
 import { NumberField, parseNumericInput, toInputText } from './NumberField'
 import './SliderField.css'

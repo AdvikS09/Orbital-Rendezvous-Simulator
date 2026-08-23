@@ -1,0 +1,129 @@
+/*
+ * Report tables.
+ *
+ * Denser than the result tables on the participant side: an administrator is
+ * scanning for an outlier across many rows, not reading one row carefully. The
+ * table scrolls inside its own container so the page never scrolls sideways,
+ * and the header row stays put while the body moves.
+ */
+
+.report-table {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+.report-table__header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2) var(--space-4);
+}
+
+.report-table__heading {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin: 0;
+  min-width: 0;
+}
+
+.report-table__count {
+  color: var(--text-muted);
+  font-size: var(--text-xs);
+  font-weight: 400;
+  white-space: nowrap;
+}
+
+.report-table__caption {
+  max-width: 82ch;
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: var(--text-sm);
+}
+
+.report-table__scroll {
+  max-width: 100%;
+  max-height: 30rem;
+  overflow: auto;
+  background: var(--surface-raised);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-md);
+}
+
+.report-table__table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--text-sm);
+}
+
+.report-table__th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  padding: var(--space-2) var(--space-3);
+  background: var(--surface-overlay);
+  border-bottom: 1px solid var(--border-default);
+  color: var(--text-secondary);
+  font-size: var(--text-xs);
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-align: left;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.report-table__th--numeric {
+  text-align: right;
+}
+
+.report-table__th-label {
+  display: block;
+}
+
+.report-table__th-unit {
+  display: block;
+  font-weight: 400;
+  letter-spacing: normal;
+  text-transform: none;
+}
+
+.report-table__td {
+  padding: var(--space-1) var(--space-3);
+  border-bottom: 1px solid var(--border-subtle);
+  color: var(--text-primary);
+  vertical-align: top;
+}
+
+/*
+ * Free-text columns (a bug report, a feature request) would otherwise force the
+ * table many screens wide. They wrap inside a bounded measure instead.
+ */
+.report-table__td:not(.report-table__td--numeric) {
+  max-width: 42ch;
+  overflow-wrap: anywhere;
+}
+
+.report-table__td--numeric {
+  text-align: right;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.report-table__table tbody tr:last-child .report-table__td {
+  border-bottom: 0;
+}
+
+.report-table__table tbody tr:hover .report-table__td {
+  background: var(--surface-hover);
+}
+
+.report-table__note {
+  max-width: 82ch;
+  margin: 0;
+  color: var(--text-muted);
+  font-size: var(--text-xs);
+  line-height: var(--leading-normal);
+}

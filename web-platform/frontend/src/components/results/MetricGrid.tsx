@@ -16,7 +16,7 @@
 import { useId } from 'react'
 import type { Metric } from '@/api/types'
 import { Icon } from '@/components/ui/Icon'
-import { NumberValue } from '@/components/ui/NumberValue'
+import { NumberValue } from '@/components/NumberValue'
 import './MetricGrid.css'
 
 export interface MetricGridProps {

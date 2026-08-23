@@ -1,8 +1,14 @@
 import type { ReactNode } from 'react'
+
+// Severity is defined once, in the API contract, so a severity added
+// server-side cannot be silently unrenderable here. Imported for local use and
+// re-exported so existing callers keep working.
+import type { Severity } from '@/api/types'
+
 import { Icon, SEVERITY_ICON } from './Icon'
 import './Callout.css'
 
-export type Severity = 'info' | 'success' | 'warning' | 'error'
+export type { Severity }
 
 /**
  * Read out before the message body. Without it the severity of a callout would

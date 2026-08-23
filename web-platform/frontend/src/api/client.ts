@@ -282,6 +282,22 @@ export const api = {
     return request<AdminReport>(`/admin/report${suffix}`, { auth })
   },
 
+  /**
+   * Registered organisations, for the administrator's organisation filter.
+   *
+   * The report tables identify an organisation by name and code, but the report
+   * query filters by numeric id, so the id has to come from somewhere; this is
+   * that somewhere.
+   */
+  adminOrganisations: (
+    auth: { username: string; password: string },
+    includeDemo = false,
+  ) =>
+    request<Record<string, unknown>[]>(
+      `/admin/organisations?include_demo=${includeDemo ? 'true' : 'false'}`,
+      { auth },
+    ),
+
   adminExport: (
     auth: { username: string; password: string },
     query: Record<string, string | number | boolean | undefined> = {},

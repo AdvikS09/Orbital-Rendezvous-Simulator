@@ -1,0 +1,75 @@
+/*
+ * Confirmation page.
+ *
+ * Reading measure, three short sections, two actions. No celebration graphics:
+ * the useful content here is the honest account of what happens to feedback,
+ * and decoration would only push it further down the page.
+ */
+
+.confirmation-page {
+  max-width: 48rem;
+  margin: 0 auto;
+  padding: var(--space-8) var(--space-6) var(--space-12);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+
+.confirmation-page__header {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding-bottom: var(--space-4);
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.confirmation-page__subtitle {
+  color: var(--text-secondary);
+  font-size: var(--text-md);
+}
+
+.confirmation-page__section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.confirmation-page__section p {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: var(--text-sm);
+  line-height: var(--leading-relaxed);
+}
+
+.confirmation-page__section strong {
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+.confirmation-page .num {
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+.confirmation-page__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+}
+
+.confirmation-page__note {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: var(--text-xs);
+  line-height: var(--leading-normal);
+}
+
+@media (max-width: 40rem) {
+  .confirmation-page {
+    padding: var(--space-6) var(--space-4) var(--space-10);
+  }
+
+  .confirmation-page__actions > * {
+    flex: 1 1 100%;
+  }
+}

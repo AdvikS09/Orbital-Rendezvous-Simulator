@@ -1,0 +1,113 @@
+/* Result tables: dense, scannable, scrollable inside their own container. */
+
+.result-tables {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+}
+
+.result-tables__table-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+.result-tables__table-heading {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin: 0;
+}
+
+.result-tables__count {
+  color: var(--text-muted);
+  font-size: var(--text-xs);
+  font-weight: 400;
+  white-space: nowrap;
+}
+
+.result-tables__caption {
+  max-width: 82ch;
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: var(--text-sm);
+}
+
+/*
+ * The scroll container, not the page. tabindex makes it reachable by keyboard,
+ * which is required for any region that scrolls.
+ */
+.result-tables__scroll {
+  max-width: 100%;
+  max-height: 32rem;
+  overflow: auto;
+  background: var(--surface-raised);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-md);
+}
+
+.result-tables__table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--text-sm);
+}
+
+.result-tables__header {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  padding: var(--space-2) var(--space-3);
+  background: var(--surface-overlay);
+  border-bottom: 1px solid var(--border-default);
+  color: var(--text-secondary);
+  font-size: var(--text-xs);
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-align: left;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.result-tables__header--numeric {
+  text-align: right;
+}
+
+.result-tables__header-label {
+  display: block;
+}
+
+.result-tables__header-unit {
+  display: block;
+  font-weight: 400;
+  letter-spacing: normal;
+  text-transform: none;
+}
+
+.result-tables__cell {
+  padding: var(--space-1) var(--space-3);
+  border-bottom: 1px solid var(--border-subtle);
+  color: var(--text-primary);
+  white-space: nowrap;
+}
+
+.result-tables__cell--numeric {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.result-tables__table tbody tr:last-child .result-tables__cell {
+  border-bottom: 0;
+}
+
+.result-tables__table tbody tr:hover .result-tables__cell {
+  background: var(--surface-hover);
+}
+
+.result-tables__note {
+  max-width: 82ch;
+  margin: 0;
+  color: var(--text-muted);
+  font-size: var(--text-xs);
+  line-height: var(--leading-normal);
+}

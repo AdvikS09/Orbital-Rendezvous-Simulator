@@ -1,0 +1,114 @@
+/*
+ * Track selection.
+ *
+ * Three stacked cards rather than a grid: the descriptions differ in length and
+ * a row of equal-height columns would either truncate or leave dead space. The
+ * suggested track is marked by a left accent rule and a text label, never by
+ * colour alone, and no track is ever disabled.
+ */
+
+.track-page {
+  max-width: 52rem;
+  margin: 0 auto;
+  padding: var(--space-8) var(--space-6) var(--space-12);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+
+.track-page__header {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding-bottom: var(--space-4);
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.track-page__subtitle {
+  color: var(--text-secondary);
+  font-size: var(--text-md);
+}
+
+.track-page__cards {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.track-page__card {
+  padding: var(--space-5);
+  background: var(--surface-raised);
+  border: 1px solid var(--border-subtle);
+  border-left: 3px solid transparent;
+  border-radius: var(--radius-lg);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  transition: border-color var(--transition-fast);
+}
+
+.track-page__card:hover {
+  border-color: var(--border-default);
+}
+
+.track-page__card--recommended {
+  border-left-color: var(--accent);
+  background: var(--surface-overlay);
+}
+
+.track-page__card--recommended:hover {
+  border-left-color: var(--accent);
+}
+
+.track-page__title {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-3);
+  font-size: var(--text-md);
+}
+
+.track-page__suggested {
+  padding: 0.1rem var(--space-2);
+  background: var(--accent-muted);
+  border: 1px solid var(--accent-border);
+  border-radius: var(--radius-sm);
+  color: var(--accent);
+  font-size: var(--text-xs);
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  text-transform: lowercase;
+  white-space: nowrap;
+}
+
+.track-page__description {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: var(--text-sm);
+  line-height: var(--leading-relaxed);
+}
+
+.track-page__audience {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: var(--text-xs);
+  line-height: var(--leading-normal);
+}
+
+.track-page__action {
+  margin-top: var(--space-1);
+  display: flex;
+}
+
+@media (max-width: 40rem) {
+  .track-page {
+    padding: var(--space-6) var(--space-4) var(--space-10);
+  }
+
+  .track-page__action > * {
+    flex: 1 1 100%;
+  }
+}

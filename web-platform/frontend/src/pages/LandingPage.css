@@ -1,0 +1,115 @@
+/*
+ * Landing page.
+ *
+ * A reading page, not a hero. Measure is capped so the prose stays scannable,
+ * the two summary panels sit side by side on a wide viewport and stack below
+ * it, and the "what this is not" block is given the same visual weight as the
+ * capability list rather than being tucked away at the bottom.
+ */
+
+.landing-page {
+  max-width: 72rem;
+  margin: 0 auto;
+  padding: var(--space-8) var(--space-6) var(--space-12);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-8);
+}
+
+.landing-page__header {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding-bottom: var(--space-4);
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.landing-page__subtitle {
+  color: var(--text-secondary);
+  font-size: var(--text-md);
+  line-height: var(--leading-normal);
+  max-width: 66ch;
+}
+
+.landing-page__intro {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  color: var(--text-secondary);
+  line-height: var(--leading-relaxed);
+}
+
+.landing-page__intro strong {
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+.landing-page__columns {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(22rem, 1fr));
+  gap: var(--space-5);
+  align-items: start;
+}
+
+.landing-page__list {
+  margin: 0;
+  padding-left: var(--space-5);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  color: var(--text-secondary);
+  font-size: var(--text-sm);
+  line-height: var(--leading-normal);
+}
+
+.landing-page__list li::marker {
+  color: var(--text-muted);
+}
+
+.landing-page__list strong {
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+.landing-page__list--limitations {
+  gap: var(--space-3);
+  line-height: var(--leading-relaxed);
+  max-width: 76ch;
+}
+
+.landing-page__not {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.landing-page__not p + p {
+  margin-top: var(--space-3);
+}
+
+.landing-page__start {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-5);
+}
+
+.landing-page__note {
+  flex: 1 1 24rem;
+  margin: 0;
+  color: var(--text-muted);
+  font-size: var(--text-xs);
+  line-height: var(--leading-normal);
+  max-width: 60ch;
+}
+
+@media (max-width: 40rem) {
+  .landing-page {
+    padding: var(--space-6) var(--space-4) var(--space-10);
+    gap: var(--space-6);
+  }
+
+  .landing-page__start > * {
+    flex: 1 1 100%;
+  }
+}

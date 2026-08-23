@@ -535,3 +535,49 @@ def test_admin_report_never_contains_a_secret(client, admin_auth):
     ).text
     assert password not in body
     assert "pbkdf2_sha256$" not in body
+
+
+# --------------------------------------------------------------------------
+# Structured errors from raised HTTPExceptions
+# --------------------------------------------------------------------------
+def test_http_exceptions_carry_an_error_class(client):
+    """A 404 must be as machine-readable as any other failure.
+
+    Without the StarletteHTTPException handler these came back as FastAPI's
+    bare {"detail": ...}, which the frontend's ApiError cannot interpret.
+    """
+    body = client.get("/api/v1/scenarios/nope").json()
+    assert body["status"] == "error"
+    assert body["error_class"] == "NotFound"
+    assert body["rejected"] is True
+    assert "nope" in body["message"]
+
+
+def test_session_field_errors_survive_as_field_attribution(client):
+    """The per-field messages must reach the client, not be flattened."""
+    response = client.post(
+        "/api/v1/sessions",
+        json={
+            "pilot_code": "has spaces", "participant_code": "me@example.org",
+            "user_type": "student", "consent_given": True,
+        },
+    )
+    assert response.status_code == 422
+    body = response.json()
+    fields = {d["field"]: d["message"] for d in body["detail"]}
+    assert "pilot_code" in fields
+    assert "participant_code" in fields
+    assert "email" in fields["participant_code"].lower()
+
+
+def test_unauthorized_admin_keeps_the_www_authenticate_header(client, admin_auth):
+    """Dropping the header would stop a browser offering its credential prompt."""
+    response = client.get("/api/v1/admin/report")
+    assert response.status_code == 401
+    assert "WWW-Authenticate" in response.headers
+    assert response.json()["error_class"] == "Unauthorized"
+
+
+def test_unknown_api_route_returns_json_not_html(client):
+    body = client.get("/api/v1/not-a-real-endpoint").json()
+    assert body["error_class"] == "NotFound"

@@ -1,0 +1,38 @@
+/* Explanatory prose: looser leading than the interface, capped measure. */
+
+.prose {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  color: var(--text-secondary);
+  line-height: var(--leading-relaxed);
+}
+
+.prose__paragraph {
+  margin: 0;
+  max-width: 76ch;
+}
+
+.prose__heading {
+  margin: var(--space-2) 0 0;
+  color: var(--text-primary);
+  font-size: var(--text-base);
+}
+
+.prose__list {
+  margin: 0;
+  padding-left: var(--space-5);
+  max-width: 76ch;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.prose__list li::marker {
+  color: var(--text-muted);
+}
+
+.prose strong {
+  color: var(--text-primary);
+  font-weight: 600;
+}

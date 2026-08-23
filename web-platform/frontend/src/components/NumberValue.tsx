@@ -157,7 +157,13 @@ export function formatValueText(
 }
 
 export interface NumberValueProps {
-  value: number | null
+  /**
+   * The value to display. A string is passed through verbatim: the API's
+   * `Metric.value` is `number | string | null` because a few metrics are
+   * categorical (an integrator name, a pass/fail word), and inventing a numeric
+   * formatting for those would be wrong.
+   */
+  value: number | string | null
   /** The unit the value is supplied in, e.g. 'm', 'm/s', 's'. */
   unit?: string
   /** Presentation chosen by the API. Omit to let the unit decide. */
@@ -180,8 +186,12 @@ export function NumberValue({
   muted = false,
   className,
 }: NumberValueProps) {
-  const { body, unit: displayUnit } = formatValueParts(value, { unit, fmt, precision })
-  const missing = isMissing(value)
+  const numeric = typeof value === 'string' ? null : value
+  const { body, unit: displayUnit } =
+    typeof value === 'string'
+      ? { body: value, unit: unit || null }
+      : formatValueParts(value, { unit, fmt, precision })
+  const missing = typeof value === 'string' ? false : isMissing(value)
 
   const classes = [
     'num',
@@ -195,7 +205,12 @@ export function NumberValue({
 
   // The exact value, unrounded, for anyone who needs to check a displayed
   // figure against the solver output.
-  const exact = missing ? undefined : unit ? `${rawValue(value)} ${unit}` : rawValue(value)
+  const exact =
+    missing || numeric === null
+      ? undefined
+      : unit
+        ? `${rawValue(numeric)} ${unit}`
+        : rawValue(numeric)
 
   return (
     <span className={classes} title={exact}>

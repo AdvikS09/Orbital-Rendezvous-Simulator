@@ -1,0 +1,98 @@
+/* Chart frame. One file per component; every class carries the component
+   prefix so nothing collides with another panel's styles. */
+
+.plotly-chart {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  /* Without this a wide chart holds the whole column open, and the page gains
+     a horizontal scrollbar instead of the chart shrinking. */
+  min-width: 0;
+}
+
+.plotly-chart__frame {
+  position: relative;
+  width: 100%;
+  background: var(--surface-raised);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  padding: var(--space-2);
+
+  /* Plotly writes an explicit pixel width onto its own root element. When the
+     viewport narrows -- a tablet rotating to portrait, say -- that oversized
+     child would otherwise prop this frame open, the ResizeObserver below would
+     never observe a size change, and the resize that should shrink the chart
+     would never be requested. A deadlock resolved by refusing to be pushed:
+     min-width lets the frame shrink, overflow clips the stale canvas for the
+     one frame before Plotly redraws at the new size. */
+  min-width: 0;
+  overflow: hidden;
+}
+
+.plotly-chart__canvas {
+  width: 100%;
+  min-width: 0;
+}
+
+/* The modebar is Plotly's own markup, so it is reached by descendant selector
+   rather than a prefixed class. It sits quietly until the chart is hovered. */
+.plotly-chart__canvas .modebar {
+  opacity: 0.35;
+  transition: opacity var(--transition-fast);
+}
+
+.plotly-chart__frame:hover .modebar,
+.plotly-chart__canvas:focus-within .modebar {
+  opacity: 1;
+}
+
+.plotly-chart__canvas .modebar-btn path {
+  fill: var(--text-muted);
+}
+
+.plotly-chart__canvas .modebar-btn:hover path,
+.plotly-chart__canvas .modebar-btn.active path {
+  fill: var(--accent);
+}
+
+/* ------------------------------------------------------------ loading state */
+.plotly-chart__loading {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-3);
+  color: var(--text-muted);
+  font-size: var(--text-sm);
+}
+
+/* The ring itself belongs to Spinner; only its placement is set here. */
+
+/* ------------------------------------------------------------ failed state */
+.plotly-chart__fallback {
+  /* A failed chart occupies the space the chart would have taken, so the page
+     does not reflow around a missing panel. */
+  min-height: 120px;
+  align-items: center;
+}
+
+/* ---------------------------------------------------------------- caption */
+.plotly-chart__caption {
+  font-size: var(--text-xs);
+  line-height: var(--leading-normal);
+  color: var(--text-muted);
+  max-width: 84ch;
+}
+
+@media print {
+  .plotly-chart__frame {
+    border-color: #ccc;
+    background: #fff;
+  }
+
+  .plotly-chart__canvas .modebar {
+    display: none;
+  }
+}

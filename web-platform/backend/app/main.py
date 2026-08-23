@@ -26,6 +26,7 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
+from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from app import bootstrap  # noqa: F401  (side effect: repo root on sys.path)
 
@@ -46,6 +47,20 @@ logging.basicConfig(
 logger = logging.getLogger("api")
 
 API_PREFIX = "/api/v1"
+
+#: Machine-readable class names for the status codes the API raises, so a client
+#: can branch on the cause rather than parse prose.
+_ERROR_CLASSES: dict[int, str] = {
+    400: "BadRequest",
+    401: "Unauthorized",
+    403: "Forbidden",
+    404: "NotFound",
+    409: "Conflict",
+    422: "ValidationError",
+    429: "RateLimited",
+    500: "InternalError",
+    503: "ServiceUnavailable",
+}
 
 #: Where the built React application lives inside the production image. The
 #: multi-stage Dockerfile copies frontend/dist here.
@@ -122,6 +137,45 @@ app.include_router(pilot_routes.router, prefix=API_PREFIX)
 # --------------------------------------------------------------------------
 # Error handling: structured messages, never a traceback
 # --------------------------------------------------------------------------
+@app.exception_handler(StarletteHTTPException)
+async def http_exception_handler(_request: Request, exc: StarletteHTTPException):
+    """Give raised HTTPExceptions the same shape as every other error.
+
+    Without this, FastAPI's default ``{"detail": ...}`` comes back for 401,
+    404, 422 and 503, which carries no ``error_class`` and no per-field
+    attribution. The frontend's ``ApiError`` could not read it, so the useful
+    message -- "That pilot code is not registered on this deployment" -- was
+    replaced by a generic one at exactly the moment it mattered.
+
+    ``detail`` may be a plain string or, from the routes that attribute errors
+    to inputs, a list of ``{field, message}`` objects. Both are normalised here.
+    """
+    detail = exc.detail
+    if isinstance(detail, list):
+        fields = [
+            FieldError(
+                field=str(item.get("field")) if isinstance(item, dict) and item.get("field") else None,
+                message=str(item.get("message", item)) if isinstance(item, dict) else str(item),
+            )
+            for item in detail
+        ]
+        message = fields[0].message if fields else "The request was refused."
+    else:
+        message = str(detail)
+        fields = [FieldError(field=None, message=message)]
+
+    return JSONResponse(
+        status_code=exc.status_code,
+        content=ErrorResponse(
+            error_class=_ERROR_CLASSES.get(exc.status_code, "HTTPError"),
+            message=message,
+            detail=fields,
+            rejected=400 <= exc.status_code < 500,
+        ).model_dump(),
+        headers=getattr(exc, "headers", None),
+    )
+
+
 @app.exception_handler(RequestValidationError)
 async def validation_error_handler(_request: Request, exc: RequestValidationError):
     details = [

@@ -1,0 +1,100 @@
+/*
+ * Consent page.
+ *
+ * Narrower measure than the landing page: this is a notice to be read, and a
+ * long line length is the enemy of that. The consent control sits in its own
+ * panel so the checkbox, the button and the reason the button is disabled are
+ * one visual group.
+ */
+
+.consent-page {
+  max-width: 58rem;
+  margin: 0 auto;
+  padding: var(--space-8) var(--space-6) var(--space-12);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+
+.consent-page__header {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding-bottom: var(--space-4);
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.consent-page__subtitle {
+  color: var(--text-secondary);
+  font-size: var(--text-md);
+}
+
+.consent-page__intro {
+  color: var(--text-secondary);
+  line-height: var(--leading-relaxed);
+}
+
+.consent-page__intro strong,
+.consent-page__detail strong {
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+.consent-page__detail {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  color: var(--text-secondary);
+  font-size: var(--text-sm);
+  line-height: var(--leading-relaxed);
+}
+
+.consent-page__detail .num {
+  color: var(--text-primary);
+}
+
+/* ------------------------------------------------------------- consent box */
+.consent-page__agree {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: var(--space-3);
+  align-items: start;
+}
+
+.consent-page__checkbox {
+  width: 1.125rem;
+  height: 1.125rem;
+  margin: 0.15rem 0 0;
+  accent-color: var(--accent);
+  cursor: pointer;
+}
+
+.consent-page__agree label {
+  color: var(--text-primary);
+  line-height: var(--leading-normal);
+  cursor: pointer;
+}
+
+.consent-page__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  margin-top: var(--space-5);
+}
+
+.consent-page__requirement {
+  margin-top: var(--space-3);
+  color: var(--text-muted);
+  font-size: var(--text-xs);
+  line-height: var(--leading-normal);
+}
+
+@media (max-width: 40rem) {
+  .consent-page {
+    padding: var(--space-6) var(--space-4) var(--space-10);
+  }
+
+  .consent-page__actions > * {
+    flex: 1 1 100%;
+  }
+}

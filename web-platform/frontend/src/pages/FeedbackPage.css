@@ -1,0 +1,127 @@
+/* Eight fields, one column, nothing decorative. */
+
+.feedback-page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+  padding: var(--space-6) var(--space-5);
+  max-width: 44rem;
+  margin: 0 auto;
+  width: 100%;
+}
+
+.feedback-page__header {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.feedback-page__subtitle {
+  color: var(--text-secondary);
+}
+
+.feedback-page__help {
+  color: var(--text-muted);
+  font-size: var(--text-xs);
+  line-height: var(--leading-normal);
+  max-width: 76ch;
+}
+
+.feedback-page__form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+
+/* ------------------------------------------------------------ scales */
+.feedback-page__scale {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-4) 0;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.feedback-page__scale:first-child {
+  padding-top: 0;
+}
+
+.feedback-page__scale:last-child {
+  border-bottom: 0;
+  padding-bottom: 0;
+}
+
+.feedback-page__scale > label {
+  color: var(--text-primary);
+  font-weight: 600;
+  line-height: var(--leading-normal);
+}
+
+.feedback-page__scale-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+}
+
+.feedback-page__scale-row input[type='range'] {
+  flex: 1;
+  min-width: 0;
+  accent-color: var(--accent);
+}
+
+.feedback-page__scale-value {
+  flex: none;
+  min-width: 2.5ch;
+  text-align: right;
+  color: var(--accent);
+  font-size: var(--text-md);
+}
+
+.feedback-page__scale .feedback-page__help {
+  margin: 0;
+}
+
+/* --------------------------------------------------------- text areas */
+.feedback-page__text {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding-bottom: var(--space-4);
+}
+
+.feedback-page__text > label {
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+.feedback-page__text textarea {
+  width: 100%;
+  resize: vertical;
+  padding: var(--space-3);
+  background: var(--surface-overlay);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-md);
+  color: var(--text-primary);
+  font-size: var(--text-sm);
+  line-height: var(--leading-normal);
+}
+
+.feedback-page__text textarea::placeholder {
+  color: var(--text-muted);
+}
+
+.feedback-page__text textarea:focus {
+  border-color: var(--border-focus);
+}
+
+.feedback-page__text textarea:disabled {
+  opacity: 0.6;
+}
+
+/* ----------------------------------------------------------- actions */
+.feedback-page__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  align-items: center;
+}

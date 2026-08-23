@@ -38,6 +38,7 @@ from app.schemas.common import (
     TableSpec,
 )
 from app.schemas.scenarios import InputEcho, SimulationResult
+from app.services.formatting import format_scientific
 
 # Okabe-Ito palette indices, matching pilot/ui/figures.py PALETTE order.
 BLUE, ORANGE, GREEN, PINK, AMBER, SKY, BLACK = range(7)
@@ -198,22 +199,30 @@ def _build_orbit(result: dict, series: dict, plots: list, metrics: list,
         "vz_mps": states[:, 5], "altitude_km": result["altitude_km"],
     })))
 
+    # Rendered through the shared formatter, not an f-string: Python's %g would
+    # put machine notation ("5e-13") into a sentence a participant reads, which
+    # is the presentation defect this migration exists to fix.
     drift = validation.get("max_energy_drift_rel")
     if drift and drift < 1e-8:
         digits = abs(int(math.log10(drift)))
         interpretations.append(Interpretation(
             severity=Severity.INFO,
-            text=(f"The integrator conserved energy to about {drift:.0e} — roughly "
-                  f"{digits} digits of agreement with theory. It is not a "
-                  "meaningful source of error here."),
+            text=(f"The integrator conserved energy to about "
+                  f"{format_scientific(drift, 2)} — roughly {digits} digits of "
+                  "agreement with theory. It is not a meaningful source of error "
+                  "here."),
+        ))
+    elif drift:
+        interpretations.append(Interpretation(
+            severity=Severity.WARNING,
+            text=(f"Energy drifted by about {format_scientific(drift, 2)}, which is "
+                  f"larger than the {format_scientific(1e-13, 1)} seen at the "
+                  "published step sizes. Consider a finer timestep."),
         ))
     else:
         interpretations.append(Interpretation(
             severity=Severity.WARNING,
-            text=(f"Energy drifted by about {drift:.0e}, which is larger than the "
-                  "~1e-13 seen at the published step sizes. Consider a finer "
-                  "timestep." if drift else
-                  "Energy drift could not be evaluated for this run."),
+            text="Energy drift could not be evaluated for this run.",
         ))
 
 
@@ -514,10 +523,14 @@ def _build_gain_sweep(result: dict, series: dict, plots: list, metrics: list,
                fmt=NumberFormat.VELOCITY, highlight=True),
     ])
 
-    text = (f"**Fastest:** Kp = {fastest.kp:.1e}, Kd = {fastest.kd:.1e} → "
+    def gains(row) -> str:
+        return (f"Kp = {format_scientific(float(row.kp), 2)}, "
+                f"Kd = {format_scientific(float(row.kd), 3)}")
+
+    text = (f"**Fastest:** {gains(fastest)} → "
             f"{fastest.convergence_time_s:.0f} s at {fastest.delta_v_mps:.2f} m/s of "
             f"delta-v.\n\n"
-            f"**Cheapest:** Kp = {cheapest.kp:.1e}, Kd = {cheapest.kd:.1e} → "
+            f"**Cheapest:** {gains(cheapest)} → "
             f"{cheapest.convergence_time_s:.0f} s at {cheapest.delta_v_mps:.2f} m/s "
             f"of delta-v.\n\n")
     if fastest.name != cheapest.name:
