@@ -9,7 +9,7 @@ import json
 from datetime import date, timedelta
 
 import pytest
-from sqlalchemy import select, update
+from sqlalchemy import func, select, update
 
 from pilot import analytics, db
 from pilot.analytics import EventType, ReportFilters
@@ -107,7 +107,70 @@ def test_unknown_pilot_codes_get_the_unregistered_organisation(pilot_env):
     context = analytics.start_session("NOT-REGISTERED", "USER1", "other", "1.0", pilot_env)
     assert context.organisation_id is not None
     assert context.organisation_name == "Unregistered pilot code"
-    assert context.pilot_code_id is None
+    # The code itself is still recorded, so the cohort remains identifiable.
+    assert context.pilot_code_id is not None
+
+
+def test_two_unregistered_cohorts_stay_distinguishable(pilot_env):
+    """Both group under one organisation, but must not merge into one cohort."""
+    from pilot.models import pilot_codes
+
+    first = analytics.start_session("SCHOOL-X", "P1", "student", "1.0", pilot_env)
+    second = analytics.start_session("SCHOOL-Y", "P2", "student", "1.0", pilot_env)
+
+    assert first.organisation_id == second.organisation_id, (
+        "unregistered codes should share the 'Unregistered' organisation")
+    assert first.pilot_code_id != second.pilot_code_id, (
+        "different cohorts must not collapse into one pilot code")
+
+    with db.get_engine(pilot_env).connect() as connection:
+        codes = {row[0] for row in connection.execute(select(pilot_codes.c.code)).all()}
+    assert {"SCHOOL-X", "SCHOOL-Y"}.issubset(codes)
+
+
+def test_the_same_unregistered_code_is_reused_not_duplicated(pilot_env):
+    from pilot.models import pilot_codes
+
+    first = analytics.start_session("SCHOOL-X", "P1", "student", "1.0", pilot_env)
+    second = analytics.start_session("school-x", "P2", "student", "1.0", pilot_env)
+    assert first.pilot_code_id == second.pilot_code_id
+
+    with db.get_engine(pilot_env).connect() as connection:
+        count = connection.execute(
+            select(func.count()).select_from(pilot_codes)).scalar()
+    assert count == 1
+
+
+def test_usage_by_pilot_code_separates_cohorts(pilot_env):
+    alpha = analytics.start_session("COHORT-A", "P1", "student", "1.0", pilot_env)
+    beta = analytics.start_session("COHORT-B", "P2", "student", "1.0", pilot_env)
+    _complete_runs(alpha, 3, pilot_env)
+    _complete_runs(beta, 1, pilot_env)
+
+    rows = analytics.usage_by_pilot_code(ReportFilters(include_demo=True), pilot_env)
+    by_code = {row["pilot_code"]: row for row in rows}
+    assert by_code["COHORT-A"]["completed_runs"] == 3
+    assert by_code["COHORT-B"]["completed_runs"] == 1
+
+
+def test_registered_codes_keep_their_real_organisation(pilot_env):
+    """Registering a code must override the unregistered grouping."""
+    from pilot.db import utcnow
+    from pilot.models import organisations, pilot_codes
+
+    with db.get_engine(pilot_env).begin() as connection:
+        org_id = int(connection.execute(organisations.insert().values(
+            code="REALORG", name="Example High School", org_type="school",
+            is_demo=True, active=True, created_at=utcnow(),
+        ).returning(organisations.c.id)).scalar_one())
+        connection.execute(pilot_codes.insert().values(
+            organisation_id=org_id, code="REALORG-Y12", label="Year 12",
+            active=True, is_demo=True, created_at=utcnow()))
+
+    context = analytics.start_session("REALORG-Y12", "P1", "student", "1.0", pilot_env)
+    assert context.organisation_id == org_id
+    assert context.organisation_name == "Example High School"
+    assert context.pilot_code_id is not None
 
 
 # --------------------------------------------------------------------------

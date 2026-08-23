@@ -179,6 +179,13 @@ def _usage_tab(filters: ReportFilters) -> dict[str, pd.DataFrame]:
         "Participating organisations", analytics.usage_by_organisation(filters),
         "No organisations have recorded activity in this period.",
         "usage_by_organisation")
+    st.caption(
+        "Codes that were never registered by a coordinator all appear under "
+        "\"Unregistered pilot code\". Use the cohort table below to tell them apart.")
+    tables["usage_by_pilot_code"] = _table(
+        "Cohorts (by pilot code)", analytics.usage_by_pilot_code(filters),
+        "No pilot codes have recorded activity in this period.",
+        "usage_by_pilot_code")
     tables["usage_by_user_type"] = _table(
         "Usage by user type", analytics.usage_by_user_type(filters),
         "No usage recorded.", "usage_by_user_type")

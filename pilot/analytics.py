@@ -192,6 +192,35 @@ def ensure_unlisted_organisation(settings: Settings | None = None) -> int:
         ).returning(organisations.c.id)).scalar_one())
 
 
+def ensure_unlisted_pilot_code(code: str, organisation_id: int,
+                               settings: Settings | None = None) -> int:
+    """Record an unregistered pilot code so cohorts stay distinguishable.
+
+    Without this, every unregistered code collapses into the single
+    "Unregistered pilot code" organisation and two different cohorts that both
+    forgot to register become impossible to tell apart in reporting.
+
+    The code itself is recorded, but the *organisation* stays "Unregistered
+    pilot code" -- so nothing here invents an institution or an institutional
+    relationship. A pilot code is a shared cohort identifier chosen by a
+    coordinator, not personal data.
+    """
+    settings = settings or get_settings()
+    normalised = code.strip().upper()
+    engine = get_engine(settings)
+    with engine.begin() as connection:
+        existing = connection.execute(
+            select(pilot_codes.c.id).where(func.upper(pilot_codes.c.code) == normalised)
+        ).scalar_one_or_none()
+        if existing is not None:
+            return int(existing)
+        return int(connection.execute(pilot_codes.insert().values(
+            organisation_id=organisation_id, code=normalised,
+            label="(entered by a participant; not registered by a coordinator)",
+            active=True, is_demo=settings.is_demo_data, created_at=utcnow(),
+        ).returning(pilot_codes.c.id)).scalar_one())
+
+
 # --------------------------------------------------------------------------
 # Session start
 # --------------------------------------------------------------------------
@@ -213,9 +242,16 @@ def start_session(pilot_code: str, participant_code: str, user_type: str,
     today = now.date()
 
     code_row, org = resolve_pilot_code(pilot_code, settings)
-    pilot_code_id = int(code_row["id"]) if code_row is not None else None
-    organisation_id = int(org["id"]) if org else ensure_unlisted_organisation(settings)
-    organisation_name = org["name"] if org else "Unregistered pilot code"
+    if code_row is not None:
+        pilot_code_id = int(code_row["id"])
+        organisation_id = int(org["id"])
+        organisation_name = org["name"]
+    else:
+        organisation_id = ensure_unlisted_organisation(settings)
+        organisation_name = "Unregistered pilot code"
+        # Record the code itself so two unregistered cohorts stay distinguishable.
+        pilot_code_id = ensure_unlisted_pilot_code(
+            pilot_code, organisation_id, settings) if pilot_code.strip() else None
 
     engine = get_engine(settings)
     with engine.begin() as connection:
@@ -665,6 +701,37 @@ def usage_by_organisation(filters: ReportFilters,
         return _rows(connection, query)
 
 
+def usage_by_pilot_code(filters: ReportFilters,
+                        settings: Settings | None = None) -> list[dict]:
+    """Activity per pilot code -- the cohort dimension.
+
+    Separate from :func:`usage_by_organisation` because one organisation may run
+    several cohorts, and because unregistered codes all share the single
+    "Unregistered pilot code" organisation while remaining distinct cohorts.
+    """
+    settings = settings or get_settings()
+    completed = events.c.event_type == EventType.SIMULATION_COMPLETED
+    query = (select(pilot_codes.c.code.label("pilot_code"),
+                    pilot_codes.c.label,
+                    organisations.c.name.label("organisation"),
+                    func.count(distinct(events.c.participant_id)).label("participants"),
+                    func.count().filter(completed).label("completed_runs"),
+                    func.count(distinct(events.c.occurred_date)).label("active_days"))
+             .select_from(events.join(pilot_codes,
+                                      events.c.pilot_code_id == pilot_codes.c.id)
+                          .outerjoin(organisations,
+                                     organisations.c.id == pilot_codes.c.organisation_id))
+             .group_by(pilot_codes.c.code, pilot_codes.c.label, organisations.c.name)
+             .order_by(func.count().filter(completed).desc()))
+    query = _apply_filters(query, events, include_demo=filters.include_demo,
+                           start=filters.start, end=filters.end,
+                           date_column=events.c.occurred_date,
+                           organisation_id=filters.organisation_id,
+                           user_type=filters.user_type)
+    with get_engine(settings).connect() as connection:
+        return _rows(connection, query)
+
+
 def usage_by_scenario(filters: ReportFilters, settings: Settings | None = None) -> list[dict]:
     settings = settings or get_settings()
     completed = events.c.event_type == EventType.SIMULATION_COMPLETED
@@ -886,7 +953,8 @@ __all__ = [
     "ParticipantContext", "ReportFilters", "participant_hash", "start_session",
     "record_event", "set_track", "record_assessment", "record_feedback",
     "resolve_pilot_code", "summary_metrics", "usage_by_date",
-    "usage_by_organisation", "usage_by_scenario", "usage_by_user_type",
+    "usage_by_organisation", "usage_by_pilot_code", "usage_by_scenario",
+    "usage_by_user_type", "ensure_unlisted_pilot_code",
     "usage_by_feature", "simulations_per_user", "assessment_changes",
     "feedback_rows", "feedback_ratings_summary", "bug_and_feature_rows",
     "list_organisations", "recent_events",
