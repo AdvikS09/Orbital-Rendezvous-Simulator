@@ -570,18 +570,25 @@ def _build_comparison(result: dict, series: dict, plots: list, metrics: list,
     series["cmp_pos_error_m"] = _array(comparison["pos_error"])
     series["cmp_vel_error_mps"] = _array(comparison["vel_error"])
 
+    # Distinct keys on purpose. The engine's summary frame calls these
+    # ``final_pos_error_m`` and ``max_pos_error_m``, but ``_relative_metrics``
+    # already uses ``final_pos_error_m`` for something entirely different -- the
+    # chaser's distance from the *target*, not the gap between the two *models*.
+    # Reusing the key would put two unrelated quantities under one name, which a
+    # parity test caught and which would also have collided as React list keys.
     metrics.insert(0, Metric(
-        key="max_pos_error_m", label="Largest gap between the models",
+        key="model_gap_max_m", label="Largest gap between the models",
         value=summary.get("max_pos_error_m"), unit="m", fmt=NumberFormat.DISTANCE,
         highlight=True,
         help="Greatest distance between the linear CW prediction and the non-linear "
              "reference at any point in the run."))
     metrics.insert(1, Metric(
-        key="final_pos_error_m", label="Gap at the end",
+        key="model_gap_final_m", label="Gap at the end",
         value=summary.get("final_pos_error_m"), unit="m", fmt=NumberFormat.DISTANCE,
-        highlight=True))
+        highlight=True,
+        help="Distance between the two models' predictions at the end of the run."))
     metrics.insert(2, Metric(
-        key="max_vel_error_mps", label="Largest velocity gap",
+        key="model_gap_max_vel_mps", label="Largest velocity gap",
         value=summary.get("max_vel_error_mps"), unit="m/s", fmt=NumberFormat.VELOCITY,
         highlight=True))
 

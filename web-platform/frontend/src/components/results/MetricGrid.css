@@ -1,0 +1,157 @@
+/* Headline metrics and their supporting detail. */
+
+.metric-grid {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.metric-grid__heading {
+  margin: 0;
+}
+
+/* --------------------------------------------------------- headline cards */
+.metric-grid__cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  gap: var(--space-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.metric-grid__card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  min-width: 0;
+  padding: var(--space-3) var(--space-4);
+  background: var(--surface-raised);
+  border: 1px solid var(--border-default);
+  border-left: 2px solid var(--accent-border);
+  border-radius: var(--radius-md);
+}
+
+.metric-grid__label {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  color: var(--text-secondary);
+  font-size: var(--text-xs);
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+.metric-grid__label-text {
+  min-width: 0;
+}
+
+.metric-grid__card .metric-grid__value {
+  font-size: var(--text-lg);
+  color: var(--text-primary);
+  text-align: left;
+}
+
+/* ------------------------------------------------------- supporting detail */
+.metric-grid__list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 0 var(--space-6);
+  margin: 0;
+  border-top: 1px solid var(--border-subtle);
+}
+
+.metric-grid__row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-4);
+  min-width: 0;
+  padding: var(--space-2) 0;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.metric-grid__term {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  min-width: 0;
+  color: var(--text-secondary);
+  font-size: var(--text-sm);
+}
+
+.metric-grid__definition {
+  flex: 0 0 auto;
+  margin: 0;
+}
+
+.metric-grid__list .metric-grid__value {
+  font-size: var(--text-sm);
+  color: var(--text-primary);
+}
+
+/* -------------------------------------------------------------- help tips */
+.metric-grid__help {
+  position: relative;
+  display: inline-flex;
+  flex: 0 0 auto;
+}
+
+.metric-grid__help-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2px;
+  margin: 0;
+  background: none;
+  border: 0;
+  border-radius: var(--radius-sm);
+  color: var(--text-muted);
+  cursor: help;
+}
+
+.metric-grid__help-button:hover,
+.metric-grid__help-button:focus-visible {
+  color: var(--accent);
+}
+
+/*
+ * Hidden with opacity, never with display or visibility: the element must stay
+ * in the accessibility tree for the aria-describedby reference to resolve.
+ */
+.metric-grid__tooltip {
+  position: absolute;
+  bottom: calc(100% + var(--space-2));
+  left: 50%;
+  z-index: var(--z-sticky);
+  width: max-content;
+  max-width: 30ch;
+  padding: var(--space-2) var(--space-3);
+  background: var(--surface-overlay);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-md);
+  color: var(--text-primary);
+  font-size: var(--text-xs);
+  font-weight: 400;
+  line-height: var(--leading-normal);
+  letter-spacing: normal;
+  text-transform: none;
+  opacity: 0;
+  pointer-events: none;
+  transform: translateX(-50%);
+  transition: opacity var(--transition-fast);
+}
+
+.metric-grid__help:hover .metric-grid__tooltip,
+.metric-grid__help-button:focus-visible + .metric-grid__tooltip {
+  opacity: 1;
+}
+
+@media (max-width: 640px) {
+  .metric-grid__tooltip {
+    left: 0;
+    max-width: 24ch;
+    transform: none;
+  }
+}

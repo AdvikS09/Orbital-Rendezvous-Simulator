@@ -1,0 +1,82 @@
+/*
+ * Disclosure.
+ *
+ * Built on <details>/<summary> rather than a div with aria-expanded: the
+ * browser supplies the expand/collapse semantics, the keyboard behaviour and
+ * find-in-page expansion for free, and none of it can drift out of sync with
+ * the visible state.
+ */
+
+.disclosure {
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  background: var(--surface-raised);
+}
+
+.disclosure + .disclosure {
+  margin-top: var(--space-2);
+}
+
+.disclosure__summary {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  cursor: pointer;
+  list-style: none;
+  font-size: var(--text-sm);
+  font-weight: 500;
+  color: var(--text-primary);
+  border-radius: var(--radius-md);
+  transition: background-color var(--transition-fast);
+}
+
+/* Suppress the native triangle in both engines; the chevron replaces it. */
+.disclosure__summary::-webkit-details-marker {
+  display: none;
+}
+
+.disclosure__summary::marker {
+  content: '';
+}
+
+.disclosure__summary:hover {
+  background: var(--surface-hover);
+}
+
+.disclosure__chevron {
+  flex: none;
+  color: var(--text-muted);
+  transition: transform var(--transition-base);
+}
+
+.disclosure[open] > .disclosure__summary {
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
+}
+
+.disclosure[open] > .disclosure__summary .disclosure__chevron {
+  transform: rotate(90deg);
+}
+
+.disclosure__title {
+  flex: 1;
+  min-width: 0;
+}
+
+.disclosure__icon {
+  flex: none;
+  color: var(--text-muted);
+}
+
+.disclosure__panel {
+  padding: var(--space-3);
+  border-top: 1px solid var(--border-subtle);
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+  line-height: var(--leading-relaxed);
+}
+
+.disclosure__panel--flush {
+  padding: 0;
+}

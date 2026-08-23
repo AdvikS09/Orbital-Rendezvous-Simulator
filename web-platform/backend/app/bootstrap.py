@@ -28,12 +28,25 @@ REPO_ROOT = Path(__file__).resolve().parents[3]
 
 
 def ensure_repo_on_path() -> Path:
-    """Insert the repository root at the front of ``sys.path``. Idempotent."""
+    """Append the repository root to ``sys.path``. Idempotent.
+
+    **Appended, never inserted at the front.** The repository root contains
+    ``app.py`` -- the legacy Streamlit MVP -- and this backend package is also
+    called ``app``. If the root came first on ``sys.path``, ``import app`` would
+    resolve to that single module instead of this package, and every
+    ``from app.services import ...`` would fail with the confusing
+    "'app' is not a package".
+
+    Appending means the backend's own directory (which is ``sys.path[0]`` when
+    running ``uvicorn app.main:app`` from ``web-platform/backend``) keeps
+    priority for ``app``, while ``orbital_core`` and ``pilot`` still resolve
+    from the root.
+    """
     root = os.environ.get("ORBITAL_REPO_ROOT")
     resolved = Path(root).resolve() if root else REPO_ROOT
     as_text = str(resolved)
     if as_text not in sys.path:
-        sys.path.insert(0, as_text)
+        sys.path.append(as_text)
     return resolved
 
 

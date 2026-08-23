@@ -1,0 +1,94 @@
+/*
+ * Callout.
+ *
+ * Status message. Three signals carry the severity, not one: a tinted left
+ * edge, a distinct glyph, and a visually-hidden word ('Warning:', 'Error:')
+ * read out before the message. Colour alone would fail both a monochrome print
+ * and a screen reader.
+ */
+
+.callout {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid;
+  border-left-width: 3px;
+  border-radius: var(--radius-md);
+  font-size: var(--text-sm);
+  line-height: var(--leading-normal);
+}
+
+.callout__icon {
+  flex: none;
+  margin-top: 0.15em;
+}
+
+.callout__content {
+  min-width: 0;
+  flex: 1;
+}
+
+.callout__title {
+  font-size: var(--text-sm);
+  font-weight: 600;
+  margin-bottom: var(--space-1);
+  color: var(--text-primary);
+}
+
+.callout__body {
+  color: var(--text-secondary);
+}
+
+.callout__body > p {
+  max-width: 76ch;
+}
+
+.callout__body > p + p {
+  margin-top: var(--space-2);
+}
+
+.callout__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  margin-top: var(--space-3);
+}
+
+/* --------------------------------------------------------------- severity */
+.callout--info {
+  background: var(--status-info-bg);
+  border-color: var(--status-info-border);
+}
+
+.callout--info .callout__icon {
+  color: var(--status-info);
+}
+
+.callout--success {
+  background: var(--status-success-bg);
+  border-color: var(--status-success-border);
+}
+
+.callout--success .callout__icon {
+  color: var(--status-success);
+}
+
+.callout--warning {
+  background: var(--status-warning-bg);
+  border-color: var(--status-warning-border);
+}
+
+.callout--warning .callout__icon {
+  color: var(--status-warning);
+}
+
+.callout--error {
+  background: var(--status-error-bg);
+  border-color: var(--status-error-border);
+}
+
+.callout--error .callout__icon {
+  color: var(--status-error);
+}

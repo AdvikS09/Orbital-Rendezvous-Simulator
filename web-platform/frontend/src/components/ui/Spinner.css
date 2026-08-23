@@ -1,0 +1,67 @@
+/*
+ * Spinner.
+ *
+ * A determinate progress bar would be better, but the backend does not report
+ * progress, so an indeterminate indicator is the honest option. It is small
+ * and low-contrast on purpose: a solver running for eight seconds should not
+ * dominate the interface.
+ */
+
+.spinner {
+  display: inline-block;
+  flex: none;
+  border-radius: 50%;
+  border-style: solid;
+  border-color: var(--border-strong);
+  border-top-color: var(--accent);
+  animation: spinner-rotate 720ms linear infinite;
+  vertical-align: -0.15em;
+}
+
+.spinner--sm {
+  width: 12px;
+  height: 12px;
+  border-width: 1.5px;
+}
+
+.spinner--md {
+  width: 18px;
+  height: 18px;
+  border-width: 2px;
+}
+
+.spinner--lg {
+  width: 28px;
+  height: 28px;
+  border-width: 2.5px;
+}
+
+/* Inside a button the spinner takes the button's own text colour. */
+.spinner--inherit {
+  border-color: currentColor;
+  border-top-color: transparent;
+  opacity: 0.9;
+}
+
+@keyframes spinner-rotate {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/*
+ * Reduced motion: the indicator must stay visible (it is the only sign that
+ * work is in progress) but it steps round slowly instead of sweeping.
+ */
+@media (prefers-reduced-motion: reduce) {
+  .spinner {
+    animation: spinner-rotate 3s steps(8, end) infinite;
+  }
+}
+
+/* Wrapper carries role="status"; it must not disturb inline layout. */
+.spinner-wrap {
+  display: inline-flex;
+  align-items: center;
+  flex: none;
+}

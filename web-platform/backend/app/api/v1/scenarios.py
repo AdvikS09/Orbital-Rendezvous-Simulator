@@ -4,7 +4,8 @@ from __future__ import annotations
 
 from typing import Annotated, Any
 
-from fastapi import APIRouter, Body, Depends, HTTPException, Query, Response, status
+from fastapi import APIRouter, Body, Depends, HTTPException, Query, status
+from fastapi.responses import JSONResponse
 
 from app.api.deps import optional_participant
 from app.schemas.common import ErrorResponse
@@ -96,7 +97,6 @@ def preflight(
 def run_simulation(
     scenario_id: str,
     payload: Annotated[SimulationRequest, Body()],
-    response: Response,
     context=Depends(optional_participant),
 ) -> Any:
     """Execute one scenario.
@@ -116,13 +116,16 @@ def run_simulation(
     result, error = simulation.run(scenario, payload.params, context)
 
     if error is not None:
-        # A rejected run is a client problem; a failed run is a server problem.
+        # Returned as an explicit JSONResponse rather than by setting a status
+        # code on the injected Response: `response_model=SimulationResult`
+        # applies to anything returned normally, and would reject the error
+        # payload as malformed. A JSONResponse bypasses that validation.
         if error.error_class == "RateLimited":
-            response.status_code = status.HTTP_429_TOO_MANY_REQUESTS
+            code = status.HTTP_429_TOO_MANY_REQUESTS
         elif error.rejected:
-            response.status_code = status.HTTP_422_UNPROCESSABLE_ENTITY
+            code = status.HTTP_422_UNPROCESSABLE_ENTITY
         else:
-            response.status_code = status.HTTP_500_INTERNAL_SERVER_ERROR
-        return error
+            code = status.HTTP_500_INTERNAL_SERVER_ERROR
+        return JSONResponse(status_code=code, content=error.model_dump())
 
     return result

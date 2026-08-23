@@ -1,0 +1,36 @@
+/* Engine interpretations, rendered as severity callouts. */
+
+.interpretation-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.interpretation-list__heading {
+  margin: 0;
+}
+
+.interpretation-list__items {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.interpretation-list__paragraph {
+  max-width: 82ch;
+  margin: 0;
+  line-height: var(--leading-relaxed);
+}
+
+.interpretation-list__paragraph + .interpretation-list__paragraph {
+  margin-top: var(--space-2);
+}
+
+.interpretation-list__paragraph strong {
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.interpretation-list__paragraph em {
+  font-style: italic;
+}

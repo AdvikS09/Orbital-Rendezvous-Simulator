@@ -1,0 +1,71 @@
+/*
+ * Tabs.
+ *
+ * A single underline marks the selected tab. Selection is not signalled by
+ * colour alone: the selected tab is also the only one at full text contrast
+ * and the only one carrying the rule beneath it.
+ */
+
+.tabs {
+  display: flex;
+  align-items: stretch;
+  gap: var(--space-1);
+  border-bottom: 1px solid var(--border-subtle);
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.tabs::-webkit-scrollbar {
+  display: none;
+}
+
+.tabs__tab {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  margin-bottom: -1px;
+  background: none;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+  font-family: var(--font-sans);
+  font-size: var(--text-sm);
+  font-weight: 500;
+  color: var(--text-muted);
+  white-space: nowrap;
+  cursor: pointer;
+  transition:
+    color var(--transition-fast),
+    border-color var(--transition-fast),
+    background-color var(--transition-fast);
+}
+
+.tabs__tab:hover:not(:disabled) {
+  color: var(--text-secondary);
+  background: var(--surface-hover);
+}
+
+.tabs__tab[aria-selected='true'] {
+  color: var(--text-primary);
+  border-bottom-color: var(--accent);
+}
+
+.tabs__tab:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.tabs__icon {
+  flex: none;
+}
+
+.tabs__panel {
+  padding-top: var(--space-4);
+  min-width: 0;
+}
+
+.tabs__panel:focus-visible {
+  outline: 2px solid var(--border-focus);
+  outline-offset: 4px;
+}

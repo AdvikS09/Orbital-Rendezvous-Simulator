@@ -1,0 +1,174 @@
+/*
+ * Slider with a separate value cell.
+ *
+ * Row 1: label on the left, the editable value hard against the right edge.
+ * Row 2: the track, full width, with nothing overlapping it.
+ * Row 3: the two end labels.
+ *
+ * Keeping the value on its own row is the whole point: the handle sweeps the
+ * full width of row 2 and can never reach the digits.
+ */
+
+.slider-field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+.slider-field__head {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--space-2) var(--space-3);
+}
+
+.slider-field__label {
+  color: var(--text-secondary);
+  font-size: var(--text-sm);
+  font-weight: 500;
+  line-height: var(--leading-tight);
+  min-width: 0;
+}
+
+.slider-field__value {
+  display: flex;
+  align-items: center;
+  justify-self: end;
+  gap: var(--space-2);
+  background: var(--surface-overlay);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-sm);
+  padding: 0 var(--space-2);
+}
+
+.slider-field__value:hover {
+  border-color: var(--border-strong);
+}
+
+.slider-field__value:focus-within {
+  border-color: var(--border-focus);
+  outline: 2px solid var(--border-focus);
+  outline-offset: 1px;
+}
+
+.slider-field__entry {
+  width: 10ch;
+  background: transparent;
+  border: 0;
+  color: var(--text-primary);
+  font-size: var(--text-sm);
+  padding: var(--space-1) 0;
+  text-align: right;
+}
+
+.slider-field__entry:focus,
+.slider-field__entry:focus-visible {
+  outline: none;
+}
+
+.slider-field__entry:disabled {
+  color: var(--text-muted);
+  cursor: not-allowed;
+}
+
+.slider-field__unit {
+  color: var(--text-muted);
+  font-size: var(--text-xs);
+  white-space: nowrap;
+}
+
+/* ------------------------------------------------------------------ track */
+.slider-field__track {
+  width: 100%;
+  margin: 0;
+  accent-color: var(--accent);
+  background: transparent;
+  cursor: pointer;
+  height: 1.25rem;
+}
+
+.slider-field__track:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.slider-field__track::-webkit-slider-runnable-track {
+  height: 4px;
+  border-radius: 2px;
+  background: var(--surface-active);
+  border: 1px solid var(--border-subtle);
+}
+
+.slider-field__track::-moz-range-track {
+  height: 4px;
+  border-radius: 2px;
+  background: var(--surface-active);
+  border: 1px solid var(--border-subtle);
+}
+
+.slider-field__track::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 14px;
+  height: 14px;
+  margin-top: -6px;
+  border-radius: 50%;
+  background: var(--accent);
+  border: 1px solid var(--surface-base);
+  box-shadow: var(--shadow-sm);
+}
+
+.slider-field__track::-moz-range-thumb {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--accent);
+  border: 1px solid var(--surface-base);
+  box-shadow: var(--shadow-sm);
+}
+
+/* ------------------------------------------------------------------- ends */
+.slider-field__ends {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: var(--space-3);
+  margin-top: calc(var(--space-1) * -1);
+  color: var(--text-muted);
+  font-size: var(--text-xs);
+}
+
+.slider-field__help,
+.slider-field__note {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: var(--text-xs);
+  line-height: var(--leading-normal);
+  max-width: none;
+}
+
+.slider-field__note {
+  color: var(--status-warning);
+}
+
+.slider-field__error {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+  margin: 0;
+  color: var(--status-error);
+  font-size: var(--text-xs);
+  line-height: var(--leading-normal);
+  max-width: none;
+}
+
+.slider-field__error-icon {
+  flex: 0 0 auto;
+  margin-top: 0.15em;
+}
+
+.slider-field--invalid .slider-field__value {
+  border-color: var(--status-error-border);
+  background: var(--status-error-bg);
+}
