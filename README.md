@@ -89,6 +89,8 @@ src/
   cw.py             Clohessy-Wiltshire 3D dynamics, state-transition matrix, propagation
   controller.py     configurable PD rendezvous controller (Kp, Kd, saturation)
   validation.py     conservation checks, error metrics, gain sweep, CW-vs-high-fidelity
+  external_validation.py  export/import + comparison vs an external tool (GMAT/STK)
+  collision.py      simple keep-out-zone / debris collision detection (extension)
   scenarios.py      frontend-agnostic scenario API (plain-data results for any UI)
   plotting.py       headless matplotlib helpers
 experiments/
@@ -98,7 +100,7 @@ experiments/
 outputs/            generated on first experiment run (git-ignored, not shipped)
   figures/          generated PNG plots
   data/             generated CSV tables
-tests/              unittest / pytest suite (32 tests)
+tests/              unittest / pytest suite (47 tests)
 old_project_backup/ archived snapshot of the earlier 2D prototype
 requirements.txt
 pytest.ini
@@ -115,6 +117,9 @@ README.md
 | `cw` | CW mean motion, state-space matrices `(A, B)`, `cw_derivatives`, closed-form `cw_state_transition`, analytic and RK4 propagation with a configurable initial relative state. |
 | `controller` | `PDController` (scalar / per-axis / matrix gains, optional saturation), `critically_damped` factory, gain helpers. |
 | `validation` | Energy/period verification, position/velocity/control error series, delta-v, convergence time, `gain_sweep`, high-fidelity relative propagation, and `compare_cw_high_fidelity`. |
+| `external_validation` | Serialise an engine ephemeris to CSV/JSON, load an external tool's CSV (flexible columns / units), and `compare_ephemerides` (position/velocity max, final, mean, RMS error). |
+| `collision` | `minimum_distance` and `analyze` — keep-out-zone and debris collision *detection* (distances + risk flags) for a chaser trajectory. |
+| `scenarios` | Frontend-agnostic API: `run_orbit`, `compare_orbit_perturbation`, `run_cw_relative`, `run_cw_rendezvous`, `run_gain_sweep`, `run_relative_scenario`, `build_validation_scenario`, `compare_external_ephemeris`, `run_collision_scenario`. |
 | `plotting` | Headless (Agg) helpers: LVLH 3D trajectory, position/velocity components, control acceleration, error growth, gain-sweep heatmaps. |
 
 ## 6. Installation
@@ -173,13 +178,14 @@ python -m unittest discover -s tests -p "test_*.py"
 python -m pytest
 ```
 
-Either reports **32 passing tests** (orbit 6, perturbations 6, validation 6,
-controller 5, cw 5, lvlh 4), covering two-body conservation and period, 3D
-orbital-element round-trips, J2 (angular-momentum conservation) and drag (orbit
-decay), LVLH round-trips, CW-vs-state-transition-matrix agreement, PD convergence
-and saturation, and the validation utilities. (`pytest.ini` scopes collection to
-`tests/` so bare `pytest` does not clash with the archived
-`old_project_backup/tests` package.)
+Either reports **47 passing tests** (orbit 6, perturbations 6, validation 6,
+controller 5, cw 5, lvlh 4, external_validation 8, collision 7), covering two-body
+conservation and period, 3D orbital-element round-trips, J2 (angular-momentum
+conservation) and drag (orbit decay), LVLH round-trips, CW-vs-state-transition-
+matrix agreement, PD convergence and saturation, the validation utilities, the
+external-validation export/import/compare round-trips, and collision detection.
+(`pytest.ini` scopes collection to `tests/` so bare `pytest` does not clash with
+the archived `old_project_backup/tests` package.)
 
 ## 8. Running the experiments
 
@@ -213,18 +219,58 @@ python -m pip install -r requirements.txt
 streamlit run app.py
 ```
 
-It opens in your browser (default http://localhost:8501) with two modes:
+It opens in your browser (default http://localhost:8501) with three modes:
 
-* **Learning Mode** — seven guided presets (basic circular orbit, J2 effect, drag
+* **Learning Mode** — eight guided presets (basic circular orbit, J2 effect, drag
   effect, CW relative motion, CW + PD rendezvous, gain tuning, CW vs
-  high-fidelity), each with a plain-English explanation, editable inputs, Run /
-  Reset buttons, interactive Plotly plots, key metrics, and an automatic
-  interpretation of the result.
+  high-fidelity, and a *collision detection* extension), each with a plain-English
+  explanation, editable inputs, Run / Reset buttons, interactive Plotly plots, key
+  metrics, and an automatic interpretation of the result.
 * **Research Mode** — full control of the initial relative state (x/y/z, vx/vy/vz),
   target altitude, inclination, duration, timestep, Kp/Kd, J2/drag toggles, and
   model choice (CW only / high-fidelity only / comparison), with relative-
   trajectory, position, velocity and control-acceleration plots, error metrics
   (final position/velocity error, convergence time, delta-v), and a CSV download.
+* **External Validation** — the GMAT/STK validation workflow (below): build and
+  export a scenario, then upload an external tool's ephemeris to compare.
+
+## External validation workflow (GMAT / STK)
+
+This validates the engine's **higher-fidelity propagator** against an external,
+industry-standard tool (NASA GMAT or AGI/Ansys STK). The validated propagator is
+in turn the "truth" the CW model is compared against, so its accuracy matters.
+
+The engine does **not** drive GMAT/STK — the external run is manual:
+
+1. **Export** a scenario from the simulator (in the app's *External Validation*
+   mode, or via `src.scenarios.build_validation_scenario`). The export includes
+   the initial state vector, timestep, duration, force-model settings, and the
+   engine-propagated position/velocity history, as **CSV** (with metadata header
+   comments) and **JSON**.
+2. **Reproduce it in GMAT/STK** — set up the same initial state, force model, and
+   step, propagate, and export that tool's ephemeris as CSV. *(This step is
+   manual and external.)*
+3. **Import & compare** — load the external CSV back in (flexible column mapping
+   and km/m units) and compute position/velocity error vs time plus max, final,
+   mean, and RMS error.
+
+Two-body or J2-only scenarios match external tools most tightly; drag models
+differ between tools, so a larger drag mismatch is expected and real. All
+exchange is SI in the ECI frame with columns
+`t_s, x_m, y_m, z_m, vx_mps, vy_mps, vz_mps`.
+
+## Collision detection (extension — future work)
+
+A small **detection-only** extension (no avoidance or path planning yet),
+available as the *Collision detection* preset in Learning Mode and via
+`src.scenarios.run_collision_scenario`. It places a spherical **keep-out zone**
+around the target and an optional **debris** object (drifting on its own CW
+trajectory), computes the minimum chaser–target and chaser–debris distances, and
+flags keep-out-zone violations and debris collision risk. Because the PD
+controller does not avoid anything, a rendezvous to the target necessarily enters
+a keep-out zone centred there — which is exactly the motivation for a future
+avoidance term (e.g. an artificial-potential-field). This is deliberately kept
+separate from the core CW + PD + gain-tuning + high-fidelity-comparison results.
 
 ## 9. Interpreting the outputs
 

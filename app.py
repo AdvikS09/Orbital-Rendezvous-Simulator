@@ -16,6 +16,7 @@ import streamlit as st
 
 from src import scenarios as sc
 from src import orbit
+from src import external_validation as ext
 
 st.set_page_config(page_title="Orbital Rendezvous Engine", page_icon="🛰️", layout="wide")
 
@@ -124,6 +125,54 @@ def fig_gain_heatmap(df, metric, title):
     return fig
 
 
+def _sphere_trace(radius, color, opacity, center=(0.0, 0.0, 0.0), name=""):
+    u, v = np.mgrid[0:2 * np.pi:20j, 0:np.pi:12j]
+    return go.Surface(
+        x=center[0] + radius * np.cos(u) * np.sin(v),
+        y=center[1] + radius * np.sin(u) * np.sin(v),
+        z=center[2] + radius * np.cos(v),
+        colorscale=[[0, color], [1, color]], opacity=opacity, showscale=False,
+        hoverinfo="skip", name=name)
+
+
+def fig_collision(chaser_states, debris_states, keep_out_radius, analysis,
+                  title="Collision detection (LVLH)"):
+    cp = np.asarray(chaser_states)[:, :3]
+    fig = go.Figure()
+    fig.add_trace(_sphere_trace(keep_out_radius, "red", 0.15, name="keep-out zone"))
+    fig.add_scatter3d(x=cp[:, 0], y=cp[:, 1], z=cp[:, 2], mode="lines",
+                      line=dict(color="royalblue", width=4), name="chaser")
+    fig.add_scatter3d(x=[cp[0, 0]], y=[cp[0, 1]], z=[cp[0, 2]], mode="markers",
+                      marker=dict(size=4, color="black"), name="chaser start")
+    fig.add_scatter3d(x=[0], y=[0], z=[0], mode="markers",
+                      marker=dict(size=6, color="green", symbol="diamond"), name="target")
+    if debris_states is not None:
+        dp = np.asarray(debris_states)[:, :3]
+        fig.add_scatter3d(x=dp[:, 0], y=dp[:, 1], z=dp[:, 2], mode="lines",
+                          line=dict(color="orange", width=3, dash="dot"), name="debris")
+        if "dist_to_debris" in analysis:
+            i = int(np.argmin(analysis["dist_to_debris"]))
+            fig.add_scatter3d(x=[cp[i, 0], dp[i, 0]], y=[cp[i, 1], dp[i, 1]],
+                              z=[cp[i, 2], dp[i, 2]], mode="lines+markers",
+                              line=dict(color="red", width=4),
+                              marker=dict(size=3, color="red"), name="closest approach")
+    fig.update_layout(title=title, height=520, scene=dict(
+        xaxis_title="radial x [m]", yaxis_title="along-track y [m]",
+        zaxis_title="cross-track z [m]", aspectmode="data"),
+        margin=dict(l=0, r=0, t=40, b=0))
+    return fig
+
+
+def fig_lines(times, series, ylabel, title):
+    """Generic multi-line plot. ``series`` = list of (label, y-values)."""
+    fig = go.Figure()
+    for label, y in series:
+        fig.add_scatter(x=times, y=y, mode="lines", name=label)
+    fig.update_layout(title=title, xaxis_title="time [s]", yaxis_title=ylabel,
+                      height=340, margin=dict(l=0, r=0, t=40, b=0))
+    return fig
+
+
 # ==========================================================================
 # Small UI helpers
 # ==========================================================================
@@ -193,9 +242,11 @@ def preset_basic_orbit():
         c[1].metric("Energy drift (rel)", f"{v['max_energy_drift_rel']:.1e}")
         c[2].metric("Period error (rel)", f"{v['period_rel_err']:.1e}")
         st.plotly_chart(fig_orbit_3d(res["states"], "Inertial circular orbit"), use_container_width=True)
+        st.caption("3D inertial orbit; the translucent blue sphere is Earth (to scale).")
         st.plotly_chart(fig_single(res["times"], res["altitude_km"], "altitude [km]",
                                    "Altitude vs time (should be flat)", color="seagreen"),
                         use_container_width=True)
+        st.caption("Altitude stays flat for a circular two-body orbit — a quick visual sanity check.")
         st.success(
             f"At {alt} km the period is {res['period_s']/60:.1f} min. Energy is conserved to "
             f"~{v['max_energy_drift_rel']:.0e} and the measured period matches theory to "
@@ -306,6 +357,7 @@ def preset_pd_rendezvous():
                                          ["x", "y", "z"], "position [m]", "Position vs time"),
                           use_container_width=True)
         st.plotly_chart(fig_control(res["times"], res["controls"]), use_container_width=True)
+        st.caption("Thrust acceleration per axis and its magnitude |u|; the area under |u| is the Δv.")
         m = res["metrics"].iloc[0]
         conv = m["convergence_time_s"]
         conv_txt = "did not converge within the run" if not np.isfinite(conv) else f"converged in {conv/60:.1f} min"
@@ -379,6 +431,60 @@ def preset_cw_vs_hf():
             f"added perturbations — CW is best trusted for close-proximity operations.")
 
 
+def preset_collision():
+    p = "col_"
+    st.subheader("Collision detection (extension)")
+    st.caption("⚠️ Future-work extension — detection only, not avoidance or path planning.")
+    st.markdown(
+        "A safety **keep-out zone** surrounds the target, and an optional **debris** object "
+        "drifts nearby. The app checks the chaser's path: does it enter the keep-out zone, and "
+        "does it pass too close to the debris? The PD controller here does **not** avoid "
+        "anything — flagging these risks is what motivates future avoidance work.")
+    pos, vel = rel_inputs(p, defaults=(0.0, 300.0, 40.0, 0.0, 0.0, 0.0))
+    c = st.columns(2)
+    koz = c[0].slider("Keep-out radius [m]", 5, 100, 25, 5, key=p + "koz")
+    crad = c[1].slider("Debris collision radius [m]", 1, 50, 5, 1, key=p + "crad")
+    st.markdown("**Debris start position (LVLH) [m]**")
+    d = st.columns(3)
+    dx = d[0].number_input("debris x", value=10.0, step=5.0, key=p + "dx")
+    dy = d[1].number_input("debris y", value=150.0, step=5.0, key=p + "dy")
+    dz = d[2].number_input("debris z", value=20.0, step=5.0, key=p + "dz")
+    controlled = st.checkbox("Apply PD control (rendezvous to target)", True, key=p + "ctl")
+    if run_reset_buttons(p):
+        st.session_state[p + "res"] = sc.run_collision_scenario(
+            pos, vel, altitude_km=400.0, dt_s=5.0, controlled=controlled,
+            keep_out_radius=float(koz), collision_radius=float(crad),
+            debris_rel_pos=[dx, dy, dz])
+    res = st.session_state.get(p + "res")
+    if res:
+        a = res["analysis"]
+        if a["keep_out_violation"]:
+            st.error(f"🚨 Keep-out zone VIOLATED — chaser came within {a['min_dist_to_target_m']:.1f} m "
+                     f"of the target (zone radius {a['keep_out_radius_m']:.0f} m).")
+        else:
+            st.success(f"✅ Keep-out zone respected — closest approach {a['min_dist_to_target_m']:.1f} m "
+                       f"(zone radius {a['keep_out_radius_m']:.0f} m).")
+        if "collision_risk" in a:
+            if a["collision_risk"]:
+                st.error(f"🚨 Debris COLLISION RISK — min separation {a['min_dist_to_debris_m']:.1f} m "
+                         f"< {a['collision_radius_m']:.0f} m at t = {a['closest_debris_time_s']:.0f} s.")
+            else:
+                st.success(f"✅ Debris clearance OK — min separation {a['min_dist_to_debris_m']:.1f} m "
+                           f"(threshold {a['collision_radius_m']:.0f} m).")
+        st.plotly_chart(fig_collision(res["chaser"]["states"], res["debris_states"],
+                                      a["keep_out_radius_m"], a), use_container_width=True)
+        st.caption("Blue: chaser path · green diamond: target · red bubble: keep-out zone · "
+                   "orange dotted: debris drift · red line: closest chaser–debris approach.")
+        series = [("chaser–target distance", a["dist_to_target"])]
+        if "dist_to_debris" in a:
+            series.append(("chaser–debris distance", a["dist_to_debris"]))
+        st.plotly_chart(fig_lines(res["times"], series, "distance [m]", "Distances vs time"),
+                        use_container_width=True)
+        st.info("Detection scaffold only. Adding an avoidance term (e.g. an artificial-potential-"
+                "field that steers the chaser around these zones) is the natural next step — "
+                "deliberately left as future work, separate from the core CW + PD research.")
+
+
 LEARNING_PRESETS = {
     "Basic circular orbit": preset_basic_orbit,
     "J2 perturbation effect": preset_j2,
@@ -387,6 +493,7 @@ LEARNING_PRESETS = {
     "CW rendezvous with PD controller": preset_pd_rendezvous,
     "Gain tuning demonstration": preset_gain_tuning,
     "CW vs high-fidelity comparison": preset_cw_vs_hf,
+    "Collision detection (extension)": preset_collision,
 }
 
 
@@ -486,18 +593,130 @@ def research_mode():
 
 
 # ==========================================================================
+# EXTERNAL VALIDATION (GMAT / STK)
+# ==========================================================================
+def external_validation_mode():
+    p = "ev_"
+    st.header("🛰️ External Validation (GMAT / STK)")
+    st.markdown(
+        "This workflow validates the engine's **higher-fidelity propagator** against an "
+        "external, industry-standard tool such as **NASA GMAT** or **AGI/Ansys STK**. The "
+        "validated propagator is then what the CW model is compared against elsewhere in the "
+        "app, so trusting it matters.\n\n"
+        "**The external run is manual** (this app does not drive GMAT/STK):\n"
+        "1. Build and export a scenario below (CSV + JSON).\n"
+        "2. In GMAT/STK, set up the same initial state, force model and step, propagate, and "
+        "export its ephemeris as CSV.\n"
+        "3. Upload that CSV here to compute position/velocity error vs the engine.")
+    st.caption("Tip: two-body or J2-only scenarios match external tools most tightly; drag "
+               "models differ between tools, so expect a larger (real) drag mismatch.")
+
+    # --- Step 1: build & export ---
+    st.subheader("1 · Build & export a scenario")
+    c = st.columns(4)
+    alt = c[0].number_input("Altitude [km]", value=400.0, step=25.0, key=p + "alt")
+    inc = c[1].number_input("Inclination [deg]", value=51.6, step=1.0, key=p + "inc")
+    period = orbit.orbital_period(sc.radius_from_altitude(alt))
+    dur = c[2].number_input("Duration [s]", value=float(round(period)), step=100.0, key=p + "dur",
+                            help=f"One orbit ≈ {period:.0f} s")
+    dt = c[3].number_input("Timestep [s]", value=10.0, step=1.0, min_value=0.1, key=p + "dt")
+    cc = st.columns(2)
+    j2 = cc[0].checkbox("J2", True, key=p + "j2")
+    drag = cc[1].checkbox("Drag", False, key=p + "drag")
+
+    if st.button("Build scenario", key=p + "build", type="primary"):
+        st.session_state[p + "scen"] = sc.build_validation_scenario(
+            altitude_km=alt, inclination_deg=inc, duration_s=dur, dt_s=dt,
+            use_j2=j2, use_drag=drag)
+    scen = st.session_state.get(p + "scen")
+    if scen:
+        meta = scen["metadata"]
+        st.dataframe(pd.DataFrame({"field": list(meta), "value": [str(v) for v in meta.values()]}),
+                     use_container_width=True, hide_index=True)
+        d = st.columns(2)
+        d[0].download_button("⬇️ Ephemeris + metadata (CSV)", scen["csv_text"].encode("utf-8"),
+                             "validation_scenario.csv", "text/csv", key=p + "csv")
+        d[1].download_button("⬇️ Scenario (JSON)", scen["json_text"].encode("utf-8"),
+                             "validation_scenario.json", "application/json", key=p + "json")
+        st.caption("Reproduce the initial state, force model and step shown above in GMAT/STK, "
+                   "then export its ephemeris CSV for step 2.")
+
+    st.divider()
+    # --- Step 2: import & compare ---
+    st.subheader("2 · Import external ephemeris & compare")
+    if not scen:
+        st.warning("Build a scenario first (step 1) so there is something to compare against.")
+        return
+    upload = st.file_uploader("Upload the external tool's ephemeris CSV", type=["csv"], key=p + "file")
+    if not upload:
+        st.info("Upload a GMAT/STK ephemeris CSV to compute the comparison.")
+        return
+    try:
+        cols = list(pd.read_csv(upload, comment="#", nrows=0).columns.str.strip())
+    except Exception as exc:  # noqa: BLE001
+        st.error(f"Could not read the CSV header: {exc}")
+        return
+    gt, gp, gv = ext.autodetect_columns(cols)
+
+    st.caption("Map the external file's columns (auto-detected where possible).")
+    m = st.columns(4)
+    time_col = m[0].selectbox("time", cols, index=cols.index(gt) if gt in cols else 0, key=p + "tc")
+    length_unit = m[1].selectbox("position unit", ["m", "km"], key=p + "lu")
+    time_unit = m[2].selectbox("time unit", ["s", "min", "h"], key=p + "tu")
+    t0 = m[3].number_input("time offset (subtracted)", value=0.0, key=p + "t0")
+    a = st.columns(3)
+    xc = a[0].selectbox("x", cols, index=cols.index(gp[0]) if gp[0] in cols else 0, key=p + "xc")
+    yc = a[1].selectbox("y", cols, index=cols.index(gp[1]) if gp[1] in cols else 0, key=p + "yc")
+    zc = a[2].selectbox("z", cols, index=cols.index(gp[2]) if gp[2] in cols else 0, key=p + "zc")
+    b = st.columns(3)
+    vxc = b[0].selectbox("vx", cols, index=cols.index(gv[0]) if gv[0] in cols else 0, key=p + "vxc")
+    vyc = b[1].selectbox("vy", cols, index=cols.index(gv[1]) if gv[1] in cols else 0, key=p + "vyc")
+    vzc = b[2].selectbox("vz", cols, index=cols.index(gv[2]) if gv[2] in cols else 0, key=p + "vzc")
+
+    if st.button("Compare", key=p + "cmp", type="primary"):
+        upload.seek(0)
+        try:
+            ext_df = sc.load_external_ephemeris(
+                upload, time_col=time_col, pos_cols=[xc, yc, zc], vel_cols=[vxc, vyc, vzc],
+                length_unit=length_unit, time_unit=time_unit, t0=t0)
+            st.session_state[p + "cmp"] = sc.compare_external_ephemeris(scen["ephemeris"], ext_df)
+        except Exception as exc:  # noqa: BLE001
+            st.error(f"Comparison failed: {exc}")
+            st.session_state.pop(p + "cmp", None)
+    cmp = st.session_state.get(p + "cmp")
+    if cmp:
+        s = cmp["summary"].iloc[0]
+        c = st.columns(4)
+        c[0].metric("Max position error", f"{s['max_position_error_m']:.3g} m")
+        c[1].metric("RMS position error", f"{s['rms_position_error_m']:.3g} m")
+        c[2].metric("Final position error", f"{s['final_position_error_m']:.3g} m")
+        c[3].metric("Max velocity error", f"{s['max_velocity_error_mps']:.3g} m/s")
+        st.dataframe(cmp["summary"], use_container_width=True, hide_index=True)
+        st.plotly_chart(fig_single(cmp["times"], cmp["pos_error"], "position error [m]",
+                                   "Position error vs time (engine − external)", color="crimson"),
+                        use_container_width=True)
+        st.plotly_chart(fig_single(cmp["times"], cmp["vel_error"], "velocity error [m/s]",
+                                   "Velocity error vs time (engine − external)", color="royalblue"),
+                        use_container_width=True)
+        st.caption(f"Compared {int(s['n_compared'])} samples over the overlapping time span "
+                   "(external interpolated onto the engine's time grid).")
+
+
+# ==========================================================================
 # Main
 # ==========================================================================
 def main():
     st.title("🛰️ Orbital Rendezvous Research Engine")
     st.caption("CW-based rendezvous guidance with a PD controller, validated against a "
                "higher-fidelity orbital model. This is a thin interface over the `src/` engine.")
-    mode = st.sidebar.radio("Mode", ["Learning Mode", "Research Mode"], key="mode")
+    mode = st.sidebar.radio("Mode", ["Learning Mode", "Research Mode", "External Validation"], key="mode")
     st.sidebar.divider()
     if mode == "Learning Mode":
         learning_mode()
-    else:
+    elif mode == "Research Mode":
         research_mode()
+    else:
+        external_validation_mode()
     st.sidebar.caption("All physics lives in `src/`; this app only renders results.")
 
 

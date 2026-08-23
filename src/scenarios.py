@@ -6,7 +6,7 @@ into a small set of "run a scenario -> plain data" functions. Every function
 returns only built-in / scientific-Python data types -- dicts of NumPy arrays and
 pandas DataFrames -- with **no plotting, no Streamlit, and no file I/O**.
 
-Why this module exists: it keeps all physics inside ``src/`` and gives the
+It keeps all physics inside ``src/`` and gives the
 frontend (the current Streamlit MVP, or any future web UI) a single function per
 scenario to call. The frontend only renders the returned data, so the backend
 stays reusable and frontend-independent. It does not duplicate any physics -- it
@@ -16,7 +16,7 @@ calls the existing engine functions.
 import numpy as np
 import pandas as pd
 
-from . import cw, orbit, validation
+from . import collision, cw, external_validation, orbit, validation
 from .controller import PDController
 from .perturbations import ForceModel
 
@@ -245,6 +245,116 @@ def run_relative_scenario(rel_pos, rel_vel, altitude_km=400.0, inclination_deg=5
     return result
 
 
+# --------------------------------------------------------------------------
+# External-tool validation (GMAT / STK)
+# --------------------------------------------------------------------------
+def build_validation_scenario(altitude_km=400.0, inclination_deg=51.6, duration_s=None,
+                              dt_s=10.0, use_j2=True, use_drag=False,
+                              cd=2.2, area=1.0, mass=100.0):
+    """Propagate one absolute orbit with the higher-fidelity model and package it
+    for export to an external tool (GMAT/STK).
+
+    Returns the scenario metadata, the ephemeris DataFrame, the raw states/times,
+    and ready-to-download CSV / JSON serialisations.
+    """
+    radius = radius_from_altitude(altitude_km)
+    mu = orbit.MU_EARTH
+    period = orbit.orbital_period(radius, mu)
+    times = _time_grid(period if duration_s is None else duration_s, dt_s)
+    state0 = orbit.circular_orbit_state(radius, mu, np.radians(float(inclination_deg)))
+    fm = ForceModel(use_j2=use_j2, use_drag=use_drag, cd=cd, area=area, mass=mass)
+    states = orbit.propagate(fm.derivatives, state0, times)
+
+    ephemeris = pd.DataFrame({
+        "t_s": times,
+        "x_m": states[:, 0], "y_m": states[:, 1], "z_m": states[:, 2],
+        "vx_mps": states[:, 3], "vy_mps": states[:, 4], "vz_mps": states[:, 5],
+    })
+    metadata = {
+        "frame": "ECI",
+        "units": "SI (m, m/s, s)",
+        "mu_m3_s2": mu,
+        "initial_state_m_mps": [float(v) for v in state0],
+        "altitude_km": float(altitude_km),
+        "inclination_deg": float(inclination_deg),
+        "dt_s": float(dt_s),
+        "duration_s": float(times[-1]),
+        "n_samples": int(times.size),
+        "force_model": fm.label,
+        "gravity": "point-mass + J2 (zonal)" if use_j2 else "point-mass (two-body)",
+        "atmosphere": ("exponential rho0=3.9e-12 kg/m^3 @400km, H=60km"
+                       if use_drag else "none"),
+        "drag_cd": float(cd), "drag_area_m2": float(area), "mass_kg": float(mass),
+    }
+    return {
+        "metadata": metadata,
+        "ephemeris": ephemeris,
+        "times": times,
+        "states": states,
+        "csv_text": external_validation.to_csv_text(ephemeris, metadata),
+        "json_text": external_validation.to_json_text(ephemeris, metadata),
+    }
+
+
+def load_external_ephemeris(source, **kwargs):
+    """Thin pass-through to :func:`src.external_validation.load_external`."""
+    return external_validation.load_external(source, **kwargs)
+
+
+def compare_external_ephemeris(internal_ephemeris, external_ephemeris):
+    """Compare an engine ephemeris against an external one (GMAT/STK)."""
+    return external_validation.compare_ephemerides(internal_ephemeris, external_ephemeris)
+
+
+# --------------------------------------------------------------------------
+# Collision / keep-out detection (extension -- detection only, not avoidance)
+# --------------------------------------------------------------------------
+def run_collision_scenario(rel_pos, rel_vel, altitude_km=400.0, duration_s=None, dt_s=5.0,
+                           controlled=True, kp=None, kd=None, max_accel=0.05,
+                           omega_n_factor=6.0, keep_out_radius=25.0, collision_radius=5.0,
+                           debris_rel_pos=None, debris_rel_vel=None):
+    """Run a chaser CW trajectory (optionally PD-controlled) and detect keep-out /
+    debris collision risk.
+
+    The optional debris object drifts on its own uncontrolled CW trajectory.
+    Returns the chaser result bundle, the debris states (or None), and the
+    collision analysis (distances, minima, and risk flags).
+    """
+    radius = radius_from_altitude(altitude_km)
+    n = cw.cw_mean_motion(radius, orbit.MU_EARTH)
+    period = orbit.orbital_period(radius)
+    times = _time_grid(period if duration_s is None else duration_s, dt_s)
+
+    if controlled:
+        if kp is None or kd is None:
+            ctrl = PDController.critically_damped(omega_n_factor * n, max_accel=max_accel)
+        else:
+            ctrl = PDController(float(kp), float(kd), max_accel=max_accel)
+    else:
+        ctrl = None
+
+    chaser_states, chaser_controls = cw.propagate_cw(_rel_state(rel_pos, rel_vel), times, n, ctrl)
+
+    debris_states = None
+    if debris_rel_pos is not None:
+        debris0 = _rel_state(debris_rel_pos, debris_rel_vel if debris_rel_vel is not None else [0, 0, 0])
+        debris_states, _ = cw.propagate_cw(debris0, times, n, None)
+
+    analysis = collision.analyze(times, chaser_states, keep_out_radius,
+                                 debris_states=debris_states, collision_radius=collision_radius)
+    chaser = _relative_result(times, chaser_states, chaser_controls, "chaser", n, period)
+    return {
+        "chaser": chaser,
+        "debris_states": debris_states,
+        "analysis": analysis,
+        "times": times,
+        "mean_motion": n,
+        "period_s": period,
+        "keep_out_radius": float(keep_out_radius),
+        "collision_radius": float(collision_radius),
+    }
+
+
 __all__ = [
     "radius_from_altitude",
     "run_orbit",
@@ -253,4 +363,8 @@ __all__ = [
     "run_cw_rendezvous",
     "run_gain_sweep",
     "run_relative_scenario",
+    "build_validation_scenario",
+    "load_external_ephemeris",
+    "compare_external_ephemeris",
+    "run_collision_scenario",
 ]
