@@ -1,0 +1,64 @@
+{
+  "two_body": {
+    "analytic_period_s": 5553.624271252228,
+    "max_energy_drift_rel": 1.1060555202205516e-13,
+    "max_ang_mom_drift_rel": 5.5482729007544e-14,
+    "measured_period_s": 5553.624271239654,
+    "period_rel_err": 2.2640646248068216e-12
+  },
+  "mean_motion_rad_s": 0.0011313666536110223,
+  "cw_rk4_vs_stm_max_err_m": 3.02243524883286e-08,
+  "pd_rendezvous": {
+    "initial_pos_error_m": 369.32370625238775,
+    "final_pos_error_m": 1.5046305808963998e-07,
+    "final_vel_error_mps": 6.617966382590547e-10,
+    "convergence_time_s": 1594.6049887753923,
+    "max_control_accel_mps2": 0.01701831014059112,
+    "delta_v_mps": 2.325778897291088
+  },
+  "cw_vs_hf_toggles": {
+    "two_body": {
+      "max_pos_error_m": 2.7809347975141163,
+      "final_pos_error_m": 2.7809347975141163,
+      "max_vel_error_mps": 0.0010014846588036121
+    },
+    "j2": {
+      "max_pos_error_m": 5.813163835044125,
+      "final_pos_error_m": 2.7793453443671106,
+      "max_vel_error_mps": 0.0034441034044540293
+    },
+    "drag": {
+      "max_pos_error_m": 2.78483127080189,
+      "final_pos_error_m": 2.78483127080189,
+      "max_vel_error_mps": 0.001002748580176399
+    },
+    "j2_drag": {
+      "max_pos_error_m": 5.816027996084958,
+      "final_pos_error_m": 2.7844795508110782,
+      "max_vel_error_mps": 0.003444506817920165
+    }
+  },
+  "gain_sweep_rows": 16,
+  "gain_sweep_critdamp": {
+    "final_pos_error_m": 1.639439025151287e-07,
+    "convergence_time_s": 1601.0448349555973,
+    "max_control_accel_mps2": 0.016988890487609837,
+    "delta_v_mps": 2.322700756412626
+  },
+  "api_run_cw_rendezvous": {
+    "initial_pos_error_m": 369.32370625238775,
+    "final_pos_error_m": 1.495996307381497e-07,
+    "final_vel_error_mps": 6.581593002429279e-10,
+    "convergence_time_s": 1595.0,
+    "max_control_accel_mps2": 0.01701831014059112,
+    "delta_v_mps": 2.3257791301763304
+  },
+  "api_run_orbit": {
+    "period_s": 5553.624271252228,
+    "max_energy_drift_rel": 1.1060555202205516e-13
+  },
+  "api_cw_vs_hf_j2": {
+    "max_pos_error_m": 5.813154194915382,
+    "final_pos_error_m": 2.7792338838041353
+  }
+}
