@@ -408,8 +408,17 @@ def test_no_user_facing_text_contains_an_emoji(client, scenario_id):
     scenario, params, _ = _engine_result(scenario_id)
     payload = _api_result(client, scenario_id, params)
 
+    # Ranges are built from code points rather than written as literal glyphs,
+    # so this file -- the emoji detector -- does not itself contain an emoji and
+    # trip a repository-wide scan.
+    ranges = [
+        (0x1F000, 0x1FAFF),   # emoticons, symbols, pictographs, transport, flags
+        (0x2600, 0x27BF),     # miscellaneous symbols and dingbats
+        (0x2B00, 0x2BFF),     # arrows and geometric shapes
+        (0xFE0F, 0xFE0F),     # variation selector 16
+    ]
     pictographic = re.compile(
-        "[\U0001F000-\U0001FAFF☀-➿⬀-⯿️]"
+        "[" + "".join(f"{chr(low)}-{chr(high)}" for low, high in ranges) + "]"
     )
     blobs = (
         [i["text"] for i in payload["interpretations"]]

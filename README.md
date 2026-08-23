@@ -24,7 +24,7 @@ reproducible.
 ## Contents
 
 1. [The research question](#1-the-research-question)
-2. [Two ways to use this](#2-two-ways-to-use-this)
+2. [Three ways to use this](#2-three-ways-to-use-this)
 3. [Installation](#3-installation)
 4. [Running the platform locally](#4-running-the-platform-locally)
 5. [Running the tests](#5-running-the-tests)
@@ -59,32 +59,51 @@ rendezvous controller, characterise the speed-versus-fuel trade-off, and
 **quantify** the linear model's divergence from a non-linear two-body + J2 +
 drag simulator as a function of separation, direction and perturbation.
 
-## 2. Two ways to use this
+## 2. Three ways to use this
 
-### The pilot platform — `pilot_app.py`
+### The web platform — `web-platform/` (recommended)
 
-A browser-based interface for education and research. Guided activities for
-learners, full parameter control for professionals, anonymous usage analytics
-for running a pilot, and an administrator dashboard. No Python knowledge needed
-by participants.
+React + TypeScript frontend on a FastAPI backend. Professional scientific
+interface, proper scientific notation, no emoji, deep-linkable URLs, and a
+production Docker build that serves everything from one origin.
+
+```bash
+# terminal 1 - API
+cd web-platform/backend && uvicorn app.main:app --reload --port 8000
+
+# terminal 2 - frontend
+cd web-platform/frontend && npm install && npm run dev
+```
+
+Opens at <http://localhost:5173>. See [section 4](#4-running-the-platform-locally).
+
+### The Streamlit platform — `pilot_app.py`
+
+The original browser interface, **kept and fully functional** as a regression
+reference. Guided activities, anonymous usage analytics, administrator
+dashboard.
 
 ```bash
 streamlit run pilot_app.py
 ```
 
-### The engine — `src/`
+### The engine — `orbital_core/`
 
 The physics, importable and scriptable, with no platform code involved:
 
 ```python
-from src import scenarios as sc
+from orbital_core import scenarios as sc
 
 result = sc.run_cw_rendezvous([200, -300, 80], [0, 0, 0])
 print(result["metrics"])
 ```
 
-`src/scenarios.py` is a frontend-agnostic API returning plain dicts and
-DataFrames. It contains no plotting, no Streamlit and no file I/O.
+`orbital_core/scenarios.py` is a frontend-agnostic API returning plain dicts and
+DataFrames. **Both frontends call these same functions** — there is no second
+copy of any physics. It contains no plotting, no Streamlit and no file I/O.
+
+`src/` remains as a compatibility shim aliasing `orbital_core`, so existing
+scripts and the test suite keep working unchanged.
 
 The original research MVP, `app.py`, is also still present and still runs
 (`streamlit run app.py`).
@@ -129,34 +148,94 @@ pandas 3.0.3, matplotlib 3.11.0**.
 
 ## 4. Running the platform locally
 
+### 4.1 The web platform (React + FastAPI)
+
+Needs **Node.js 20+** as well as Python. Install the API dependencies once:
+
 ```bash
-streamlit run pilot_app.py
+python -m pip install -r web-platform/backend/requirements.txt
 ```
 
-Opens at <http://localhost:8501>. With no configuration it uses a local SQLite
-database at `pilot_data/pilot.db` and flags every record as development data, so
-you cannot accidentally contaminate real pilot figures while trying things out.
+Then run the two processes. **Terminal 1 — the API:**
 
-To see the administrator dashboard locally:
+```bash
+cd web-platform/backend
+uvicorn app.main:app --reload --port 8000
+```
+
+**Terminal 2 — the frontend:**
+
+```bash
+cd web-platform/frontend
+npm install
+npm run dev
+```
+
+Open <http://localhost:5173>. Vite proxies `/api` to the backend, so the browser
+only ever talks to one origin and there is no CORS to configure.
+
+* API documentation: <http://localhost:8000/api/v1/docs>
+* Health: <http://localhost:8000/api/v1/health>
+
+With no configuration it uses a local SQLite database at `pilot_data/pilot.db`
+and flags every record as development data, so you cannot accidentally
+contaminate real pilot figures while trying things out.
+
+To see the administrator dashboard:
 
 ```bash
 python scripts/hash_password.py          # prints PILOT_ADMIN_PASSWORD_HASH=...
 ```
 
-Set `PILOT_ADMIN_USERNAME` and that hash in your environment, restart, then open
-<http://localhost:8501/?view=admin>.
+Set `PILOT_ADMIN_USERNAME` and that hash in the environment the **API** runs in,
+restart it, then open <http://localhost:5173/admin>.
 
-Copy `.env.example` to `.env` for the full set of options — every one has a
-working default, and the file explains what each is for.
+Copy `web-platform/.env.example` to `.env` for the full set of options — every
+one has a working default, and the file explains what each is for.
+
+### 4.2 Production build
+
+```bash
+cd web-platform/frontend && npm run build
+```
+
+Writes to `web-platform/frontend/dist/`. In production those files are copied
+into the backend image and FastAPI serves them from the same origin as the API,
+so one deployment and one domain cover everything. To try that locally:
+
+```bash
+cp -r web-platform/frontend/dist web-platform/backend/app/static
+cd web-platform/backend && uvicorn app.main:app --port 8000
+```
+
+Then the whole application is at <http://localhost:8000>.
+
+### 4.3 The Streamlit platform
+
+Unchanged and still fully functional:
+
+```bash
+streamlit run pilot_app.py
+```
+
+Opens at <http://localhost:8501>; the administrator area is at
+<http://localhost:8501/?view=admin>.
 
 ## 5. Running the tests
 
 ```bash
-python -m pytest -q
+# Engine and Streamlit platform (repository root)
+python -m pytest -q                                  # 255 passed
+
+# Web platform API, including numerical parity
+cd web-platform/backend && python -m pytest -q       # 187 passed
+
+# Web platform frontend
+cd web-platform/frontend && npx vitest run           # 77 passed
 ```
 
-**251 tests.** The engine's own tests also run under the standard library with
-nothing extra installed:
+**519 tests in total.** The engine's own tests also run under the standard
+library with nothing extra installed:
 
 ```bash
 python -m unittest discover -s tests -p "test_*.py"
@@ -176,11 +255,17 @@ python -m unittest discover -s tests -p "test_*.py"
 | **Numerical regression baseline** | `test_regression_baseline.py` | 11 |
 | **Integrator convergence** | `test_integrator_convergence.py` | 9 |
 | Platform database | `test_platform_database.py` | 11 |
-| Analytics and privacy | `test_platform_analytics.py` | 30 |
+| Analytics and privacy | `test_platform_analytics.py` | 34 |
 | Input validation | `test_platform_validation.py` | 31 |
 | Runner, rate limiting, auth | `test_platform_runner.py` | 38 |
 | Educational content | `test_platform_content.py` | 41 |
 | End-to-end user journey | `test_ui_flow.py` | 27 |
+| **Engine parity (API vs engine)** | `backend/tests/test_engine_parity.py` | 116 |
+| API behaviour | `backend/tests/test_api.py` | 58 |
+| Python/TypeScript formatting parity | `backend/tests/test_formatting_parity.py` | 13 |
+| Number formatting | `frontend/tests/formatting.test.ts` | 44 |
+| Components | `frontend/tests/components.test.tsx` | 24 |
+| Chart traces | `frontend/src/charts/buildTraces.test.ts` | 9 |
 
 Two of these deserve mention. **`test_regression_baseline.py`** pins the
 published numerical outputs at `rtol=1e-9` against a captured baseline — if it
@@ -216,10 +301,21 @@ python experiments/run_cw_vs_high_fidelity.py
 ## 7. Repository structure
 
 ```
-pilot_app.py        Pilot platform entry point (Streamlit)
+web-platform/       THE WEB PLATFORM (React + TypeScript + FastAPI)
+  backend/          FastAPI: 19 endpoints, Pydantic models, no physics
+    app/services/   catalogue, simulation, result adapters, formatting
+    tests/          engine parity, API behaviour, formatting parity
+  frontend/         React 18 + TypeScript + Vite
+    src/formatting/ THE number formatter - scientific notation, units
+    src/charts/     Plotly.js from returned arrays; never recomputes
+    src/pages/      12 pages
+  Dockerfile        multi-stage: build React, serve both from one origin
+  docker-compose.yml
+
+pilot_app.py        Streamlit platform (kept as regression reference)
 app.py              Original research MVP (still works)
 
-src/                THE VALIDATED ENGINE - not modified by the platform
+orbital_core/       THE VALIDATED ENGINE - not modified by either frontend
   orbit.py          two-body dynamics, RK4, orbital elements, energy/period
   perturbations.py  J2 + drag, ForceModel toggles
   lvlh.py           inertial <-> LVLH transforms
@@ -228,8 +324,10 @@ src/                THE VALIDATED ENGINE - not modified by the platform
   validation.py     conservation checks, error metrics, gain sweep, comparison
   external_validation.py  export/import + compare vs an external tool
   collision.py      keep-out-zone / debris detection (detection only)
-  scenarios.py      frontend-agnostic scenario API  <- the platform boundary
+  scenarios.py      frontend-agnostic scenario API  <- the shared boundary
   plotting.py       headless matplotlib helpers
+
+src/                compatibility shim aliasing orbital_core (same objects)
 
 pilot/              THE PLATFORM - no physics
   config.py         environment-driven settings
@@ -345,23 +443,69 @@ judgement.
 
 ## 11. Deployment
 
-The platform is designed for **Streamlit Community Cloud** (free public URL)
-with managed PostgreSQL, or for **Docker** on any host. Full instructions,
-including why the SQLite fallback must not be used for a hosted pilot, are in
-[docs/DEPLOYMENT.md](docs/DEPLOYMENT.md).
+### 11.1 The web platform (recommended)
+
+A multi-stage Docker build compiles the React application and copies it into a
+Python image, so FastAPI serves the API **and** the frontend from one origin —
+one deployment, one custom domain, no CORS.
+
+```bash
+# Build context is the repository root: the image needs orbital_core/ and pilot/
+docker build -f web-platform/Dockerfile -t orbital-web .
+docker run -p 8000:8000 --env-file web-platform/.env orbital-web
+```
+
+Or the whole stack including PostgreSQL:
+
+```bash
+cd web-platform && docker compose up --build
+```
+
+**Deploy the repository root**, with `web-platform/Dockerfile` as the
+dockerfile path. Render, Railway and Fly.io all accept this directly. Set at
+minimum:
+
+| Variable | Why |
+| --- | --- |
+| `PILOT_ENV=production` | Otherwise every record is flagged demo data and excluded from reports |
+| `DATABASE_URL` | Managed Postgres. The SQLite fallback is wiped on every restart on these hosts |
+| `PILOT_PARTICIPANT_SALT` | A fixed secret, set once. Changing it makes every returning participant look new |
+| `PILOT_ADMIN_USERNAME` + `PILOT_ADMIN_PASSWORD_HASH` | The admin API refuses everything without them |
+
+To attach a custom domain, point it at the host's URL and add it in the host's
+domain settings. Nothing in the build hard-codes a hostname: all API calls use
+a relative `/api/v1`, so the same image works on localhost and in production.
+
+To change the database later, change `DATABASE_URL` and restart — migrations run
+on startup and are idempotent.
+
+**Note:** the Docker image has been written and reviewed but **not built** —
+no Docker daemon was available in the development environment. Build it once
+before relying on it. See [docs/KNOWN_GAPS.md](docs/KNOWN_GAPS.md) §2.1.
+
+### 11.2 The Streamlit platform
+
+Designed for **Streamlit Community Cloud** with managed PostgreSQL, or Docker.
+Full instructions in [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md).
 
 ```bash
 docker build -t orbital-pilot .
 docker run -p 8501:8501 --env-file .env orbital-pilot
 ```
 
-The image runs the numerical regression tests during the build, so an image
+Both images run the numerical regression tests during the build, so an image
 whose engine outputs have moved cannot be produced.
 
 ## 12. Documentation
 
 | Document | For |
 | --- | --- |
+| [docs/MIGRATION_INVENTORY.md](docs/MIGRATION_INVENTORY.md) | Every item of the Streamlit platform and where it went |
+| [docs/ENGINE_PARITY_REPORT.md](docs/ENGINE_PARITY_REPORT.md) | Proof the API returns identical physics |
+| [docs/UI_MIGRATION_REPORT.md](docs/UI_MIGRATION_REPORT.md) | How the interface changed, and why |
+| [docs/IMPLEMENTATION_REPORT.md](docs/IMPLEMENTATION_REPORT.md) | Web migration: files, decisions, bugs found |
+| [docs/MANUAL_REVIEW_CHECKLIST.md](docs/MANUAL_REVIEW_CHECKLIST.md) | Web platform: what to test by hand |
+| [docs/KNOWN_GAPS.md](docs/KNOWN_GAPS.md) | Web platform: what is unfinished or unverified |
 | [CURRENT_STATE_AUDIT.md](CURRENT_STATE_AUDIT.md) | What existed before the platform work, verified by running it |
 | [IMPLEMENTATION_REPORT.md](IMPLEMENTATION_REPORT.md) | What was added, decisions taken, test results |
 | [MANUAL_REVIEW_CHECKLIST.md](MANUAL_REVIEW_CHECKLIST.md) | Every journey to test by hand, with expected outcomes |
