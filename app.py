@@ -597,12 +597,17 @@ def research_mode():
 # ==========================================================================
 def external_validation_mode():
     p = "ev_"
-    st.header("🛰️ External Validation (GMAT / STK)")
+    st.header("External validation workflow (GMAT / STK)")
     st.markdown(
-        "This workflow validates the engine's **higher-fidelity propagator** against an "
-        "external, industry-standard tool such as **NASA GMAT** or **AGI/Ansys STK**. The "
-        "validated propagator is then what the CW model is compared against elsewhere in the "
-        "app, so trusting it matters.\n\n"
+        "This is the **workflow** for comparing the engine's higher-fidelity "
+        "propagator against an external, industry-standard tool such as NASA GMAT "
+        "or AGI/Ansys STK. It is not a result.\n\n"
+        "**No such comparison has been run for this repository.** Nothing here has "
+        "been benchmarked against GMAT, STK or any other external tool, and this "
+        "project is not affiliated with NASA or Ansys/AGI. The higher-fidelity "
+        "model is more faithful than the CW model it is compared against "
+        "elsewhere in this app, but it is not independently validated ground "
+        "truth.\n\n"
         "**The external run is manual** (this app does not drive GMAT/STK):\n"
         "1. Build and export a scenario below (CSV + JSON).\n"
         "2. In GMAT/STK, set up the same initial state, force model and step, propagate, and "
@@ -717,7 +722,8 @@ def main():
         research_mode()
     else:
         external_validation_mode()
-    st.sidebar.caption("All physics lives in `src/`; this app only renders results.")
+    st.sidebar.caption(
+        "All physics lives in `orbital_core/`; this app only renders results.")
 
 
 if __name__ == "__main__":

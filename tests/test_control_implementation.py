@@ -1,9 +1,15 @@
 """Internal verification of the controlled nonlinear branch
 
-GMAT validates the nonlinear propagator and the LVLH relative-state
-reconstruction, but not the controller. These tests verify, inside the
-simulator, the parts of the controlled nonlinear branch that GMAT does not
-cover:
+Note on scope, corrected 2026-08: an earlier version of this docstring said
+"GMAT validates the nonlinear propagator and the LVLH relative-state
+reconstruction". **That was never true of this repository.** No GMAT or STK
+comparison has ever been run here; ``orbital_core/external_validation.py``
+provides the workflow to carry one out, but no benchmark result exists. See
+``KNOWN_GAPS.md`` section 1.1. The tests themselves were correct and are
+unchanged -- only the claim about what validates them was wrong.
+
+These tests verify, inside the simulator, the parts of the controlled
+nonlinear branch that no other test covers:
 
   1. an LVLH control vector rotated to ECI and back reproduces the original;
   2. the LVLH<->ECI rotation preserves acceleration magnitude;

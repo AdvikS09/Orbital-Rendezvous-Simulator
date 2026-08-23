@@ -22,6 +22,10 @@ RUN python -m pip install --upgrade pip \
     && python -m pip install -r requirements-lock.txt \
     && python -m pip install "psycopg[binary]==3.2.3"
 
+COPY orbital_core/ ./orbital_core/
+# src/ is now a compatibility shim re-exporting orbital_core. The test suite
+# still imports it, and the regression gate below runs those tests, so it must
+# be present in the image.
 COPY src/ ./src/
 COPY pilot/ ./pilot/
 COPY tests/ ./tests/
