@@ -1,0 +1,40 @@
+{
+  "name": "orbital-rendezvous-frontend",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "description": "React + TypeScript frontend for the Orbital Rendezvous Simulator. Collects inputs, calls the Python API, renders returned numerical results. Contains no physics.",
+  "license": "MIT",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "lint": "eslint src --ext .ts,.tsx --max-warnings 0"
+  },
+  "dependencies": {
+    "plotly.js-dist-min": "2.35.2",
+    "react": "18.3.1",
+    "react-dom": "18.3.1",
+    "react-router-dom": "6.28.0"
+  },
+  "devDependencies": {
+    "@testing-library/jest-dom": "6.6.3",
+    "@testing-library/react": "16.1.0",
+    "@testing-library/user-event": "14.5.2",
+    "@types/react": "18.3.12",
+    "@types/react-dom": "18.3.1",
+    "@typescript-eslint/eslint-plugin": "8.18.0",
+    "@typescript-eslint/parser": "8.18.0",
+    "@vitejs/plugin-react": "4.3.4",
+    "eslint": "8.57.1",
+    "eslint-plugin-jsx-a11y": "6.10.2",
+    "eslint-plugin-react-hooks": "5.1.0",
+    "jsdom": "25.0.1",
+    "typescript": "5.7.2",
+    "vite": "5.4.11",
+    "vitest": "2.1.8"
+  }
+}

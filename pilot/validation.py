@@ -25,7 +25,7 @@ from __future__ import annotations
 import math
 from dataclasses import dataclass, field
 
-from src import orbit
+from orbital_core import orbit
 
 # --------------------------------------------------------------------------
 # Physical and practical limits

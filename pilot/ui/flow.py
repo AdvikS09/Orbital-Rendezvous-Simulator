@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import streamlit as st
 
-import src
+import orbital_core
 from .. import analytics
 from ..analytics import USER_TYPE_LABELS, USER_TYPES
 from ..config import get_settings
@@ -105,7 +105,7 @@ def landing() -> None:
             goto("consent")
     with right:
         st.caption(
-            f"Engine v{src.__version__}. Open source under the MIT licence. "
+            f"Engine v{orbital_core.__version__}. Open source under the MIT licence. "
             "The next page explains what is recorded and asks your consent.")
 
 

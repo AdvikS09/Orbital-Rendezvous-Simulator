@@ -26,7 +26,7 @@ from datetime import datetime, timezone
 import numpy as np
 import pandas as pd
 
-import src
+import orbital_core
 from .content.scenarios_catalog import Scenario
 
 CONFIG_FORMAT_VERSION = "1.0"
@@ -50,7 +50,7 @@ def scenario_config(scenario: Scenario, params: dict,
         "format": "orbital-pilot-scenario",
         "format_version": CONFIG_FORMAT_VERSION,
         "exported_at_utc": datetime.now(timezone.utc).isoformat(timespec="seconds"),
-        "engine_version": src.__version__,
+        "engine_version": orbital_core.__version__,
         "app_version": app_version,
         "scenario": {
             "id": scenario.id,
@@ -192,7 +192,7 @@ def results_readme(scenario: Scenario, params: dict, warnings: list[str],
         "=" * len(scenario.title),
         "",
         f"Exported     : {datetime.now(timezone.utc).isoformat(timespec='seconds')} UTC",
-        f"Engine       : Orbital Rendezvous Research Engine v{src.__version__}",
+        f"Engine       : Orbital Rendezvous Research Engine v{orbital_core.__version__}",
         f"Platform     : v{app_version}",
         f"Scenario id  : {scenario.id}",
         "",

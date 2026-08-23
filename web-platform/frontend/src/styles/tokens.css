@@ -1,0 +1,171 @@
+/*
+ * Design tokens.
+ *
+ * Visual direction: a mature aerospace/research tool. Deep navy and graphite
+ * surfaces, restrained cyan and blue accents, no decorative gradients, no
+ * emoji, no oversized marketing headings.
+ *
+ * Colour is never the only carrier of meaning: status is always accompanied by
+ * a text label, and plot series are distinguished by dash pattern as well as
+ * hue (the Okabe-Ito palette carried over from the Streamlit version).
+ */
+
+:root {
+  /* --- surfaces, darkest to lightest --------------------------------- */
+  --surface-base: #0b1220;      /* page background - deep navy */
+  --surface-raised: #111a2b;    /* panels */
+  --surface-overlay: #16223a;   /* cards, inputs */
+  --surface-hover: #1c2a45;
+  --surface-active: #23334f;
+
+  /* --- borders -------------------------------------------------------- */
+  --border-subtle: #1e2b42;
+  --border-default: #2a3a56;
+  --border-strong: #3a4d6e;
+  --border-focus: #38bdf8;
+
+  /* --- text ----------------------------------------------------------- */
+  --text-primary: #e8eef7;
+  --text-secondary: #a7b6cc;
+  --text-muted: #7286a3;
+  --text-inverse: #0b1220;
+
+  /* --- accents -------------------------------------------------------- */
+  --accent: #38bdf8;            /* restrained cyan */
+  --accent-strong: #0ea5e9;
+  --accent-muted: rgba(56, 189, 248, 0.12);
+  --accent-border: rgba(56, 189, 248, 0.35);
+
+  /* --- status (each always paired with a text label) ------------------ */
+  --status-info: #60a5fa;
+  --status-info-bg: rgba(96, 165, 250, 0.10);
+  --status-info-border: rgba(96, 165, 250, 0.30);
+
+  --status-success: #34d399;
+  --status-success-bg: rgba(52, 211, 153, 0.10);
+  --status-success-border: rgba(52, 211, 153, 0.30);
+
+  --status-warning: #fbbf24;
+  --status-warning-bg: rgba(251, 191, 36, 0.10);
+  --status-warning-border: rgba(251, 191, 36, 0.32);
+
+  --status-error: #f87171;
+  --status-error-bg: rgba(248, 113, 113, 0.10);
+  --status-error-border: rgba(248, 113, 113, 0.32);
+
+  /* --- plot series: Okabe-Ito, colour-vision-deficiency safe ---------- */
+  --series-1: #0072b2;
+  --series-2: #d55e00;
+  --series-3: #009e73;
+  --series-4: #cc79a7;
+  --series-5: #e69f00;
+  --series-6: #56b4e9;
+  --series-7: #f0f0f0;
+
+  /* --- typography ----------------------------------------------------- */
+  --font-sans: "Inter", "Segoe UI", system-ui, -apple-system, "Helvetica Neue",
+    Arial, sans-serif;
+  /* Numeric font stack: tabular figures so columns of numbers align. */
+  --font-mono: "JetBrains Mono", "SF Mono", "Cascadia Mono", "Consolas",
+    "Liberation Mono", monospace;
+
+  --text-xs: 0.6875rem;   /* 11px - captions, units */
+  --text-sm: 0.8125rem;   /* 13px - body small, controls */
+  --text-base: 0.875rem;  /* 14px - body */
+  --text-md: 1rem;        /* 16px - section headings */
+  --text-lg: 1.125rem;    /* 18px - page headings */
+  --text-xl: 1.375rem;    /* 22px - the single largest size used */
+
+  --leading-tight: 1.3;
+  --leading-normal: 1.55;
+  --leading-relaxed: 1.7;  /* explanatory prose */
+
+  /* --- spacing (4px base) --------------------------------------------- */
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.25rem;
+  --space-6: 1.5rem;
+  --space-8: 2rem;
+  --space-10: 2.5rem;
+  --space-12: 3rem;
+
+  /* --- geometry ------------------------------------------------------- */
+  --radius-sm: 3px;
+  --radius-md: 5px;
+  --radius-lg: 8px;
+
+  --sidebar-width: 248px;
+  --params-width: 340px;
+  --content-max: 1680px;
+
+  /* --- elevation: subtle, no glow ------------------------------------- */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.28);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.32);
+  --shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.40);
+
+  --transition-fast: 110ms ease;
+  --transition-base: 180ms ease;
+
+  --z-sticky: 100;
+  --z-drawer: 200;
+  --z-modal: 300;
+  --z-toast: 400;
+}
+
+/*
+ * Light theme. The application is dark by default because it is a long-session
+ * analysis tool, but a light theme is available for projection and printing,
+ * where dark backgrounds read badly.
+ */
+:root[data-theme='light'] {
+  --surface-base: #f6f8fb;
+  --surface-raised: #ffffff;
+  --surface-overlay: #ffffff;
+  --surface-hover: #eef2f8;
+  --surface-active: #e3eaf4;
+
+  --border-subtle: #e3e9f2;
+  --border-default: #d0d9e6;
+  --border-strong: #b3c0d3;
+
+  --text-primary: #0f1a2b;
+  --text-secondary: #40506a;
+  --text-muted: #64748b;
+  --text-inverse: #ffffff;
+
+  --accent: #0369a1;
+  --accent-strong: #075985;
+  --accent-muted: rgba(3, 105, 161, 0.09);
+  --accent-border: rgba(3, 105, 161, 0.28);
+
+  --status-info: #1d4ed8;
+  --status-info-bg: rgba(29, 78, 216, 0.07);
+  --status-info-border: rgba(29, 78, 216, 0.22);
+
+  --status-success: #047857;
+  --status-success-bg: rgba(4, 120, 87, 0.07);
+  --status-success-border: rgba(4, 120, 87, 0.22);
+
+  --status-warning: #b45309;
+  --status-warning-bg: rgba(180, 83, 9, 0.08);
+  --status-warning-border: rgba(180, 83, 9, 0.24);
+
+  --status-error: #b91c1c;
+  --status-error-bg: rgba(185, 28, 28, 0.07);
+  --status-error-border: rgba(185, 28, 28, 0.22);
+
+  --series-7: #1a1a1a;
+
+  --shadow-sm: 0 1px 2px rgba(15, 26, 43, 0.07);
+  --shadow-md: 0 4px 12px rgba(15, 26, 43, 0.09);
+  --shadow-lg: 0 12px 32px rgba(15, 26, 43, 0.13);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --transition-fast: 0ms;
+    --transition-base: 0ms;
+  }
+}

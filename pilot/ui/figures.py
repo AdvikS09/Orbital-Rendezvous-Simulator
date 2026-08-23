@@ -19,7 +19,7 @@ from __future__ import annotations
 import numpy as np
 import plotly.graph_objects as go
 
-from src import orbit
+from orbital_core import orbit
 
 EARTH_R_KM = orbit.R_EARTH / 1000.0
 

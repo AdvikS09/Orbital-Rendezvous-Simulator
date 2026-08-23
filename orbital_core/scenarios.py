@@ -6,11 +6,12 @@ into a small set of "run a scenario -> plain data" functions. Every function
 returns only built-in / scientific-Python data types -- dicts of NumPy arrays and
 pandas DataFrames -- with **no plotting, no Streamlit, and no file I/O**.
 
-It keeps all physics inside ``src/`` and gives the
-frontend (the current Streamlit MVP, or any future web UI) a single function per
-scenario to call. The frontend only renders the returned data, so the backend
-stays reusable and frontend-independent. It does not duplicate any physics -- it
-calls the existing engine functions.
+It keeps all physics inside ``orbital_core/`` and gives every frontend a single
+function per scenario to call. Two frontends use it today -- the legacy
+Streamlit application and the FastAPI backend under ``web-platform/`` -- and
+both call these same functions rather than duplicating any physics. Each
+frontend only renders the returned data, so this module stays reusable and
+frontend-independent.
 """
 
 import numpy as np

@@ -1,7 +1,7 @@
 """The catalogue of simulation scenarios the platform exposes.
 
 Every entry maps to functionality that **actually exists and is tested** in
-``src/``. Nothing here is aspirational. Three capabilities implied by the pilot
+``orbital_core/``. Nothing here is aspirational. Three capabilities implied by the pilot
 brief are deliberately absent, and are recorded in ``KNOWN_GAPS.md`` rather than
 faked:
 
@@ -23,8 +23,8 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Callable
 
-from src import orbit
-from src import scenarios as sc
+from orbital_core import orbit
+from orbital_core import scenarios as sc
 
 
 # --------------------------------------------------------------------------
@@ -276,13 +276,13 @@ def _run_convergence(p: dict) -> dict:
 
     This is a *convergence* study of the one integrator the engine has, not a
     comparison between different integrators -- the engine has only RK4.
-    Implemented here rather than in ``src/`` because it is a study over the
+    Implemented here rather than in ``orbital_core/`` because it is a study over the
     existing API, adding no new physics.
     """
     import numpy as np
 
     radius = sc.radius_from_altitude(p["altitude_km"])
-    from src import cw as cw_module
+    from orbital_core import cw as cw_module
     n = cw_module.cw_mean_motion(radius, orbit.MU_EARTH)
     period = orbit.orbital_period(radius)
     state0 = np.array([p.get("rel_x", 1000.0), p.get("rel_y", 0.0),

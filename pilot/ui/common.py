@@ -10,7 +10,7 @@ from __future__ import annotations
 
 import streamlit as st
 
-import src
+import orbital_core
 from ..analytics import USER_TYPE_LABELS
 from ..config import get_settings
 
@@ -137,7 +137,7 @@ def status_footer() -> None:
         st.markdown("**Privacy**")
         st.markdown(PRIVACY_SUMMARY)
         st.caption(
-            f"Engine v{src.__version__} · platform v{settings.app_version} · "
+            f"Engine v{orbital_core.__version__} · platform v{settings.app_version} · "
             "MIT licence · open source.")
     st.caption(
         "Research and educational software — not NASA-approved and not for "

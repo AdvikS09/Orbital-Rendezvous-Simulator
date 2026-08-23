@@ -14,9 +14,9 @@ import pandas as pd
 import plotly.graph_objects as go
 import streamlit as st
 
-from src import scenarios as sc
-from src import orbit
-from src import external_validation as ext
+from orbital_core import scenarios as sc
+from orbital_core import orbit
+from orbital_core import external_validation as ext
 
 st.set_page_config(page_title="Orbital Rendezvous Engine", page_icon="🛰️", layout="wide")
 

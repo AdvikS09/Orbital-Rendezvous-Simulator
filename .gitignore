@@ -15,3 +15,11 @@ pilot_data/
 *.db
 *.db-wal
 *.db-shm
+
+# Web platform
+web-platform/frontend/node_modules/
+web-platform/frontend/dist/
+web-platform/frontend/.vite/
+web-platform/frontend/coverage/
+web-platform/backend/app/static/
+npm-debug.log*
