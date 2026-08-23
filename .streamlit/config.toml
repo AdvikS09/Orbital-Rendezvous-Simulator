@@ -1,0 +1,29 @@
+# Streamlit configuration for the pilot platform.
+# Contains no secrets -- those go in the environment or the host's secrets panel.
+
+[server]
+headless = true
+# Uploaded files are only used by the external-validation comparison, which
+# takes a modest ephemeris CSV. A small cap limits accidental resource use.
+maxUploadSize = 20
+enableXsrfProtection = true
+enableCORS = true
+
+[browser]
+# Do not send usage statistics to Streamlit. Participants consented to this
+# project's anonymous analytics, not to a third party's.
+gatherUsageStats = false
+
+[theme]
+base = "light"
+primaryColor = "#0072B2"
+backgroundColor = "#FFFFFF"
+secondaryBackgroundColor = "#F0F2F6"
+textColor = "#1A1A1A"
+
+[client]
+# Never show a Python traceback to a participant. Errors are caught and
+# explained in plain language by pilot/runner.py; anything that escapes that
+# should not leak internals.
+showErrorDetails = "none"
+toolbarMode = "minimal"

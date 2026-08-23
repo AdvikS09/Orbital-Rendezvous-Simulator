@@ -1,0 +1,124 @@
+name: tests
+
+on:
+  push:
+    branches: [main, pilot-platform]
+  pull_request:
+  workflow_dispatch:
+
+# Cancel superseded runs on the same branch.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: Python ${{ matrix.python-version }} on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        # The published results were produced on 3.14; 3.12 catches accidental
+        # use of newer syntax. Both OSes because the engine is developed on
+        # Windows and deployed on Linux, and float results should match.
+        os: [ubuntu-latest, windows-latest]
+        python-version: ["3.12", "3.14"]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements.txt
+
+      - name: Run the test suite
+        env:
+          # Never let CI touch a real database, and keep the salt fixed so the
+          # identity tests are deterministic.
+          PILOT_ENV: test
+          PILOT_PARTICIPANT_SALT: ci-fixed-salt-not-a-real-secret
+        run: python -m pytest -q --durations=10
+
+      - name: Check the engine also runs under plain unittest
+        run: python -m unittest discover -s tests -p "test_orbit.py" -v
+
+  regression:
+    name: Numerical regression (reference environment)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.14"
+          cache: pip
+
+      - name: Install the locked environment
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements.txt
+
+      - name: Verify the validated numerical outputs have not moved
+        env:
+          PILOT_ENV: test
+          PILOT_PARTICIPANT_SALT: ci-fixed-salt-not-a-real-secret
+        run: |
+          python -m pytest tests/test_regression_baseline.py \
+                           tests/test_integrator_convergence.py -q
+
+  secrets:
+    name: No secrets committed
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check for committed secrets and databases
+        run: |
+          set -e
+          fail=0
+
+          # .env must never be committed; .env.example must be.
+          if git ls-files --error-unmatch .env >/dev/null 2>&1; then
+            echo "::error::.env is tracked by git"; fail=1
+          fi
+          if ! test -f .env.example; then
+            echo "::error::.env.example is missing"; fail=1
+          fi
+
+          # Database files must not be committed.
+          if git ls-files | grep -E '\.(db|sqlite3?)$'; then
+            echo "::error::a database file is tracked by git"; fail=1
+          fi
+
+          # A real PBKDF2 hash or a populated secret in a tracked file.
+          if git grep -nI -E 'PILOT_ADMIN_PASSWORD=[^[:space:]]' -- \
+               ':!.env.example' ':!*.md' ':!tests/*' ':!.github/*'; then
+            echo "::error::an admin password appears in a tracked file"; fail=1
+          fi
+          if git grep -nI -E 'PILOT_PARTICIPANT_SALT=[0-9a-f]{32,}' -- \
+               ':!.env.example'; then
+            echo "::error::a real participant salt appears in a tracked file"; fail=1
+          fi
+          # tests/ is excluded here on purpose: it contains deliberately fake
+          # credentials on reserved domains (.invalid, example.com) whose whole
+          # job is to prove that passwords are stripped from labels and logs.
+          if git grep -nI -E 'postgres(ql)?(\+[a-z]+)?://[^:/@[:space:]]+:[^@[:space:]]+@' -- \
+               ':!.env.example' ':!*.md' ':!tests/*'; then
+            echo "::error::a database URL with a password appears in a tracked file"; fail=1
+          fi
+
+          # Any fake credential in tests must stay on a reserved domain, so it
+          # can never point at something real.
+          if git grep -nIh -E -o 'postgres(ql)?(\+[a-z]+)?://[^[:space:]"]+' -- 'tests/*' \
+               | grep -vE '@[^/]*(\.invalid|example\.(com|org|net))' | grep . ; then
+            echo "::error::a test uses a database host that is not a reserved domain"
+            fail=1
+          fi
+
+          exit $fail
