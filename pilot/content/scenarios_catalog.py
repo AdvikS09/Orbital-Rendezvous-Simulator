@@ -355,7 +355,7 @@ SCENARIOS: tuple[Scenario, ...] = (
 
     Scenario(
         id="j2_effect",
-        title="J2 effect: Earth is not a sphere",
+        title="J2 effect: Earth is not perfectly spherical",
         category="orbit_propagation",
         feature_category="perturbation_j2",
         model="orbit",

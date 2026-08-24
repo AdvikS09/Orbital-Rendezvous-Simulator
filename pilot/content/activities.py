@@ -122,7 +122,7 @@ ORBITS_AND_PERTURBATIONS = Activity(
         ),
         ActivityStep(
             id="step3_j2",
-            title="Earth is not a sphere",
+            title="Earth is not perfectly spherical",
             scenario_id="j2_effect",
             brief=(
                 "Earth bulges at the equator, so its gravity is not quite that of a "
