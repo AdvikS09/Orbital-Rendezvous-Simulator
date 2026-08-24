@@ -1,0 +1,51 @@
+name: Pilot feedback
+description: Feedback from using the platform in teaching or research.
+labels: ["feedback"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Feedback from a pilot is exactly what shapes later releases. Please keep
+        this anonymous — do not include participant names, emails, or any
+        personal or confidential information.
+  - type: dropdown
+    id: role
+    attributes:
+      label: You are a
+      options:
+        - Student
+        - Teacher / instructor
+        - Engineer / researcher
+        - Pilot coordinator
+        - Other
+    validations:
+      required: true
+  - type: textarea
+    id: useful
+    attributes:
+      label: What worked well
+      description: Which scenarios, explanations or features were most useful?
+    validations:
+      required: false
+  - type: textarea
+    id: confusing
+    attributes:
+      label: What was unclear or got in the way
+    validations:
+      required: false
+  - type: textarea
+    id: missing
+    attributes:
+      label: What would you add
+      description: Scenarios, activities, controls, or documentation you wanted.
+    validations:
+      required: false
+  - type: textarea
+    id: context
+    attributes:
+      label: Context (optional)
+      description: >-
+        Group size, level, and setting — with no identifying detail. For
+        example, "a class of ~30 first-year undergraduates".
+    validations:
+      required: false

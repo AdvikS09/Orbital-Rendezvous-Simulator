@@ -1,0 +1,8 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Documentation
+    url: https://github.com/AdvikS09/Orbital-Rendezvous-Simulator/tree/v2-platform/docs
+    about: Architecture, privacy, deployment, troubleshooting and the physics write-up.
+  - name: Known gaps and limitations
+    url: https://github.com/AdvikS09/Orbital-Rendezvous-Simulator/blob/v2-platform/docs/KNOWN_GAPS.md
+    about: What is unfinished or unverified — worth reading before filing.

@@ -1,0 +1,57 @@
+name: Bug report
+description: Report a defect in the simulator, the API, or the interface.
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting. For a suspected **numerical** defect, the exact
+        inputs and the expected value (with its source) are what make it
+        actionable. Please do not include any personal information.
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - Web frontend (React)
+        - Web API (FastAPI)
+        - Simulation engine / numerical result
+        - Streamlit platform
+        - Documentation
+        - Other
+    validations:
+      required: true
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened
+      description: What did you do, and what went wrong?
+      placeholder: Which scenario, which parameters, which page.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What you expected
+      description: >-
+        For a numerical issue, give the expected value and where it comes from
+        (a textbook result, a conservation law, a prior run).
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Open scenario ...
+        2. Set parameters ...
+        3. Run ...
+    validations:
+      required: true
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: Browser and OS for a UI issue; Python/Node versions for a local one.
+    validations:
+      required: false

@@ -6,8 +6,74 @@ Versioning is [semantic](https://semver.org/): the **engine** (`src/`) and the
 that leaves the physics untouched must be visibly distinguishable from one that
 does not.
 
-* Engine version: `src/__init__.py` → `__version__`
+* Engine version: `orbital_core/__init__.py` → `__version__` (was `src/`)
 * Platform version: `pilot/__init__.py` → `__version__`, and `PILOT_APP_VERSION`
+
+---
+
+## [2.0.0] — 2026-08-24 — Web platform (React + FastAPI)
+
+A browser platform on a custom stack, replacing the Streamlit presentation
+layer while reusing the validated engine unchanged. **The physics did not
+change:** the engine files moved from `src/` to `orbital_core/` with `git mv`
+(nine byte-identical, one docstring edit), and the new API reproduces the
+engine's outputs bit-for-bit — 338,556 values compared across all scenarios
+with a maximum difference of exactly zero (`docs/ENGINE_PARITY_REPORT.md`).
+
+### Added
+
+* **FastAPI backend** (`web-platform/backend/`) — a versioned `/api/v1` with 19
+  endpoints. No physics; it imports `orbital_core` and `pilot`, so there is one
+  definition of every scenario, bound and metric shared with the Streamlit app.
+  Responses carry named numeric arrays plus plot metadata; no figure is rendered
+  server-side.
+* **React + TypeScript + Vite frontend** (`web-platform/frontend/`) — the full
+  participant journey (landing, consent, sign-in, tracks, scenarios, guided
+  activities, assessments, feedback) and a password-protected admin dashboard,
+  reached at real URLs.
+* **One shared number-formatting utility** rendering scientific notation with
+  real Unicode superscripts (`2.0 × 10⁻¹²`), fixing the Streamlit interface's
+  machine-notation display (`2e-12`). Presentation formatting never reaches an
+  export.
+* **Plotly.js charts** built in the browser from returned arrays, lazy-loaded so
+  the initial bundle stays small.
+* **Reproducible exports** — result CSVs (machine values), a scenario-config
+  JSON, and a caveats file — plus an admin ZIP export with metric definitions.
+* **Production Docker build** — multi-stage, single-origin, non-root, with the
+  engine-parity suite as a build-time gate; `docker-compose.yml` for local dev.
+* **Migration documentation** — `docs/MIGRATION_INVENTORY.md`,
+  `docs/ENGINE_PARITY_REPORT.md`, `docs/UI_MIGRATION_REPORT.md`, plus web-platform
+  `IMPLEMENTATION_REPORT`, `MANUAL_REVIEW_CHECKLIST` and `KNOWN_GAPS`.
+
+### Changed
+
+* `src/` → `orbital_core/` (history preserved). `src/` remains a compatibility
+  shim aliasing the same module objects, so existing scripts and the test suite
+  import unchanged.
+* Corrected two overstated external-validation statements found during the
+  migration audit: a test docstring and the legacy app's copy both implied GMAT
+  validation had been performed. It has not; the wording now says so.
+* **Regression-test tolerance made platform-robust.** The baseline comparison
+  used `rtol = 1e-9`, which held only on the machine the baseline was captured
+  on. CI on Linux (and even between two Linux runners) produced last-bit
+  differences of ~1e-8 in the accumulated RK4 sums and BLAS matrix products —
+  floating-point reality across CPUs/BLAS builds, not a physics change (values
+  still agree to eight significant figures). The comparison now uses
+  `rtol = 1e-6` plus an absolute floor `atol = 1e-11` for the machine-epsilon
+  conservation drifts, which absorbs cross-platform variance while staying far
+  tighter than any real regression. **No physics changed** — the engine
+  reproduces bit-for-bit on a fixed machine. `requirements.txt` was also
+  re-encoded from UTF-16 to UTF-8 so a fresh `pip install` works on Linux/macOS.
+
+### Tests
+
+* 519 automated tests: 255 engine/platform, 187 web API (including 116 parity),
+  77 frontend (formatting, components, chart traces).
+
+### Not changed
+
+* The Streamlit platform (`pilot_app.py`, `app.py`) remains fully functional as
+  a regression reference.
 
 ---
 

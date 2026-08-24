@@ -1,0 +1,29 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+title: "Orbital Rendezvous Simulator"
+abstract: >-
+  An open-source research and educational platform for spacecraft
+  relative motion and rendezvous guidance. It implements the
+  Clohessy-Wiltshire (Hill) linearised relative-motion equations with a
+  Proportional-Derivative controller, and compares that linear model
+  against a higher-fidelity non-linear orbital model (two-body plus J2
+  oblateness plus atmospheric drag). The engine is deterministic
+  fixed-step RK4 in SI units; the platform exposes it through a browser
+  interface for students, teachers and researchers.
+type: software
+authors:
+  - family-names: "Sushanth"
+    given-names: "Advik"
+repository-code: "https://github.com/AdvikS09/Orbital-Rendezvous-Simulator"
+url: "https://github.com/AdvikS09/Orbital-Rendezvous-Simulator"
+license: MIT
+version: "2.0.0"
+date-released: "2026-08-24"
+keywords:
+  - orbital-mechanics
+  - astrodynamics
+  - spacecraft-rendezvous
+  - clohessy-wiltshire
+  - relative-motion
+  - guidance-control
+  - educational-software

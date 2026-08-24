@@ -536,4 +536,16 @@ The relative-motion and perturbation models follow standard astrodynamics:
 This engine supersedes an earlier 2D prototype, preserved unmodified under
 `old_project_backup/`. Nothing in the active project imports from it.
 
+### Citation
+
+If you use this software, please cite it via [`CITATION.cff`](CITATION.cff)
+(GitHub renders a "Cite this repository" button from it). No accompanying paper
+has been published; cite the software itself.
+
+### Contributing
+
+See [`CONTRIBUTING.md`](CONTRIBUTING.md). The physics engine is protected: any
+change that could move a numerical result needs a regression test and a
+changelog note.
+
 Licensed under the MIT License — see [`LICENSE`](LICENSE).
