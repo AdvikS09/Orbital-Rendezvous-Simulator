@@ -64,11 +64,19 @@ with a maximum difference of exactly zero (`docs/ENGINE_PARITY_REPORT.md`).
   tighter than any real regression. **No physics changed** — the engine
   reproduces bit-for-bit on a fixed machine. `requirements.txt` was also
   re-encoded from UTF-16 to UTF-8 so a fresh `pip install` works on Linux/macOS.
+* **Scenario-track presentation.** The three tracks a scenario belongs to are
+  shown as chips, each with its own icon (book / settings / flask) and a faint
+  tint, so they read as distinct options and are told apart by shape and word,
+  not colour alone. The bare label `Free` is now `Free exploration`. Track
+  label, meaning and icon are defined once (`content/tracks.ts`).
+* **Copy correction.** The J2 scenario and its guided-activity step said
+  "Earth is not a sphere", which is imprecise; they now say "not perfectly
+  spherical". Shared content, so the web API and the Streamlit app agree.
 
 ### Tests
 
-* 519 automated tests: 255 engine/platform, 187 web API (including 116 parity),
-  77 frontend (formatting, components, chart traces).
+* 525 automated tests: 255 engine/platform, 187 web API (including 116 parity),
+  83 frontend (formatting, components including the track chips, chart traces).
 
 ### Not changed
 

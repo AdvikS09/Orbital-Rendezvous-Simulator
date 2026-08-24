@@ -122,6 +122,10 @@ Typographic decisions that matter for a numbers application:
 * Plot series are distinguished by **dash pattern as well as hue**, and use the
   Okabe-Ito palette carried over unchanged from the Streamlit version — so a
   series keeps both its colour and its line style across scenarios.
+* The scenario-track chips (Guided, Professional, Free exploration) are told
+  apart by a **distinct icon and word** — book, settings and flask glyphs — with
+  only a faint per-track tint on the glyph as a secondary cue. Drop the colour
+  and the chips are still unambiguous.
 
 ---
 
