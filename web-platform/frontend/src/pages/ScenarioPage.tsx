@@ -27,7 +27,15 @@ import type {
   SimulationResult,
 } from '@/api/types'
 import { NumberValue } from '@/components/NumberValue'
-import { Badge, Button, Callout, Disclosure, Panel, Spinner } from '@/components/ui'
+import {
+  Badge,
+  Button,
+  Callout,
+  Disclosure,
+  Panel,
+  Spinner,
+  TrackChips,
+} from '@/components/ui'
 import { ParamPanel } from '@/components/controls/ParamPanel'
 import { ResultView } from '@/components/results'
 import { useSession } from '@/state/session'
@@ -259,11 +267,7 @@ export function ScenarioPage() {
       <header className="scenario-page__header">
         <div className="scenario-page__tags">
           <Badge tone="neutral">{detail.category_label}</Badge>
-          {detail.levels.map((level) => (
-            <Badge tone="accent" key={level}>
-              {level}
-            </Badge>
-          ))}
+          <TrackChips levels={detail.levels} withTitle />
         </div>
         <h1>{detail.title}</h1>
         <p className="scenario-page__summary">{detail.summary}</p>

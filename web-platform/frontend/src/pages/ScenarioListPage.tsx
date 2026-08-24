@@ -14,14 +14,9 @@ import type { ScenarioSummary } from '@/api/types'
 import { Callout } from '@/components/ui/Callout'
 import { Icon } from '@/components/ui/Icon'
 import { Spinner } from '@/components/ui/Spinner'
+import { TrackChips } from '@/components/ui/TrackChip'
 
 import './ScenarioListPage.css'
-
-const TRACK_LABEL: Record<string, string> = {
-  guided: 'Guided',
-  professional: 'Professional',
-  free: 'Free',
-}
 
 export function ScenarioListPage() {
   const [scenarios, setScenarios] = useState<ScenarioSummary[] | null>(null)
@@ -100,14 +95,10 @@ export function ScenarioListPage() {
                   </span>
                   <span className="scenario-card__summary">{scenario.summary}</span>
                   <span className="scenario-card__meta">
+                    <TrackChips levels={scenario.levels} />
                     <span className="scenario-card__param-count">
                       {scenario.param_count} parameter
                       {scenario.param_count === 1 ? '' : 's'}
-                    </span>
-                    <span className="scenario-card__tracks">
-                      {scenario.levels
-                        .map((level) => TRACK_LABEL[level] ?? level)
-                        .join(' · ')}
                     </span>
                   </span>
                 </Link>

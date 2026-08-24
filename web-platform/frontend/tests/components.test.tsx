@@ -19,6 +19,7 @@ import { MetricGrid } from '@/components/results/MetricGrid'
 import { ResultTables } from '@/components/results/ResultTables'
 import { toCsv } from '@/components/results/csv'
 import { Callout } from '@/components/ui/Callout'
+import { TrackChip, TrackChips } from '@/components/ui/TrackChip'
 import { TIMES } from '@/formatting/number'
 
 // --------------------------------------------------------------- fixtures
@@ -325,6 +326,58 @@ describe('Callout', () => {
   it('uses role=status for non-urgent notes', () => {
     render(<Callout severity="info">The integrator conserved energy.</Callout>)
     expect(screen.getByRole('status')).toBeInTheDocument()
+  })
+})
+
+describe('TrackChip', () => {
+  it('spells out "Free exploration" rather than a bare "Free"', () => {
+    render(<TrackChip level="free" />)
+    expect(screen.getByText('Free exploration')).toBeInTheDocument()
+    expect(screen.queryByText('Free')).not.toBeInTheDocument()
+  })
+
+  it('labels the guided and professional tracks', () => {
+    render(
+      <>
+        <TrackChip level="guided" />
+        <TrackChip level="professional" />
+      </>,
+    )
+    expect(screen.getByText('Guided')).toBeInTheDocument()
+    expect(screen.getByText('Professional')).toBeInTheDocument()
+  })
+
+  it('gives each track a distinct modifier class, not colour alone', () => {
+    const { container } = render(
+      <>
+        <TrackChip level="guided" />
+        <TrackChip level="professional" />
+        <TrackChip level="free" />
+      </>,
+    )
+    expect(container.querySelector('.track-chip--guided')).not.toBeNull()
+    expect(container.querySelector('.track-chip--professional')).not.toBeNull()
+    expect(container.querySelector('.track-chip--free')).not.toBeNull()
+  })
+
+  it('falls back to the raw level for an unknown track', () => {
+    render(<TrackChip level="mystery" />)
+    expect(screen.getByText('mystery')).toBeInTheDocument()
+  })
+
+  it('renders one chip per level, in the given order', () => {
+    const { container } = render(
+      <TrackChips levels={['professional', 'free']} />,
+    )
+    const chips = container.querySelectorAll('.track-chip')
+    expect(chips).toHaveLength(2)
+    expect(chips[0]).toHaveTextContent('Professional')
+    expect(chips[1]).toHaveTextContent('Free exploration')
+  })
+
+  it('renders nothing for an empty track list', () => {
+    const { container } = render(<TrackChips levels={[]} />)
+    expect(container.querySelector('.track-chips')).toBeNull()
   })
 })
 

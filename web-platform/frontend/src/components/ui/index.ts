@@ -21,6 +21,9 @@ export type { ButtonProps, ButtonSize, ButtonVariant } from './Button'
 export { Badge } from './Badge'
 export type { BadgeProps, BadgeTone } from './Badge'
 
+export { TrackChip, TrackChips } from './TrackChip'
+export type { TrackChipProps, TrackChipsProps } from './TrackChip'
+
 export { Disclosure } from './Disclosure'
 export type { DisclosureProps } from './Disclosure'
 
