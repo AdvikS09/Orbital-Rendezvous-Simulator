@@ -1,0 +1,53 @@
+{
+  "cell": "D4",
+  "split": "dev",
+  "n": 300,
+  "rng": {
+    "entropy": "86935363347966043549250571469551842477",
+    "spawn_key": [
+      4,
+      1
+    ],
+    "bit_generator": "PCG64",
+    "seed_sequence": "numpy.random.SeedSequence"
+  },
+  "run_config": {
+    "cell": "D4",
+    "chief": "circular two-body",
+    "reference": "eci",
+    "crosscheck": "nerm",
+    "models": [
+      "cw",
+      "eci",
+      "nerm"
+    ],
+    "crit": {
+      "pos_tol": 1.0,
+      "vel_tol": 0.01,
+      "dwell": 300.0,
+      "legacy_samples": 2001
+    },
+    "monitor_dt_s": 0.5,
+    "altitude_floor_m": 100000.0,
+    "engine_sha": "25643c68cae0ff3b",
+    "cmd_mode": "sampled",
+    "Ts": 10.0,
+    "phase_s": 0.0,
+    "first_update_s": 0.0,
+    "engine": "cwvalid3.sampled.HeldBatch (DOP853 tableau, fixed step)",
+    "h_main_s": 2.0,
+    "h_naive_s": 0.5,
+    "features": {
+      "A_H": "held memory J_U(s0(t_k)) e(t_k)",
+      "B_H": "-K e(t_k)",
+      "A_naive": "continuous formula on held path",
+      "C_H": "residual only",
+      "sep": "|rho0|",
+      "sat": "fraction of held time with saturated command"
+    }
+  },
+  "manifest_sha256": "a139e727a4157999ef13d2bb18421233ac78df1a7541da7def6b02552e136ad4",
+  "archived_overlap": 0,
+  "written": "2026-10-13 21:43:40",
+  "n_archived_physics_keys_checked": 9194
+}

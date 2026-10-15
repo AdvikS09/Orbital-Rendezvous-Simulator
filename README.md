@@ -21,6 +21,28 @@ reproducible.
 
 ---
 
+## Research engine (validation study code)
+
+The [`research-engine/`](research-engine/) folder is the standalone research codebase behind the CW validation study:
+the CW-versus-non-linear comparison, the calibrated screening of when CW is accurate enough (continuous, held-command
+and LQR variants) and the numerical audits. It's version **v3.1.1**, self-contained, with its own
+[README](research-engine/README.md), tests and pinned requirements.
+
+```bash
+cd research-engine
+python -m venv .venv
+# activate it (Windows: .venv\Scripts\Activate.ps1, macOS/Linux: source .venv/bin/activate), then:
+python -m pip install -r requirements.txt
+python -m pytest -q        # 316 tests; 5 skip without the full data archive
+```
+
+Permanent link to this exact version:
+<https://github.com/AdvikS09/Orbital-Rendezvous-Simulator/tree/research-engine-v3.1.1/research-engine>.
+A ZIP of the same folder is on the
+[release page](https://github.com/AdvikS09/Orbital-Rendezvous-Simulator/releases/tag/research-engine-v3.1.1).
+
+---
+
 ## Contents
 
 1. [The research question](#1-the-research-question)

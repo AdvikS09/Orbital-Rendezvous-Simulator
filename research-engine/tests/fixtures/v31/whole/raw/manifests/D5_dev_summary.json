@@ -1,0 +1,62 @@
+{
+  "cell": "D5",
+  "split": "dev",
+  "n": 300,
+  "rng": {
+    "entropy": "86935363347966043549250571469551842477",
+    "spawn_key": [
+      5,
+      1
+    ],
+    "bit_generator": "PCG64",
+    "seed_sequence": "numpy.random.SeedSequence"
+  },
+  "run_config": {
+    "cell": "D5",
+    "chief": "circular two-body",
+    "reference": "eci",
+    "crosscheck": "nerm",
+    "models": [
+      "cw",
+      "eci",
+      "nerm"
+    ],
+    "crit": {
+      "pos_tol": 1.0,
+      "vel_tol": 0.01,
+      "dwell": 300.0,
+      "legacy_samples": 2001
+    },
+    "monitor_dt_s": 0.5,
+    "altitude_floor_m": 100000.0,
+    "engine_sha": "25643c68cae0ff3b",
+    "cmd_mode": "continuous",
+    "Ts": null,
+    "phase_s": null,
+    "solver": {
+      "method": "DOP853",
+      "rtol": 1e-13,
+      "atol_rel_pos": 1e-10,
+      "atol_rel_vel": 1e-13,
+      "atol_eci_pos": 1e-07,
+      "atol_eci_vel": 1e-10,
+      "atol_dv": 1e-13,
+      "max_step": 20.0,
+      "rk4_dt": null,
+      "sat_events": true,
+      "max_sat_restarts": 2000
+    },
+    "engine": "cwvalid (PD) / cwvalid3.continuous (matrix)",
+    "features": {
+      "A": "d1: e'=(A+B J_U(s0))e+B r, 2 s grid",
+      "B": "d1u: J_U=-K",
+      "C": "cres",
+      "sep": "|rho0|",
+      "sat": "CW saturated time / T"
+    }
+  },
+  "manifest_sha256": "3dcd61aa1b0538a53b31d19bc1e0481251683cc8e3f5d7e1b4b8307c41e661a5",
+  "archived_overlap": 0,
+  "written": "2026-10-13 21:43:45",
+  "n_archived_physics_keys_checked": 9194
+}
