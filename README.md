@@ -1,5 +1,7 @@
 # Orbital Rendezvous Simulator
 
+> For the current research manuscript, use the [CEAS paper guide](research-engine/START_HERE.md). The introduction and numbered sections below describe the older educational platform; they are not the six-cell paper's numerical protocol.
+
 A reproducible Python testbed for **spacecraft rendezvous guidance**, built on
 the **Clohessy–Wiltshire (Hill) relative-motion equations** with a **PD
 controller**, and compared against a **higher-fidelity non-linear orbital model**
@@ -21,25 +23,15 @@ reproducible.
 
 ---
 
-## Research engine (validation study code)
+## CEAS paper and reproducibility
 
-The [`research-engine/`](research-engine/) folder is the standalone research codebase behind the CW validation study:
-the CW-versus-non-linear comparison, the calibrated screening of when CW is accurate enough (continuous, held-command
-and LQR variants) and the numerical audits. It's version **v3.1.1**, self-contained, with its own
-[README](research-engine/README.md), tests and pinned requirements.
+Start with **[the paper guide](research-engine/START_HERE.md)** for *Saturation-Aware Trajectory-Error Screening for Controlled LEO Rendezvous*.
 
-```bash
-cd research-engine
-python -m venv .venv
-# activate it (Windows: .venv\Scripts\Activate.ps1, macOS/Linux: source .venv/bin/activate), then:
-python -m pip install -r requirements.txt
-python -m pytest -q        # 316 tests; 5 skip without the full data archive
-```
+The [`research-engine/`](research-engine/) directory contains the selected scientific engine: continuous PD, held-command PD and CW-LQR comparisons, nominal sensitivity features, frozen conditional-risk calibration and numerical audits. The primary paper uses matched two-body dynamics, SciPy DOP853 for continuous propagation, and full-orbit position-discrepancy targets of 1 m and 0.1 m. Its methods differ from the older educational platform examples below.
 
-Permanent link to this exact version:
-<https://github.com/AdvikS09/Orbital-Rendezvous-Simulator/tree/research-engine-v3.1.1/research-engine>.
-A ZIP of the same folder is on the
-[release page](https://github.com/AdvikS09/Orbital-Rendezvous-Simulator/releases/tag/research-engine-v3.1.1).
+The scientific code remains fixed at tag [`research-engine-v3.1.1`](https://github.com/AdvikS09/Orbital-Rendezvous-Simulator/tree/research-engine-v3.1.1/research-engine), commit `254b07d9abf0ff647f71093ade69fee99e5fb6d1`. The [code release](https://github.com/AdvikS09/Orbital-Rendezvous-Simulator/releases/tag/research-engine-v3.1.1) contains selected regression fixtures, not the full campaign archive. The [paper evidence release](https://github.com/AdvikS09/Orbital-Rendezvous-Simulator/releases/tag/ceas-evidence-2026-10-17) provides [supplementary methods](https://github.com/AdvikS09/Orbital-Rendezvous-Simulator/releases/download/ceas-evidence-2026-10-17/ESM_1.pdf), the [complete archive](https://github.com/AdvikS09/Orbital-Rendezvous-Simulator/releases/download/ceas-evidence-2026-10-17/ESM_2.zip), and [checksums](https://github.com/AdvikS09/Orbital-Rendezvous-Simulator/releases/download/ceas-evidence-2026-10-17/SHA256SUMS.txt). The paper guide explains the tested reproduction commands. Do not interpret the repository-wide test collection as the narrower 151-test follow-up audit.
+
+This documentation update does not change the engine, frozen thresholds or original evidence. Older platform methods remain below; the earlier research-engine README is preserved as [historical documentation](research-engine/docs/historical/README_before_2026-10-17.md).
 
 ---
 
