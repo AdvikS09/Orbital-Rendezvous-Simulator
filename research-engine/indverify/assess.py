@@ -1,25 +1,12 @@
-"""Assessed quantities (SPEC section 8): grids, terminal arrival under the
-production and fine monitoring conventions, peak refinement and saturation
-statistics.  Nothing here knows about the dynamics; everything works on
-sampled values plus a scalar callable for root finding / refinement, so the
-arrival logic can be tested on synthetic g(t) histories.
-"""
-
 import math
 
 import numpy as np
 from scipy.optimize import brentq, minimize_scalar
 
-from .constants import DWELL_REQUIRED_S, GRID_SNAP, PEAK_XATOL
+from .constants import DWELLREQS, GRIDSNAP, PEAKXATOL
 
 
-def time_grid(t_end, dt, snap=GRID_SNAP):
-    """t_k = dt*k for k = 0..floor(t_end/dt), with t_end appended.
-
-    If the last grid point is within ``snap`` of t_end it is replaced by
-    t_end (SPEC section 8, production convention).  Equivalent formulation:
-    all dt*k < t_end - snap, followed by t_end.
-    """
+def timegrid(t_end, dt, snap=GRIDSNAP):
     t_end = float(t_end)
     dt = float(dt)
     if t_end <= 0.0:
@@ -30,11 +17,7 @@ def time_grid(t_end, dt, snap=GRID_SNAP):
     return np.append(base, t_end)
 
 
-def sign_intervals(t, g):
-    """Intervals [t_i, t_i+1] on which the 'inside' flag (g < 0) changes.
-
-    Returns a list of (t_a, t_b, g_a, g_b).  NaN counts as outside.
-    """
+def signivals(t, g):
     t = np.asarray(t, dtype=float)
     g = np.asarray(g, dtype=float)
     if g.size < 2:
@@ -44,8 +27,7 @@ def sign_intervals(t, g):
     return [(float(t[i]), float(t[i + 1]), float(g[i]), float(g[i + 1])) for i in idx]
 
 
-class SignTracker:
-    """Streaming version of :func:`sign_intervals` for chunked sampling."""
+class SignTrack:
 
     def __init__(self):
         self.intervals = []
@@ -63,13 +45,12 @@ class SignTracker:
         else:
             t = np.concatenate(([self._prev[0]], t))
             g = np.concatenate(([self._prev[1]], g))
-        self.intervals.extend(sign_intervals(t, g))
+        self.intervals.extend(signivals(t, g))
         self._prev = (float(t[-1]), float(g[-1]))
         self.last = float(g[-1])
 
 
-class MaxTracker:
-    """Streaming arg-max over a sequence fed in chunks (NaN ignored)."""
+class MaxTrack:
 
     def __init__(self):
         self.value = -math.inf
@@ -86,12 +67,11 @@ class MaxTracker:
         self.count += v.size
 
 
-def locate_root(fun, ta, tb, xtol):
-    """Brent root of ``fun`` on [ta, tb]; midpoint if no sign change."""
+def locateroot(fun, ta, tb, xtol):
     try:
         fa = float(fun(ta))
         fb = float(fun(tb))
-    except Exception:  # noqa: BLE001
+    except Exception:  # an end cannot be evaluated: use the midpoint
         return 0.5 * (ta + tb)
     if not (np.isfinite(fa) and np.isfinite(fb)):
         return 0.5 * (ta + tb)
@@ -107,53 +87,38 @@ def locate_root(fun, ta, tb, xtol):
         return 0.5 * (ta + tb)
 
 
-def assess_arrival(intervals, g_end, gfun, T, completed, xtol, locate_all):
-    """Terminal-arrival assessment (SPEC section 8).
-
-    intervals : sign-change intervals of g on the monitoring grid
-    g_end     : g at the last grid point (= T for a completed branch)
-    gfun      : scalar callable g(t) on the continuous solution
-    locate_all: False -> production convention (only the final entry is
-                located); True -> fine convention (every sign change located).
-    """
-    n_cross = len(intervals)
-    n_entries = sum(1 for iv in intervals if iv[3] < 0.0)
-    roots = [locate_root(gfun, iv[0], iv[1], xtol) for iv in intervals] if locate_all else []
+def assessarr(intervals, g_end, gfun, T, completed, xtol, locateall):
+    ncross = len(intervals)
+    nentries = sum(1 for iv in intervals if iv[3] < 0.0)
+    roots = [locateroot(gfun, iv[0], iv[1], xtol) for iv in intervals] if locateall else []
     out = {"inside_at_end": False, "entry_time_s": math.nan, "dwell_s": math.nan,
-           "dwell_margin_s": math.nan, "arrived": False, "n_crossings": int(n_cross),
-           "n_entries": int(n_entries), "n_exits": int(n_cross - n_entries), "roots": roots}
+           "dwell_margin_s": math.nan, "arrived": False, "n_crossings": int(ncross),
+           "n_entries": int(nentries), "n_exits": int(ncross - nentries), "roots": roots}
     if not completed:
         return out
     inside = bool(g_end < 0.0)
     out["inside_at_end"] = inside
     if not inside:
         return out
-    if n_cross == 0:
+    if ncross == 0:
         entry = 0.0
     else:
-        ta, tb, _, _ = intervals[-1]          # last change is an entry (inside at end)
-        entry = roots[-1] if locate_all else locate_root(gfun, ta, tb, xtol)
+        ta, tb, _, _ = intervals[-1]
+        entry = roots[-1] if locateall else locateroot(gfun, ta, tb, xtol)
     dwell = float(T) - entry
     out.update(entry_time_s=float(entry), dwell_s=float(dwell),
-               dwell_margin_s=float(dwell - DWELL_REQUIRED_S),
-               arrived=bool(dwell >= DWELL_REQUIRED_S))
+               dwell_margin_s=float(dwell - DWELLREQS),
+               arrived=bool(dwell >= DWELLREQS))
     return out
 
 
-def arrival_on_grid(gfun, T, dt, xtol, locate_all, completed=True):
-    """Sample ``gfun`` (vectorised & scalar) on time_grid(T, dt) and assess."""
-    t = time_grid(T, dt)
+def arrgrid(gfun, T, dt, xtol, locateall, completed=True):
+    t = timegrid(T, dt)
     g = np.asarray(gfun(t), dtype=float)
-    return assess_arrival(sign_intervals(t, g), g[-1], gfun, T, completed, xtol, locate_all)
+    return assessarr(signivals(t, g), g[-1], gfun, T, completed, xtol, locateall)
 
 
-def refine_max(fun, t, v, xatol=PEAK_XATOL, k=None, value=None):
-    """Grid maximum of v(t) refined by bounded scalar maximisation of ``fun``
-    within one grid step either side of the grid maximum.
-
-    Returns (peak value, time of peak).  The refined value is accepted only if
-    it exceeds the grid value.
-    """
+def refinemax(fun, t, v, xatol=PEAKXATOL, k=None, value=None):
     t = np.asarray(t, dtype=float)
     if k is None:
         v = np.asarray(v, dtype=float)
@@ -176,13 +141,12 @@ def refine_max(fun, t, v, xatol=PEAK_XATOL, k=None, value=None):
             val = -float(res.fun)
             if np.isfinite(val) and val > best:
                 best, tbest = val, float(res.x)
-        except Exception:  # noqa: BLE001
+        except Exception:  # keep the best grid point if the bounded search fails
             pass
     return best, tbest
 
 
-def saturated_time(roots, saturated_at_start, t_end):
-    """Measure of {t in [0, t_end] : saturated}, given the ordered switch roots."""
+def sattime(roots, saturated_at_start, t_end):
     edges = [0.0] + sorted(float(r) for r in roots) + [float(t_end)]
     total = 0.0
     sat = bool(saturated_at_start)

@@ -1,0 +1,182 @@
+import os
+import sys
+
+import numpy as np
+import pandas as pd
+
+HERE = os.path.dirname(os.path.abspath(__file__))
+sys.path.insert(0, HERE)
+sys.path.insert(0, os.path.dirname(os.path.dirname(HERE)))
+import reportutil as RU
+
+from cwvalid.runner import loadres
+
+PROJ = os.path.dirname(RU.RESULTS)
+PUB = os.path.join(PROJ, "prior_work", "Supplementary", "data")
+BR = os.path.join(RU.RESULTS, "reproduction")
+
+
+def logcross(s, v, level):
+    s, v = np.asarray(s, float), np.asarray(v, float)
+    o = np.argsort(s)
+    s, v = s[o], v[o]
+    for i in range(1, len(s)):
+        if v[i - 1] < level <= v[i]:
+            return float(np.exp(np.log(s[i - 1]) + (np.log(level) - np.log(v[i - 1])) * (np.log(s[i]) - np.log(s[i - 1])) / (np.log(v[i]) - np.log(v[i - 1]))))
+    return float("nan")
+
+
+def bracket(br, axis, wn, am, pred):
+    q = br[(br.meta_axis == axis) & (br.wn_ratio == wn) & (br.a_max == am) & (br.predicate == pred)].sort_values("sep_lo")
+    if q.empty:
+        return "none in 50 m - 50 km"
+    return "; ".join(f"{r.sep_lo/1e3:.3f}-{r.sep_hi/1e3:.3f} km" for r in q.itertuples())
+
+
+def databrack(d, axis, wn, am, col, level, rel=False):
+    q = d[(d.meta_axis == axis) & (d.wn_ratio == wn) & (d.a_max == am)].sort_values("sep_m").drop_duplicates("sep_m")
+    v = q[col] / q.sep_m if rel else q[col]
+    s = q.sep_m.to_numpy()
+    b = (v > level).to_numpy()
+    idx = np.where(b[1:] != b[:-1])[0]
+    if idx.size == 0:
+        return "not reached in 50 m - 50 km"
+    return "; ".join(f"{s[i]/1e3:.3f}-{s[i+1]/1e3:.3f} km" for i in idx)
+
+
+def main():
+    sw = pd.read_csv(os.path.join(PUB, "sepsweep.csv"))
+    cl = sw[(sw["mode"] == "closed_loop") & (sw.force_model == "two-body")]
+    ol = sw[(sw["mode"] == "open_loop") & (sw.force_model == "two-body")]
+    j2 = sw[(sw["mode"] == "closed_loop") & (sw.force_model == "j2_drag")]
+    rob = pd.read_csv(os.path.join(PUB, "robustnesscrossings.csv"))
+    t10 = pd.read_csv(os.path.join(BR, "T10onsets.csv"))
+    s31 = pd.read_csv(os.path.join(BR, "S31aexpm.csv"))
+    s31b = pd.read_csv(os.path.join(BR, "S31bsteps.csv"))
+    fcmp = pd.read_csv(os.path.join(BR, "filecomparison.csv"))
+    fig6 = pd.read_csv(os.path.join(RU.RESULTS, "corrections", "fig6framerate.csv"))
+    brk = pd.read_csv(os.path.join(RU.RESULTS, "maingrid", "refine", "boundarybrackets.csv"))
+    d = pd.concat([loadres(os.path.join(RU.RESULTS, "maingrid", s)) for s in ("grid", "refine")], ignore_index=True)
+    sc = pd.read_csv(os.path.join(RU.RESULTS, "verification", "scaling.csv"))
+    ident = int((fcmp.status == "identical (byte-for-byte)").sum())
+    from cwvalid.experiment import RunCfg, runscen
+    from cwvalid.scenario import axisscen
+    v1km = runscen(axisscen("tab", "+V", 1000.0, 6.0, 0.05), RunCfg(models=("cw", "eci")))[0]["cw_vs_eci_max_pos_disc_m"]
+    D = "cw_vs_eci_max_pos_disc_m"
+    ax = {"radial": "+R", "along-track": "+V", "cross-track": "+H"}
+    rows = []
+
+    import re
+
+    def onsetstatus(pubkm, newtxt, base="reproduced"):
+        m = re.findall(r"([0-9.]+)-([0-9.]+) km", newtxt)
+        if not m or pubkm is None:
+            return base, ""
+        lo, hi = float(m[0][0]), float(m[0][1])
+        mid = 0.5 * (lo + hi)
+        dev = 100 * (pubkm - mid) / mid
+        if abs(dev) <= 3.0:
+            return base, f"published value within {abs(dev):.1f}% of the refined bracket"
+        return "interpolation bias", f"published value {dev:+.1f}% from the refined bracket (coarse log-log interpolation)"
+
+    def add(item, loc, ms, orig, new, status, note=""):
+        rows.append({"item": item, "manuscript": loc, "published value": ms, "original engine (re-run)": orig,
+                     "new pipeline (DOP853, refined)": new, "status": status, "note": note})
+
+    add("Published CSV files regenerated", "Suppl. S2", "13 regenerable files", f"{ident} of 13 byte-identical",
+        "", "reproduced", "THRESHOLD_SENSITIVITY.csv was hand-interpolated (no script); validation_summary.csv needs GMAT")
+    add("Table 4 divergence metric, 1 km along-track, 2001 samples", "Table 4", "2.263 mm", "2.263 mm (identical CSV)",
+        f"{v1km*1e3:.4f} mm (+V 1000 m, production DOP853)", "reproduced", "")
+    add("Table 4 CW RK4 error vs STM, 2001 samples", "Table 4", "3.02e-8 m", "3.02e-8 m (identical CSV)", "", "reproduced")
+    add("Table 5 invariants (energy, h, period)", "Table 5", "1.37e-14, 6.61e-15, 1.34e-13", "1.368e-14, 6.605e-15, 1.336e-13", "", "reproduced")
+    add("Table 2 closed-loop eigenvalues", "Table 2", "|lambda|/n 9.15, 6.08, 3.77; zeta 0.929, 0.986, 0.931",
+        "9.146, 6.083, 3.768; 0.9285, 0.9864, 0.9307 (new script)", "", "reproduced", "no script existed; re-derived")
+    add("Controlled CW vs expm(A-BK), 4001 samples", "Sec. 3.1", "3e-8 m", f"{s31[s31.samples==4001].max_pos_err_m.iloc[0]:.2e} m (case (200,-300,80); original case not recorded)",
+        "", "reproduced", "4th-order convergence confirmed (ratios ~16)")
+    s5 = s31b[s31b.sep_m == 5000.0]
+    add("Step refinement 5 km / 14 km radial, 1001-8001 samples", "Sec. 3.1", "peak and classification unchanged",
+        f"5 km: peak {s5.peak_m.min():.4f}-{s5.peak_m.max():.4f} m (0.5% spread), labels unchanged; 14 km: identical to 9 digits",
+        "RK4 loses 4th order under saturation (verification)", "reproduced", "'unchanged' holds for labels; 5 km peak varies in the third digit")
+    add("Table 6 single case (369 m)", "Table 6", "1591 s, 2.33 m/s, 1.50e-7 m", "identical CSV", "", "reproduced")
+    add("Gain sweep 13/16 converge", "Sec. 3.3", "13/16; 'weakly damped' failures", "identical CSV", "",
+        "inconsistent", "the 3 failing pairs (Kp = 1e-5) are heavily damped, low-stiffness loops, not weakly damped")
+    add("Table 7 open-loop toggles", "Table 7", "2.781/5.813/2.785/5.816 m", "identical CSV", "", "reproduced")
+    add("Fig. 6 J2+drag closed-loop peak (369 m)", "Sec. 3.4", "~1.7 cm",
+        f"{fig6.peak_cw_vs_ref_m.iloc[0]*100:.3f} cm (identical CSV)", f"{fig6.peak_cw_vs_ref_m.iloc[1]*100:.3f} cm with exact LVLH frame rate",
+        "corrected", "baseline omits the out-of-plane frame-rate term under J2/drag (correction log C1)")
+    for name, a in ax.items():
+        oc = logcross(ol[ol.direction == name].sep_m, ol[ol.direction == name].max_traj_diff_m, 1.0)
+        scq = sc[(sc["mode"] == "free drift") & (sc.direction == a)]
+        nc = logcross(scq.sep_m, scq.cw_err_m, 1.0)
+        add(f"Open-loop 1 m crossing, {name}", "Table 8", {"radial": "~95 m", "along-track": "~600 m", "cross-track": "~850 m"}[name],
+            f"{oc:.0f} m (log-log, identical CSV)", f"{nc:.0f} m (free drift vs NERM, 10-point log grid)", "reproduced")
+    for name, a in ax.items():
+        c = logcross(cl[cl.direction == name].sep_m, cl[cl.direction == name].max_traj_diff_m, 1.0)
+        nb = bracket(brk, a, 6.0, 0.05, "disc_gt_1m")
+        st_, nt_ = onsetstatus({"radial": 5.5, "along-track": 7.7, "cross-track": 10.0}[name], nb)
+        if name == "radial":
+            st_, nt_ = "inconsistent", nt_ + "; Table 8/abstract 5.5 km vs 5.40 km from the 12-point data and 5.4 km in Table 12"
+        add(f"Closed-loop 1 m onset, {name} (6n, 0.05)", "Tables 8, 9, 12; abstract",
+            {"radial": "~5.5 km (Table 12: 5.4)", "along-track": "~7.7 km", "cross-track": "~10 km (Table 12: 10.1)"}[name],
+            f"{c/1e3:.2f} km (12-pt log-log)", nb, st_, nt_)
+    for name, a in ax.items():
+        c = logcross(cl[cl.direction == name].sep_m, cl[cl.direction == name].max_traj_diff_m, 0.1)
+        nb = bracket(brk, a, 6.0, 0.05, "disc_gt_0.1m")
+        st_, nt_ = onsetstatus({"radial": 3.0, "along-track": 4.5, "cross-track": 4.8}[name], nb)
+        add(f"0.1 m onset, {name}", "Table 9", {"radial": "3.0 km", "along-track": "4.5 km", "cross-track": "4.8 km"}[name],
+            f"{c/1e3:.2f} km", nb, st_, nt_)
+    for name, a in ax.items():
+        c = logcross(cl[cl.direction == name].sep_m, cl[cl.direction == name].rel_max_diff, 0.01)
+        add(f"1%-of-separation onset, {name}", "Table 9", {"radial": "9.3 km", "along-track": "16 km", "cross-track": "n/a"}[name],
+            f"{c/1e3:.2f} km (interpolates across the arrival jump)" if np.isfinite(c) else "not reached",
+            databrack(d, a, 6.0, 0.05, D, 0.01, rel=True),
+            *(("corrected", "interpolated across the arrival/non-arrival discontinuity; the data bracket lies just below the capture limit")
+              if name in ("radial", "along-track") else ("reproduced", "")))
+    for name, a in ax.items():
+        q = cl[cl.direction == name].sort_values("sep_m")
+        arr = (q.hf_final_pos_err_m < 1.0).to_numpy() & np.isfinite(q.hf_conv_time_s.to_numpy())
+        idx = np.where(arr[1:] != arr[:-1])[0]
+        ob = "; ".join(f"{q.sep_m.iloc[i]/1e3:.1f}-{q.sep_m.iloc[i+1]/1e3:.1f} km" for i in idx) or "none"
+        add(f"First reference non-arrival bracket, {name}", "Table 8", {"radial": "8 to 14 km", "along-track": "14 to 27 km", "cross-track": "not observed up to 50 km"}[name],
+            ob + " (position-only, 12-pt)", "legacy: " + bracket(brk, a, 6.0, 0.05, "nl_legacy") + "; terminal: " + bracket(brk, a, 6.0, 0.05, "nl_terminal"),
+            "reproduced")
+    add("'CW still predicts arrival while the reference fails' beyond the radial onset", "Sec. 3.5", "8-14 km radial",
+        "not supported by saved data: both fail at 14.25 km, both arrive at 7.6 and 12 km", "outcome labels differ only in narrow bands (<0.4% of separation) at the capture limit; see disagreement-band table",
+        "inconsistent")
+    for am in (0.01, 0.05, 0.10):
+        r = t10[t10.a_max == am].iloc[0]
+        nb = bracket(brk, "+R", 6.0, am, "disc_gt_1m")
+        st_, nt_ = onsetstatus({0.01: 2.0, 0.05: 5.5, 0.10: 7.9}[am], nb)
+        add(f"Radial 1 m onset at a_max = {am:g}", "Table 10", {0.01: "~2.0 km", 0.05: "~5.5 km", 0.10: "~7.9 km"}[am],
+            f"{r.onset_refined_m/1e3:.2f} km (re-derived; no script existed)", nb, st_, nt_)
+    for w in (4.0, 6.0, 8.0):
+        rr = rob[(rob.omega_n_over_n == w) & (rob.horizon_orbits == 1.0)].set_index("direction").one_metre_crossing_km
+        pubs = {4.0: (5.9, 9.0, 10.7), 6.0: (5.4, 7.7, 10.1), 8.0: (5.2, 7.0, 9.5)}[w]
+        nbs = [bracket(brk, a, w, 0.05, "disc_gt_1m") for a in ("+R", "+V", "+H")]
+        sts = [onsetstatus(pv, nb) for pv, nb in zip(pubs, nbs)]
+        worst = "interpolation bias" if any(x[0] != "reproduced" for x in sts) else "reproduced"
+        add(f"1 m crossings at wn = {w:g}n (radial/along/cross)", "Table 12",
+            " / ".join(f"{v:g}" for v in pubs) + " km",
+            f"{rr['radial']:.2f} / {rr['along-track']:.2f} / {rr['cross-track']:.2f} km (identical CSV)",
+            " / ".join(nbs), worst, "; ".join(f"{d}: {x[1]}" for d, x in zip(("radial", "along", "cross"), sts)))
+    add("Energy matching: radial 1 m onset 5.5 -> 6.0 km; 12 km divergence 122 -> 16 m", "Sec. 3.6", "5.5 -> 6.0 km; 122 -> 16 m",
+        "identical CSV (5.45 -> 6.02 km; 121.9 -> 15.7 m)", "5.46 -> 6.02 km (first-order and exact matching agree to 0.01 km)", "reproduced",
+        "'order of magnitude' reduction in Discussion is a factor of ~7.8")
+    add("Terminal speed statistics", "Sec. 3.2", "entry 4-50 mm/s; final <= 5.8e-4 m/s; 17/17 agree",
+        "identical CSV", "velocity gate changes the arrival time in 2 of 1758 main-grid reference arrivals", "inconsistent",
+        "cases are a separate 17-case list, not the sweep; gate tested on final speed only")
+    add("J2+drag closed-loop sweep", "Sec. 4 limitation", "'not run across a closed-loop sweep'",
+        f"36 rows exist in sepsweep.csv; 1 m crossings {logcross(j2[j2.direction=='radial'].sep_m, j2[j2.direction=='radial'].max_traj_diff_m, 1)/1e3:.2f} / {logcross(j2[j2.direction=='along-track'].sep_m, j2[j2.direction=='along-track'].max_traj_diff_m, 1)/1e3:.2f} / {logcross(j2[j2.direction=='cross-track'].sep_m, j2[j2.direction=='cross-track'].max_traj_diff_m, 1)/1e3:.2f} km",
+        "affected by the frame-rate defect; see operational study for corrected J2 results", "inconsistent")
+    add("GMAT two-body relative agreement", "Table 11", "< 1 um, 5 geometries", "GMAT not re-executed",
+        f"saved GMAT reports vs direct-LVLH NERM: max {pd.read_csv(os.path.join(RU.RESULTS, 'verification', 'gmatnerm.csv')).gmat_vs_nerm_max_pos_m.max():.2e} m",
+        "unavailable", "independent re-check of saved GMAT output; GMAT validates free propagation only")
+    t = pd.DataFrame(rows)
+    RU.writetable(t, "baselinecomparison", "Baseline reproduction: manuscript values against the unmodified "
+                  "original engine (re-executed at tag baseline-paper-final) and the new adaptive pipeline. "
+                  "Brackets from the refined main grid are 0.5% wide.", "tab:baseline")
+    print(t[["item", "status"]].to_string())
+
+
+if __name__ == "__main__":
+    main()

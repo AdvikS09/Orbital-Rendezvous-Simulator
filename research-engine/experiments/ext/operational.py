@@ -1,39 +1,3 @@
-"""Step 8 - sampled control and perturbation sensitivity with a staged comparison.
-
-For each case in results/operational/cases.json (representative and boundary
-cases chosen from the main-grid analysis) the following branches are run, each
-closing its own loop on its own state:
-
-  key            model  command          force model (target / chaser)
-  cw_cont        CW     continuous       -
-  cw_s1, cw_s10  CW     sampled 1 s/10 s -
-  nl_cont        ECI    continuous       two-body
-  nerm_cont      NERM   continuous       two-body (formulation cross-check)
-  nl_s1, nl_s10  ECI    sampled 1 s/10 s two-body
-  j2_cont        ECI    continuous       J2 (exact LVLH frame rate)
-  j2_cont_base   ECI    continuous       J2 (baseline frame rate, wx = 0)
-  j2d_cont       ECI    continuous       J2 + drag, equal Cd*A/m = 0.022 m^2/kg
-  j2d_lo, j2d_hi ECI    continuous       J2 + drag, chaser A doubled / halved
-                                         (exploratory differential drag)
-  j2d_s10        ECI    sampled 10 s     J2 + drag, equal ballistic coefficients
-
-Spacecraft: Cd = 2.2, A = 1 m^2, m = 100 kg (manuscript Table 3); exponential
-density rho0 = 3.9e-12 kg/m^3 at 400 km, H = 60 km. The 0.5x/2x ballistic
-ratios are an exploratory sensitivity range, not a specific vehicle pair.
-Inclination 51.6 deg; target released at the ascending node.
-
-Staged comparison (peak position difference and terminal outcome):
-  model      : cw_cont vs nl_cont        (two-body model disagreement)
-  pert_J2    : nl_cont vs j2_cont        (effect of J2 omitted from CW)
-  pert_drag  : j2_cont vs j2d_cont       (effect of common-mode drag)
-  diff_drag  : j2d_cont vs j2d_lo/j2d_hi (exploratory differential drag)
-  sampling   : nl_cont vs nl_s1 / nl_s10 (controller sampling, nonlinear)
-  combined   : cw_cont vs j2d_s10        (CW prediction vs most operational branch)
-  frame_fix  : j2_cont vs j2_cont_base   (effect of the baseline wx omission)
-
-Usage: python experiments/ext/operational.py [--workers 7]
-"""
-
 import argparse
 import json
 import os
@@ -48,25 +12,25 @@ ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)
 sys.path.insert(0, ROOT)
 RES = os.path.join(os.path.dirname(ROOT), "results", "operational")
 
-from cwvalid import metrics as M  # noqa: E402
-from cwvalid.control import CommandSpec  # noqa: E402
-from cwvalid.dynamics import InertialForce  # noqa: E402
-from cwvalid.experiment import make_law  # noqa: E402
-from cwvalid.scenario import Scenario  # noqa: E402
-from cwvalid.simulate import EciConfig, SolverConfig, simulate  # noqa: E402
+from cwvalid import metrics as M
+from cwvalid.control import CmdSpec
+from cwvalid.dynamics import InertForce
+from cwvalid.experiment import makelaw
+from cwvalid.scenario import Scenario
+from cwvalid.simulate import EciCfg, SolverCfg, simulate
 
-CRIT = M.OutcomeCriteria()
-SOLVER = SolverConfig()
-B_AREA = 1.0
+CRIT = M.OutcCrit()
+SOLVER = SolverCfg()
+BAREA = 1.0
 
 
 def branches():
-    two = InertialForce()
-    j2 = InertialForce(use_j2=True)
-    j2d = InertialForce(use_j2=True, use_drag=True, area=B_AREA)
-    j2d_hi = InertialForce(use_j2=True, use_drag=True, area=2.0 * B_AREA)
-    j2d_lo = InertialForce(use_j2=True, use_drag=True, area=0.5 * B_AREA)
-    E = lambda ft, fc, exact=True: EciConfig(force_target=ft, force_chaser=fc, exact_frame_rate=exact)
+    two = InertForce()
+    j2 = InertForce(use_j2=True)
+    j2d = InertForce(use_j2=True, use_drag=True, area=BAREA)
+    j2dhi = InertForce(use_j2=True, use_drag=True, area=2.0 * BAREA)
+    j2dlo = InertForce(use_j2=True, use_drag=True, area=0.5 * BAREA)
+    E = lambda ft, fc, exact=True: EciCfg(force_target=ft, force_chaser=fc, exact_frame_rate=exact)
     return {
         "cw_cont": ("cw", "continuous", None, None),
         "cw_s1": ("cw", "sampled", 1.0, None),
@@ -78,8 +42,8 @@ def branches():
         "j2_cont": ("eci", "continuous", None, E(j2, j2)),
         "j2_cont_base": ("eci", "continuous", None, E(j2, j2, exact=False)),
         "j2d_cont": ("eci", "continuous", None, E(j2d, j2d)),
-        "j2d_hi": ("eci", "continuous", None, E(j2d, j2d_hi)),
-        "j2d_lo": ("eci", "continuous", None, E(j2d, j2d_lo)),
+        "j2d_hi": ("eci", "continuous", None, E(j2d, j2dhi)),
+        "j2d_lo": ("eci", "continuous", None, E(j2d, j2dlo)),
         "j2d_s10": ("eci", "sampled", 10.0, E(j2d, j2d)),
     }
 
@@ -92,20 +56,20 @@ STAGES = [("model", "cw_cont", "nl_cont"), ("formulation", "nerm_cont", "nl_cont
           ("frame_fix", "j2_cont", "j2_cont_base"), ("model_s10", "cw_s10", "nl_s10")]
 
 
-def run_case(d):
+def runcase(d):
     scn = Scenario.from_dict(d)
-    law = make_law(scn)
+    law = makelaw(scn)
     T = scn.horizon
-    grid = M.common_grid(T, 0.5)
+    grid = M.commongrid(T, 0.5)
     sims, traces, diag = {}, {}, {}
     for key, (model, mode, Ts, eci) in branches().items():
-        cmd = CommandSpec(mode, law=law, sample_period=Ts)
+        cmd = CmdSpec(mode, law=law, sample_period=Ts)
         t0 = time.perf_counter()
         s = simulate(model, scn.rel0, cmd, T, n=scn.n, R=scn.R, solver=SOLVER, eci=eci)
         sims[key] = s
-        traces[key] = M.make_trace(s, grid)
-        dg = M.branch_diagnostics(s, traces[key], T, CRIT)
-        dg.update(M.legacy_arrival(s, T, CRIT))
+        traces[key] = M.maketrace(s, grid)
+        dg = M.branchdiags(s, traces[key], T, CRIT)
+        dg.update(M.legacyarr(s, T, CRIT))
         dg.update({"status": s.status, "termination": s.termination, "nfev": s.nfev,
                    "wall_s": time.perf_counter() - t0})
         diag[key] = dg
@@ -115,7 +79,7 @@ def run_case(d):
     for key, dg in diag.items():
         rows.append({**base, "kind": "branch", "branch": key, **dg})
     for stage, a, b in STAGES:
-        pdg = M.paired_diagnostics(sims[a], traces[a], sims[b], traces[b], T, CRIT)
+        pdg = M.pairdiags(sims[a], traces[a], sims[b], traces[b], T, CRIT)
         rows.append({**base, "kind": "stage", "stage": stage, "a": a, "b": b,
                      "a_terminal": diag[a]["terminal_arrived"], "b_terminal": diag[b]["terminal_arrived"],
                      "outcome": M.classify(diag[a]["terminal_arrived"], diag[b]["terminal_arrived"]),
@@ -134,18 +98,18 @@ def main():
     ap.add_argument("--workers", type=int, default=7)
     a = ap.parse_args()
     os.makedirs(os.path.join(RES, "histories"), exist_ok=True)
-    cases = json.load(open(os.path.join(RES, "cases.json")))
+    cas = json.load(open(os.path.join(RES, "cases.json")))
     rows = []
     t0 = time.perf_counter()
     with ProcessPoolExecutor(max_workers=a.workers) as ex:
-        for k, r in enumerate(ex.map(run_case, cases)):
+        for k, r in enumerate(ex.map(runcase, cas)):
             rows.extend(r)
             if (k + 1) % 10 == 0:
-                print(f"  {k + 1}/{len(cases)} cases ({time.perf_counter() - t0:.0f}s)", flush=True)
+                print(f"  {k + 1}/{len(cas)} cases ({time.perf_counter() - t0:.0f}s)", flush=True)
     df = pd.DataFrame(rows)
-    df[df.kind == "branch"].dropna(axis=1, how="all").to_csv(os.path.join(RES, "operational_branches.csv"), index=False)
-    df[df.kind == "stage"].dropna(axis=1, how="all").to_csv(os.path.join(RES, "operational_stages.csv"), index=False)
-    print(f"done: {len(cases)} cases in {time.perf_counter() - t0:.0f}s")
+    df[df.kind == "branch"].dropna(axis=1, how="all").to_csv(os.path.join(RES, "branches.csv"), index=False)
+    df[df.kind == "stage"].dropna(axis=1, how="all").to_csv(os.path.join(RES, "stages.csv"), index=False)
+    print(f"done: {len(cas)} cases in {time.perf_counter() - t0:.0f}s")
 
 
 if __name__ == "__main__":

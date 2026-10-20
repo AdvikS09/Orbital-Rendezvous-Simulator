@@ -1,11 +1,34 @@
-# Orbital Rendezvous Research Engine
+# Research engine
 
-**Start with [the CEAS paper guide](START_HERE.md)** for the scientific scope, evidence dependencies and reproduction route.
+Code for *Saturation-Aware Trajectory-Error Screening for Controlled LEO Rendezvous* (Advik Sushanth, CEAS Space Journal manuscript).
 
-This directory contains the code for *Saturation-Aware Trajectory-Error Screening for Controlled LEO Rendezvous*. The study compares nominal CW sensitivity features against matched nonlinear two-body trajectories under continuous PD, held PD (1 s and 10 s) and CW-LQR control, using six cells and frozen conditional-risk selection. It assesses a full-orbit position-discrepancy tolerance of 1 m or 0.1 m. It does not claim a runtime saving or operational safety certification.
+The study compares nominal Clohessy–Wiltshire (CW) sensitivity features with matched nonlinear two-body trajectories under continuous PD, held PD (1 s and 10 s) and CW-LQR control. Frozen screening rules are calibrated in six simulation cells for a full-orbit position tolerance of 1 m or 0.1 m. The study does not claim a runtime saving or an operational safety certificate.
 
-The scientific code selected for the paper is tag `research-engine-v3.1.1`, commit `254b07d9abf0ff647f71093ade69fee99e5fb6d1`. The code tag includes selected regression fixtures. The [paper evidence release](https://github.com/AdvikS09/Orbital-Rendezvous-Simulator/releases/tag/ceas-evidence-2026-10-17) separately provides the [supplementary methods](https://github.com/AdvikS09/Orbital-Rendezvous-Simulator/releases/download/ceas-evidence-2026-10-17/ESM_1.pdf), [complete `ESM_2.zip` archive](https://github.com/AdvikS09/Orbital-Rendezvous-Simulator/releases/download/ceas-evidence-2026-10-17/ESM_2.zip), and [checksums](https://github.com/AdvikS09/Orbital-Rendezvous-Simulator/releases/download/ceas-evidence-2026-10-17/SHA256SUMS.txt). A code download alone is insufficient for the paper's stored-data analyses.
+## Layout
 
-The historical platform introduction, including its older RK4/J2/drag examples, is preserved in [docs/historical/README_before_2026-10-17.md](docs/historical/README_before_2026-10-17.md). Those descriptions are not the methods or acceptance criterion of the present six-cell paper. Existing CW-LQR and held-command modules are part of the selected engine, not planned future additions.
+| Folder | Contents |
+|---|---|
+| `cwvalid/` | CW, quadratic and nonlinear relative dynamics, closed-loop simulation and first-order estimates |
+| `cwvalid3/` | Held-command engine, sensitivity maps, calibration, record contracts and serialization |
+| `indverify/` | Separately coded numerical verifier |
+| `experiments/` | Campaign drivers and analyses: `ext/` and `v2/` for the earlier studies, `v3/` for the calibrated study, `v31/` and `v311/` for the later corrections |
+| `src/` | The earlier platform engine (RK4, J2, drag) used by the historical comparisons |
+| `tests/` | Regression tests, with exact-line fixtures from the stored records |
+| `app.py` | Streamlit dashboard for the earlier platform engine |
 
-This documentation update does not change the scientific engine, selected thresholds, original records or old tag. The accompanying guide distinguishes stored-data reproduction, one-case numerical replay, regression tests and a genuinely new campaign.
+## Running the tests
+
+Python 3.12 or later:
+
+```bash
+python -m pip install -r requirements.txt
+python -m pytest -q
+```
+
+Expect 316 passed and 5 skipped. The skipped tests need the complete data archive next to this folder.
+
+## Data and versions
+
+The stored campaign records, and the scripts that rebuild every table and figure in the paper, are in Online Resource 2 of the paper. The code there is the same as this folder (engine identity `66f0b10a9d842165`).
+
+This folder is a tidied form of the code at tag [`research-engine-v3.1.1`](https://github.com/AdvikS09/Orbital-Rendezvous-Simulator/tree/research-engine-v3.1.1/research-engine) (commit `254b07d9abf0`), which the paper cites. Identifiers, files and folders were renamed and unused code was removed, but the logic is unchanged. The original source stays available at that tag.

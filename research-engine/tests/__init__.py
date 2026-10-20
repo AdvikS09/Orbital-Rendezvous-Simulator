@@ -1,5 +1,3 @@
-"""Test package bootstrap: make the project root importable as ``src``."""
-
 import os
 import sys
 
