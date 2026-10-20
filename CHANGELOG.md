@@ -11,6 +11,26 @@ does not.
 
 ---
 
+## [Unreleased] — repository tidy
+
+### Changed
+
+* `research-engine/` now holds the tidied code supplied with the CEAS paper as
+  Online Resource 2: identifiers, files and folders renamed and unused code
+  removed, with the logic unchanged (engine identity `66f0b10a9d842165`). The
+  code the paper cites stays at tag `research-engine-v3.1.1`.
+
+### Removed
+
+* Development reports: `CURRENT_STATE_AUDIT.md`, `IMPLEMENTATION_REPORT.md`,
+  `MANUAL_REVIEW_CHECKLIST.md`, `docs/IMPLEMENTATION_REPORT.md`,
+  `docs/MANUAL_REVIEW_CHECKLIST.md`, `docs/MIGRATION_INVENTORY.md` and
+  `docs/UI_MIGRATION_REPORT.md`.
+* `old_project_backup/`. The earlier 2D prototype remains in the history at tag
+  `v1.0.0`.
+
+---
+
 ## [2.0.0] — 2026-08-24 — Web platform (React + FastAPI)
 
 A browser platform on a custom stack, replacing the Streamlit presentation
@@ -158,8 +178,7 @@ First release of the pilot platform. **Engine unchanged at 1.1.0** — no file i
 
 ### Added — documentation
 
-`CURRENT_STATE_AUDIT.md`, `IMPLEMENTATION_REPORT.md`,
-`MANUAL_REVIEW_CHECKLIST.md`, `KNOWN_GAPS.md`, and `docs/`: architecture, data
+`KNOWN_GAPS.md` and `docs/`: architecture, data
 dictionary, privacy, deployment, coordinator guide, participant guide,
 troubleshooting.
 
@@ -182,12 +201,6 @@ troubleshooting.
   an over-long horizon being quietly truncated to a fifth of what was requested,
   negative durations returning two samples. All now rejected with an
   explanation. **The engine is unchanged**; the gate sits above it.
-* `old_project_backup/` (22 files, the archived 2D prototype) had been deleted
-  from the working tree but not committed. Restored from `HEAD`.
-* Substantial uncommitted research work (`docs/`, six experiment scripts,
-  `src/collision.py`, `src/external_validation.py`, three test files) committed
-  before any platform work began, where a stray `git clean` would have destroyed
-  it.
 
 ### Explicitly not included
 
@@ -210,9 +223,9 @@ Recorded in `KNOWN_GAPS.md` rather than faked:
 
 ---
 
-## [Engine 1.1.0] — before this work
+## [Engine 1.1.0]
 
-The state audited in `CURRENT_STATE_AUDIT.md`: CW relative motion with a PD
+CW relative motion with a PD
 controller, validated against a non-linear two-body + J2 + drag reference;
 Streamlit MVP (`app.py`); nine experiment scripts; 53 passing tests.
 

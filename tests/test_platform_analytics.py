@@ -16,9 +16,7 @@ from pilot.analytics import EventType, ReportFilters
 from pilot.models import events, feedback, participants, sessions
 
 
-# --------------------------------------------------------------------------
 # Anonymous identity
-# --------------------------------------------------------------------------
 def test_participant_hash_is_stable_for_the_same_codes(pilot_env):
     first = analytics.participant_hash("ORG1", "ALICE01", pilot_env)
     second = analytics.participant_hash("ORG1", "ALICE01", pilot_env)
@@ -61,9 +59,7 @@ def test_the_raw_participant_code_is_never_stored(pilot_env):
     assert rows[0]["participant_ref"] == rows[0]["participant_hash"][:8]
 
 
-# --------------------------------------------------------------------------
 # Sessions and return visits
-# --------------------------------------------------------------------------
 def test_returning_on_the_same_day_is_not_a_return_visit(pilot_env):
     first = analytics.start_session("ORG", "USER1", "student", "1.0", pilot_env)
     second = analytics.start_session("ORG", "USER1", "student", "1.0", pilot_env)
@@ -173,9 +169,7 @@ def test_registered_codes_keep_their_real_organisation(pilot_env):
     assert context.pilot_code_id is not None
 
 
-# --------------------------------------------------------------------------
 # Event recording and the privacy filter
-# --------------------------------------------------------------------------
 def test_record_event_writes_a_row(participant, pilot_env):
     assert analytics.record_event(participant, EventType.SIMULATION_COMPLETED,
                                   scenario_category="relative_motion",
@@ -261,9 +255,7 @@ def test_no_column_can_hold_an_email_or_a_name():
         assert not (columns & forbidden), f"{table.name} exposes {columns & forbidden}"
 
 
-# --------------------------------------------------------------------------
 # Tracks, assessments, feedback
-# --------------------------------------------------------------------------
 def test_set_track_updates_the_session(participant, pilot_env):
     analytics.set_track(participant, "guided", pilot_env)
     assert participant.track == "guided"
@@ -306,9 +298,7 @@ def test_record_feedback_writes_a_row(participant, pilot_env):
     assert rows[0]["usefulness_rating"] == 4
 
 
-# --------------------------------------------------------------------------
 # Metric definitions
-# --------------------------------------------------------------------------
 def _complete_runs(context, count, settings):
     for _ in range(count):
         analytics.record_event(context, EventType.SIMULATION_COMPLETED,

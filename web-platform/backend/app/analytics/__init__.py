@@ -2,7 +2,7 @@
 
 The implementation lives in ``pilot.analytics`` and is shared with the legacy
 Streamlit application, so both record identical events against identical metric
-definitions. This package exists as the seam the brief asks for: if analytics
+definitions. This package is the seam for that: if analytics
 storage is ever swapped (local SQLite in development, PostgreSQL or Supabase in
 production), it is configured behind this boundary rather than at call sites.
 """

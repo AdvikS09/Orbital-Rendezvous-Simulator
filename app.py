@@ -23,9 +23,7 @@ st.set_page_config(page_title="Orbital Rendezvous Engine", page_icon="🛰️", 
 EARTH_R_KM = orbit.R_EARTH / 1000.0
 
 
-# ==========================================================================
 # Plotly figure builders (pure presentation: data in -> go.Figure out)
-# ==========================================================================
 def fig_orbit_3d(states, title="Inertial orbit"):
     p = np.asarray(states)[:, :3] / 1000.0  # km
     fig = go.Figure()
@@ -173,9 +171,7 @@ def fig_lines(times, series, ylabel, title):
     return fig
 
 
-# ==========================================================================
 # Small UI helpers
-# ==========================================================================
 def download_csv(df, filename, key):
     st.download_button("⬇️ Download CSV", df.to_csv(index=False).encode("utf-8"),
                        file_name=filename, mime="text/csv", key=key)
@@ -219,9 +215,7 @@ def run_reset_buttons(prefix):
     return run
 
 
-# ==========================================================================
 # LEARNING MODE presets
-# ==========================================================================
 def preset_basic_orbit():
     p = "basic_"
     st.subheader("Basic circular orbit")
@@ -505,9 +499,7 @@ def learning_mode():
     LEARNING_PRESETS[choice]()
 
 
-# ==========================================================================
 # RESEARCH MODE
-# ==========================================================================
 def research_mode():
     st.header("🔬 Research Mode")
     st.caption("Full control over the initial relative state, orbit, controller, and model.")
@@ -592,9 +584,7 @@ def research_mode():
     download_csv(primary["history"], "research_run.csv", p + "dl")
 
 
-# ==========================================================================
 # EXTERNAL VALIDATION (GMAT / STK)
-# ==========================================================================
 def external_validation_mode():
     p = "ev_"
     st.header("External validation workflow (GMAT / STK)")
@@ -616,7 +606,7 @@ def external_validation_mode():
     st.caption("Tip: two-body or J2-only scenarios match external tools most tightly; drag "
                "models differ between tools, so expect a larger (real) drag mismatch.")
 
-    # --- Step 1: build & export ---
+    # Step 1: build & export
     st.subheader("1 · Build & export a scenario")
     c = st.columns(4)
     alt = c[0].number_input("Altitude [km]", value=400.0, step=25.0, key=p + "alt")
@@ -647,7 +637,7 @@ def external_validation_mode():
                    "then export its ephemeris CSV for step 2.")
 
     st.divider()
-    # --- Step 2: import & compare ---
+    # Step 2: import & compare
     st.subheader("2 · Import external ephemeris & compare")
     if not scen:
         st.warning("Build a scenario first (step 1) so there is something to compare against.")
@@ -707,9 +697,7 @@ def external_validation_mode():
                    "(external interpolated onto the engine's time grid).")
 
 
-# ==========================================================================
 # Main
-# ==========================================================================
 def main():
     st.title("🛰️ Orbital Rendezvous Research Engine")
     st.caption("CW-based rendezvous guidance with a PD controller, validated against a "

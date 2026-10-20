@@ -1,6 +1,6 @@
 # Orbital Rendezvous Simulator
 
-> For the current research manuscript, use the [CEAS paper guide](research-engine/START_HERE.md). The introduction and numbered sections below describe the older educational platform; they are not the six-cell paper's numerical protocol.
+> For the CEAS research manuscript, see [`research-engine/`](research-engine/). The introduction and numbered sections below describe the older educational platform; they are not the paper's numerical protocol.
 
 A reproducible Python testbed for **spacecraft rendezvous guidance**, built on
 the **Clohessy–Wiltshire (Hill) relative-motion equations** with a **PD
@@ -25,13 +25,9 @@ reproducible.
 
 ## CEAS paper and reproducibility
 
-Start with **[the paper guide](research-engine/START_HERE.md)** for *Saturation-Aware Trajectory-Error Screening for Controlled LEO Rendezvous*.
+[`research-engine/`](research-engine/) holds the code for *Saturation-Aware Trajectory-Error Screening for Controlled LEO Rendezvous*: continuous PD, held-command PD and CW-LQR comparisons, nominal sensitivity features, frozen conditional-risk calibration and numerical audits. The paper uses matched two-body dynamics, SciPy DOP853 for continuous propagation and full-orbit position-discrepancy targets of 1 m and 0.1 m, so its methods differ from the older educational platform described below. See [`research-engine/README.md`](research-engine/README.md) for its layout and tests.
 
-The [`research-engine/`](research-engine/) directory contains the selected scientific engine: continuous PD, held-command PD and CW-LQR comparisons, nominal sensitivity features, frozen conditional-risk calibration and numerical audits. The primary paper uses matched two-body dynamics, SciPy DOP853 for continuous propagation, and full-orbit position-discrepancy targets of 1 m and 0.1 m. Its methods differ from the older educational platform examples below.
-
-The scientific code remains fixed at tag [`research-engine-v3.1.1`](https://github.com/AdvikS09/Orbital-Rendezvous-Simulator/tree/research-engine-v3.1.1/research-engine), commit `254b07d9abf0ff647f71093ade69fee99e5fb6d1`. The [code release](https://github.com/AdvikS09/Orbital-Rendezvous-Simulator/releases/tag/research-engine-v3.1.1) contains selected regression fixtures, not the full campaign archive. The [paper evidence release](https://github.com/AdvikS09/Orbital-Rendezvous-Simulator/releases/tag/ceas-evidence-2026-10-17) provides [supplementary methods](https://github.com/AdvikS09/Orbital-Rendezvous-Simulator/releases/download/ceas-evidence-2026-10-17/ESM_1.pdf), the [complete archive](https://github.com/AdvikS09/Orbital-Rendezvous-Simulator/releases/download/ceas-evidence-2026-10-17/ESM_2.zip), and [checksums](https://github.com/AdvikS09/Orbital-Rendezvous-Simulator/releases/download/ceas-evidence-2026-10-17/SHA256SUMS.txt). The paper guide explains the tested reproduction commands. Do not interpret the repository-wide test collection as the narrower 151-test follow-up audit.
-
-This documentation update does not change the engine, frozen thresholds or original evidence. Older platform methods remain below; the earlier research-engine README is preserved as [historical documentation](research-engine/docs/historical/README_before_2026-10-17.md).
+The paper cites the code at tag [`research-engine-v3.1.1`](https://github.com/AdvikS09/Orbital-Rendezvous-Simulator/tree/research-engine-v3.1.1/research-engine) (commit `254b07d9abf0`). The folder on this branch is a tidied form of that code with the same logic. The stored campaign records and the scripts that rebuild every table and figure are supplied with the paper as Online Resource 2; the original archived edition is in the [study-evidence release](https://github.com/AdvikS09/Orbital-Rendezvous-Simulator/releases/tag/ceas-evidence-2026-10-17-r2).
 
 ---
 
@@ -245,11 +241,14 @@ python -m pytest -q                                  # 255 passed
 cd web-platform/backend && python -m pytest -q       # 187 passed
 
 # Web platform frontend
-cd web-platform/frontend && npx vitest run           # 77 passed
+cd web-platform/frontend && npx vitest run           # 83 passed
+
+# Research engine (CEAS paper code)
+cd research-engine && python -m pytest -q            # 316 passed, 5 skipped
 ```
 
-**519 tests in total.** The engine's own tests also run under the standard
-library with nothing extra installed:
+**525 platform tests in total**, plus the research engine's own suite. The platform
+engine's tests also run under the standard library with nothing extra installed:
 
 ```bash
 python -m unittest discover -s tests -p "test_*.py"
@@ -278,7 +277,7 @@ python -m unittest discover -s tests -p "test_*.py"
 | API behaviour | `backend/tests/test_api.py` | 58 |
 | Python/TypeScript formatting parity | `backend/tests/test_formatting_parity.py` | 13 |
 | Number formatting | `frontend/tests/formatting.test.ts` | 44 |
-| Components | `frontend/tests/components.test.tsx` | 24 |
+| Components | `frontend/tests/components.test.tsx` | 30 |
 | Chart traces | `frontend/src/charts/buildTraces.test.ts` | 9 |
 
 Two of these deserve mention. **`test_regression_baseline.py`** pins the
@@ -357,10 +356,10 @@ pilot/              THE PLATFORM - no physics
   ui/               Streamlit pages
 
 experiments/        nine standalone research scripts
-tests/              251 tests
+tests/              255 tests
 docs/               architecture, data dictionary, privacy, deployment, guides
 scripts/            init_db, hash_password, seed_pilot_codes, purge_expired
-old_project_backup/ archived 2D prototype (nothing active imports from it)
+research-engine/    code for the CEAS paper (own README and tests)
 ```
 
 ## 8. Method and conventions
@@ -514,15 +513,8 @@ whose engine outputs have moved cannot be produced.
 
 | Document | For |
 | --- | --- |
-| [docs/MIGRATION_INVENTORY.md](docs/MIGRATION_INVENTORY.md) | Every item of the Streamlit platform and where it went |
 | [docs/ENGINE_PARITY_REPORT.md](docs/ENGINE_PARITY_REPORT.md) | Proof the API returns identical physics |
-| [docs/UI_MIGRATION_REPORT.md](docs/UI_MIGRATION_REPORT.md) | How the interface changed, and why |
-| [docs/IMPLEMENTATION_REPORT.md](docs/IMPLEMENTATION_REPORT.md) | Web migration: files, decisions, bugs found |
-| [docs/MANUAL_REVIEW_CHECKLIST.md](docs/MANUAL_REVIEW_CHECKLIST.md) | Web platform: what to test by hand |
 | [docs/KNOWN_GAPS.md](docs/KNOWN_GAPS.md) | Web platform: what is unfinished or unverified |
-| [CURRENT_STATE_AUDIT.md](CURRENT_STATE_AUDIT.md) | What existed before the platform work, verified by running it |
-| [IMPLEMENTATION_REPORT.md](IMPLEMENTATION_REPORT.md) | What was added, decisions taken, test results |
-| [MANUAL_REVIEW_CHECKLIST.md](MANUAL_REVIEW_CHECKLIST.md) | Every journey to test by hand, with expected outcomes |
 | [KNOWN_GAPS.md](KNOWN_GAPS.md) | Missing, provisional or unverified — read before a real pilot |
 | [CHANGELOG.md](CHANGELOG.md) | Versioned release notes |
 | [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | How it fits together and why |
@@ -547,8 +539,8 @@ The relative-motion and perturbation models follow standard astrodynamics:
 * Curtis, H. D. *Orbital Mechanics for Engineering Students* — two-body dynamics
   and relative motion.
 
-This engine supersedes an earlier 2D prototype, preserved unmodified under
-`old_project_backup/`. Nothing in the active project imports from it.
+This engine supersedes an earlier 2D prototype, which remains in the repository
+history at tag `v1.0.0`.
 
 ### Citation
 

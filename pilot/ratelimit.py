@@ -3,7 +3,7 @@
 The threat model here is *accident*, not attack: a class of thirty students
 holding down a Run button, or someone leaving a wide parameter sweep looping.
 The engine is pure-Python and a single high-fidelity run can occupy a Streamlit
-worker for seconds (see ``CURRENT_STATE_AUDIT.md`` §4.6), so an unbounded run
+worker for seconds, so an unbounded run
 rate will make the app unusable for everyone else on the instance.
 
 Deliberately in-process rather than in the database: the check runs on every Run

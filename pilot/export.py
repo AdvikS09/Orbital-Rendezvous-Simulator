@@ -112,9 +112,7 @@ def config_json(scenario: Scenario, params: dict, app_version: str = "1.0.0") ->
     return json.dumps(scenario_config(scenario, params, app_version), indent=2)
 
 
-# --------------------------------------------------------------------------
 # Result tables
-# --------------------------------------------------------------------------
 def result_tables(result_kind: str, result) -> dict[str, pd.DataFrame]:
     """Extract the downloadable tables from a scenario result bundle.
 

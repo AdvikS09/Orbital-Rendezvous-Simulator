@@ -6,7 +6,7 @@ from src import scenarios as sc
 
 out = {}
 
-# --- 1. Two-body orbit validation (experiment 3, part 1) ---
+# 1. Two-body orbit validation (experiment 3, part 1)
 radius = orbit.DEFAULT_RADIUS
 mu = orbit.MU_EARTH
 period = orbit.orbital_period(radius, mu)
@@ -23,25 +23,25 @@ out["two_body"] = {
     "period_rel_err": float(v["period_rel_err"]),
 }
 
-# --- 2. CW mean motion ---
+# 2. CW mean motion
 n = cw.cw_mean_motion(radius, mu)
 out["mean_motion_rad_s"] = float(n)
 
-# --- 3. CW RK4 vs closed-form STM (integration error) ---
+# 3. CW RK4 vs closed-form STM (integration error)
 t1 = np.linspace(0.0, period, 2001)
 s0 = np.array([1000.0, 0.0, 500.0, 0.0, 0.0, 0.0])
 rk4, _ = cw.propagate_cw(s0, t1, n, None)
 exact = cw.propagate_cw_analytic(s0, t1, n)
 out["cw_rk4_vs_stm_max_err_m"] = float(np.max(np.linalg.norm(rk4[:, :3] - exact[:, :3], axis=1)))
 
-# --- 4. Baseline PD rendezvous (experiment 1 settings) ---
+# 4. Baseline PD rendezvous (experiment 1 settings)
 tr = np.linspace(0.0, period, 1112)   # dt ~= 5 s, as run_cw_rendezvous.py
 ctrl = controller.PDController.critically_damped(6.0 * n, max_accel=0.05)
 rst, rct = cw.propagate_cw(np.array([200.0, -300.0, 80.0, 0.0, 0.0, 0.0]), tr, n, ctrl)
 m = validation.rendezvous_metrics(tr, rst, rct, pos_tol=1.0).iloc[0]
 out["pd_rendezvous"] = {k: float(m[k]) for k in m.index}
 
-# --- 5. CW vs high-fidelity, perturbation toggles (experiment 3, part 3) ---
+# 5. CW vs high-fidelity, perturbation toggles (experiment 3, part 3)
 tt = np.linspace(0.0, period, 1001)
 rel0 = np.array([0.0, 1000.0, 0.0, 0.0, 0.0, 0.0])
 toggles = {}
@@ -56,7 +56,7 @@ for name, fm in [("two_body", perturbations.ForceModel.two_body()),
                      "max_vel_error_mps": float(s["max_vel_error_mps"])}
 out["cw_vs_hf_toggles"] = toggles
 
-# --- 6. Gain sweep corner values ---
+# 6. Gain sweep corner values
 tg = np.linspace(0.0, period, 556)  # dt ~= 10 s
 gs = validation.gain_sweep(np.array([200.0, -300.0, 80.0, 0.0, 0.0, 0.0]), tg, n,
                            [1.0e-5, 4.6e-5, 1.0e-4, 2.0e-4],
@@ -67,7 +67,7 @@ out["gain_sweep_critdamp"] = {k: (None if not np.isfinite(sel[k]) else float(sel
                               for k in ["final_pos_error_m", "convergence_time_s",
                                         "max_control_accel_mps2", "delta_v_mps"]}
 
-# --- 7. Scenario-API level (what the UI actually calls) ---
+# 7. Scenario-API level (what the UI actually calls)
 r = sc.run_cw_rendezvous([200, -300, 80], [0, 0, 0])
 out["api_run_cw_rendezvous"] = {k: float(r["metrics"].iloc[0][k]) for k in r["metrics"].columns}
 o = sc.run_orbit(400.0, 51.6, 2.0)

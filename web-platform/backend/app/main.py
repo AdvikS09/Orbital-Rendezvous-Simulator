@@ -134,9 +134,7 @@ app.include_router(scenario_routes.router, prefix=API_PREFIX)
 app.include_router(pilot_routes.router, prefix=API_PREFIX)
 
 
-# --------------------------------------------------------------------------
 # Error handling: structured messages, never a traceback
-# --------------------------------------------------------------------------
 @app.exception_handler(StarletteHTTPException)
 async def http_exception_handler(_request: Request, exc: StarletteHTTPException):
     """Give raised HTTPExceptions the same shape as every other error.
@@ -212,9 +210,7 @@ async def unhandled_error_handler(_request: Request, exc: Exception):
     )
 
 
-# --------------------------------------------------------------------------
 # Static frontend (production only)
-# --------------------------------------------------------------------------
 if STATIC_DIR.is_dir():
     app.mount(
         "/assets",

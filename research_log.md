@@ -3,8 +3,8 @@
 This log documents the **current 3D orbital rendezvous research engine**:
 CW-based relative-motion guidance with a PD controller, validated against a
 higher-fidelity non-linear orbital model (two-body + J2 + atmospheric drag).
-An earlier 2D prototype has been superseded and is archived (see the final
-section and `old_project_backup/`).
+An earlier 2D prototype has been superseded (see the final section; its code
+is in the repository history at tag `v1.0.0`).
 
 ---
 
@@ -142,11 +142,11 @@ CW-vs-high-fidelity).
 
 ---
 
-## Archived: 2D prototype (superseded — see `old_project_backup/`)
+## Archived: 2D prototype (superseded)
 
 The first iteration was a **planar (2D)** prototype with state `[x, y, vx, vy]`.
-It has been **superseded** by the 3D engine above and is retained only for
-reference under `old_project_backup/`. Its details differ from the current engine
+It has been **superseded** by the 3D engine above and is kept only in the
+repository history (tag `v1.0.0`). Its details differ from the current engine
 and should not be taken as describing it. In brief, the 2D prototype:
 
 * used three integrators (explicit Euler, RK4, and velocity-Verlet) and compared
@@ -159,4 +159,3 @@ and should not be taken as describing it. In brief, the 2D prototype:
 * shipped 20 tests (vs 32 now) and a different set of experiment scripts and
   output files.
 
-Nothing in the active project imports from `old_project_backup/`.

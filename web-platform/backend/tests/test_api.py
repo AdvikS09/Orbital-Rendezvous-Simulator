@@ -23,9 +23,7 @@ def _auth_header(username: str, password: str) -> dict[str, str]:
     return {"Authorization": f"Basic {token}"}
 
 
-# --------------------------------------------------------------------------
 # Packaging: the backend package must not be shadowed
-# --------------------------------------------------------------------------
 def test_app_resolves_to_the_backend_package_not_the_legacy_module():
     """The repository root holds app.py, the legacy Streamlit MVP.
 
@@ -43,9 +41,7 @@ def test_app_resolves_to_the_backend_package_not_the_legacy_module():
     from app.services import catalogue, simulation  # noqa: F401
 
 
-# --------------------------------------------------------------------------
 # Health
-# --------------------------------------------------------------------------
 def test_health_reports_engine_and_database(client):
     response = client.get("/api/v1/health")
     assert response.status_code == 200
@@ -77,9 +73,7 @@ def test_health_never_exposes_the_database_password(monkeypatch, client):
         config.get_settings(refresh=True)
 
 
-# --------------------------------------------------------------------------
 # Catalogue
-# --------------------------------------------------------------------------
 def test_list_scenarios(client):
     body = client.get("/api/v1/scenarios").json()
     assert len(body) == len(SCENARIOS)
@@ -116,9 +110,7 @@ def test_scenario_detail_carries_its_full_content(client, scenario_id):
     assert body["params"]
 
 
-# --------------------------------------------------------------------------
 # Input validation - the silent-wrong-answer cases
-# --------------------------------------------------------------------------
 @pytest.mark.parametrize(
     "params,expect",
     [
@@ -201,9 +193,7 @@ def test_preflight_reports_failure_without_running(client):
     assert body["errors"]
 
 
-# --------------------------------------------------------------------------
 # Sessions and analytics
-# --------------------------------------------------------------------------
 def test_session_requires_consent(client):
     response = client.post(
         "/api/v1/sessions",
@@ -315,9 +305,7 @@ def test_simulation_works_without_a_session(client):
     assert response.status_code == 200
 
 
-# --------------------------------------------------------------------------
 # Rate limiting
-# --------------------------------------------------------------------------
 def test_rate_limit_returns_429(session_client, monkeypatch):
     from pilot import ratelimit
     from pilot.ratelimit import SessionRateLimiter
@@ -339,9 +327,7 @@ def test_rate_limit_returns_429(session_client, monkeypatch):
     ratelimit.reset_limiter()
 
 
-# --------------------------------------------------------------------------
 # Feedback and assessments
-# --------------------------------------------------------------------------
 def test_feedback_requires_a_session(client):
     assert client.post("/api/v1/feedback", json={"usefulness_rating": 4}).status_code == 401
 
@@ -422,9 +408,7 @@ def test_activities_are_served_with_their_steps(client):
             assert len(step["predict_options"]) >= 2
 
 
-# --------------------------------------------------------------------------
 # Exports
-# --------------------------------------------------------------------------
 def test_config_export_is_reproducible_and_clean(client):
     import json
 
@@ -453,9 +437,7 @@ def test_notes_export_carries_assumptions_and_warnings(client):
     assert "NASA" in response.text
 
 
-# --------------------------------------------------------------------------
 # Administrator area
-# --------------------------------------------------------------------------
 def test_admin_refuses_when_no_credentials_are_configured(client):
     response = client.get("/api/v1/admin/report")
     assert response.status_code == 503
@@ -537,9 +519,7 @@ def test_admin_report_never_contains_a_secret(client, admin_auth):
     assert "pbkdf2_sha256$" not in body
 
 
-# --------------------------------------------------------------------------
 # Structured errors from raised HTTPExceptions
-# --------------------------------------------------------------------------
 def test_http_exceptions_carry_an_error_class(client):
     """A 404 must be as machine-readable as any other failure.
 

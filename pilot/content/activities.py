@@ -53,9 +53,7 @@ class Activity:
     review_status: str = "DRAFT - not yet reviewed by a subject teacher"
 
 
-# --------------------------------------------------------------------------
 # Activity 1 -- orbits and what disturbs them
-# --------------------------------------------------------------------------
 ORBITS_AND_PERTURBATIONS = Activity(
     id="orbits_and_perturbations",
     title="What keeps a satellite up, and what pulls it down",
@@ -170,9 +168,7 @@ ORBITS_AND_PERTURBATIONS = Activity(
 )
 
 
-# --------------------------------------------------------------------------
 # Activity 2 -- relative motion
-# --------------------------------------------------------------------------
 RELATIVE_MOTION = Activity(
     id="relative_motion",
     title="Why you cannot just fly straight at another spacecraft",
@@ -266,9 +262,7 @@ RELATIVE_MOTION = Activity(
 )
 
 
-# --------------------------------------------------------------------------
 # Activity 3 -- control and its cost
-# --------------------------------------------------------------------------
 CONTROL_AND_COST = Activity(
     id="control_and_cost",
     title="Flying the rendezvous, and paying for it",

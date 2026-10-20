@@ -28,9 +28,7 @@ def _event_types(settings):
         return [row[0] for row in connection.execute(select(events.c.event_type)).all()]
 
 
-# --------------------------------------------------------------------------
 # Catalogue integrity
-# --------------------------------------------------------------------------
 def test_every_scenario_has_unique_id_and_required_content():
     ids = [scenario.id for scenario in SCENARIOS]
     assert len(ids) == len(set(ids))
@@ -77,9 +75,7 @@ def test_no_scenario_claims_external_validation_as_a_result():
     assert "no such comparison has been run" in blob or "no benchmark result" in blob
 
 
-# --------------------------------------------------------------------------
 # Running scenarios
-# --------------------------------------------------------------------------
 def test_running_a_scenario_records_the_full_event_sequence(participant, pilot_env):
     scenario = get_scenario("pd_rendezvous")
     outcome = run_scenario(scenario, default_params(scenario), participant, pilot_env)
@@ -202,9 +198,7 @@ def test_analytics_detail_holds_only_buckets_not_raw_values(participant, pilot_e
     assert payload["steps_bucket"]
 
 
-# --------------------------------------------------------------------------
 # Every scenario actually runs
-# --------------------------------------------------------------------------
 @pytest.mark.parametrize("scenario_id", [scenario.id for scenario in SCENARIOS])
 def test_every_scenario_runs_with_its_defaults(scenario_id, participant, pilot_env):
     scenario = get_scenario(scenario_id)
@@ -222,9 +216,7 @@ def test_scenario_results_are_deterministic(pilot_env):
     np.testing.assert_array_equal(first["states"], second["states"])
 
 
-# --------------------------------------------------------------------------
 # Rate limiting
-# --------------------------------------------------------------------------
 def test_rate_limiter_allows_up_to_the_burst_limit():
     limiter = SessionRateLimiter(max_per_minute=3, max_per_session=100)
     for _ in range(3):
@@ -289,9 +281,7 @@ def test_rate_limited_runs_are_recorded_and_blocked(participant, pilot_env, monk
     ratelimit.reset_limiter()
 
 
-# --------------------------------------------------------------------------
 # Admin authentication
-# --------------------------------------------------------------------------
 def test_password_hash_roundtrip():
     encoded = auth.hash_password("correct horse battery staple", iterations=1000)
     assert auth.verify_password("correct horse battery staple", encoded)

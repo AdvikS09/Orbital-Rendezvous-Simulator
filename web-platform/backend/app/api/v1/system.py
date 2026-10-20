@@ -91,9 +91,7 @@ def health() -> HealthResponse:
     )
 
 
-# --------------------------------------------------------------------------
 # Exports
-# --------------------------------------------------------------------------
 @router.post(
     "/exports/{scenario_id}/config",
     response_class=PlainTextResponse,
@@ -157,9 +155,7 @@ def export_notes(
     )
 
 
-# --------------------------------------------------------------------------
 # Administration
-# --------------------------------------------------------------------------
 def _filters(
     start: str | None, end: str | None, organisation_id: int | None,
     user_type: str | None, include_demo: bool,

@@ -83,7 +83,6 @@ def main():
     for wratio in bandwidths:
         omega_n = wratio * n
         ctrl = controller.PDController.critically_damped(omega_n, max_accel=a_max)
-        zeta = 1.0  # gains built from critically_damped_gains (open-loop 2nd order)
         for h in horizons:
             N = int(round(2000 * h)) + 1
             times = np.linspace(0.0, h * period, N)

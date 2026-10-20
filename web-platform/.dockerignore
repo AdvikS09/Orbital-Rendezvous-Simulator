@@ -10,7 +10,7 @@ venv
 .github
 outputs
 pilot_data
-old_project_backup
+research-engine
 experiments
 docs
 *.db

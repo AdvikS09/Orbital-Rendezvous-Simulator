@@ -26,7 +26,7 @@ from src import controller, cw, orbit, plotting, validation
 
 
 def main():
-    # --- Scenario configuration (SI units) ---
+    # Scenario configuration (SI units)
     radius = orbit.DEFAULT_RADIUS               # 400 km circular LEO
     n = cw.cw_mean_motion(radius)
     period = orbit.orbital_period(radius)
@@ -46,7 +46,7 @@ def main():
     vel_err = validation.velocity_error_series(states)
     metrics = validation.rendezvous_metrics(times, states, controls, pos_tol=1.0)
 
-    # --- Save data ---
+    # Save data
     history = pd.DataFrame({
         "t_s": times,
         "x_m": states[:, 0], "y_m": states[:, 1], "z_m": states[:, 2],
@@ -63,7 +63,7 @@ def main():
     print(f"omega_n = {omega_n:.4e} rad/s (= {omega_n/n:.1f} n), max_accel = {max_accel} m/s^2\n")
     print(metrics.T.to_string(header=False))
 
-    # --- Figures ---
+    # Figures
     figs = [
         plotting.plot_lvlh_trajectory(
             [("chaser", states)], os.path.join(FIG, "cw_rendezvous_lvlh_trajectory.png"),

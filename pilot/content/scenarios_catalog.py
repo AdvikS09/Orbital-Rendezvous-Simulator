@@ -1,8 +1,8 @@
 """The catalogue of simulation scenarios the platform exposes.
 
 Every entry maps to functionality that **actually exists and is tested** in
-``orbital_core/``. Nothing here is aspirational. Three capabilities implied by the pilot
-brief are deliberately absent, and are recorded in ``KNOWN_GAPS.md`` rather than
+``orbital_core/``. Nothing here is aspirational. Three capabilities a user might expect
+are deliberately absent, and are recorded in ``KNOWN_GAPS.md`` rather than
 faked:
 
 * **GMAT/STK benchmark results** -- the repository contains the *workflow* to
@@ -27,9 +27,7 @@ from orbital_core import orbit
 from orbital_core import scenarios as sc
 
 
-# --------------------------------------------------------------------------
 # Parameter description
-# --------------------------------------------------------------------------
 @dataclass(frozen=True)
 class Param:
     """One user-editable input, rendered generically by the UI."""
@@ -69,9 +67,7 @@ class Scenario:
     extra: dict = field(default_factory=dict)
 
 
-# --------------------------------------------------------------------------
 # Shared parameter fragments
-# --------------------------------------------------------------------------
 ALTITUDE = Param("altitude_km", "Target altitude", "slider", 400.0,
                  200.0, 1200.0, 25.0, "km",
                  "Height above Earth's surface of the target's circular orbit. "
@@ -145,9 +141,7 @@ MASS = Param("mass", "Mass", "number", 100.0, 0.1, 100_000.0, 10.0, "kg",
              "Spacecraft mass. Drag scales with Cd*A/m.", advanced=True)
 
 
-# --------------------------------------------------------------------------
 # Shared assumption / limitation text
-# --------------------------------------------------------------------------
 ENGINE_ASSUMPTIONS = (
     "Fixed-step 4th-order Runge-Kutta integration (no adaptive stepping).",
     "SI units throughout; states are [x, y, z, vx, vy, vz].",
@@ -184,9 +178,7 @@ CONTROLLER_LIMITATIONS = (
 )
 
 
-# --------------------------------------------------------------------------
 # Runners -- thin adapters from a flat parameter dict onto src/scenarios.py
-# --------------------------------------------------------------------------
 def _rel_vectors(p: dict) -> tuple[list, list]:
     return ([p.get("rel_x", 0.0), p.get("rel_y", 0.0), p.get("rel_z", 0.0)],
             [p.get("rel_vx", 0.0), p.get("rel_vy", 0.0), p.get("rel_vz", 0.0)])
@@ -311,9 +303,7 @@ def _run_external_export(p: dict) -> dict:
         use_j2=p.get("use_j2", True), use_drag=p.get("use_drag", False))
 
 
-# --------------------------------------------------------------------------
 # Catalogue
-# --------------------------------------------------------------------------
 CATEGORY_LABELS = {
     "orbit_propagation": "Orbital propagation",
     "relative_motion": "Relative motion and rendezvous",

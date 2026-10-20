@@ -92,9 +92,7 @@ def _api_result(client, scenario_id: str, params: dict) -> dict:
     return response.json()
 
 
-# --------------------------------------------------------------------------
 # Every scenario, at its documented defaults
-# --------------------------------------------------------------------------
 @pytest.mark.parametrize("scenario_id", SCENARIO_IDS)
 def test_scalar_metric_parity(client, scenario_id):
     """Every scalar the API reports equals the engine's value."""
@@ -212,9 +210,7 @@ def test_table_parity(client, scenario_id):
             )
 
 
-# --------------------------------------------------------------------------
 # Units, defaults and derived quantities
-# --------------------------------------------------------------------------
 @pytest.mark.parametrize("scenario_id", SCENARIO_IDS)
 def test_defaults_and_units_match_the_catalogue(client, scenario_id):
     """The API must not silently re-default or relabel a parameter."""
@@ -259,9 +255,7 @@ def test_result_echoes_inputs_with_units(client, scenario_id):
         assert _close(echoed[name]["value"], params[name])
 
 
-# --------------------------------------------------------------------------
 # Conservation metrics, specifically
-# --------------------------------------------------------------------------
 def test_conservation_metrics_match_the_regression_baseline(client):
     """The two-body validation numbers the research publishes still hold."""
     params = {"altitude_km": 400.0, "inclination_deg": 51.6, "n_orbits": 2.0}
@@ -327,9 +321,7 @@ def test_integrator_convergence_reports_fourth_order(client):
     assert 3.6 <= metrics["mean_observed_order"] <= 4.4
 
 
-# --------------------------------------------------------------------------
 # Solver metadata travels with the result
-# --------------------------------------------------------------------------
 @pytest.mark.parametrize("scenario_id", SCENARIO_IDS)
 def test_solver_information_is_reported(client, scenario_id):
     scenario, params, _ = _engine_result(scenario_id)
@@ -359,9 +351,7 @@ def test_assumptions_and_limitations_travel_with_every_result(client, scenario_i
     assert payload["reading_guide"] == (scenario.reading_guide or "")
 
 
-# --------------------------------------------------------------------------
 # Determinism
-# --------------------------------------------------------------------------
 @pytest.mark.parametrize("scenario_id", ["pd_rendezvous", "cw_vs_reference"])
 def test_identical_requests_give_identical_numbers(client, scenario_id):
     """The reproducibility claim in every exported configuration."""
@@ -375,9 +365,7 @@ def test_identical_requests_give_identical_numbers(client, scenario_id):
     ]
 
 
-# --------------------------------------------------------------------------
 # Presentation: no machine notation may reach a participant
-# --------------------------------------------------------------------------
 @pytest.mark.parametrize("scenario_id", SCENARIO_IDS)
 def test_no_interpretation_contains_machine_notation(client, scenario_id):
     """The defect this migration exists to fix.

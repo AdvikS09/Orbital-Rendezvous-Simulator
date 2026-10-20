@@ -2,8 +2,8 @@
 
 What is missing, unverified or provisional in the React + FastAPI platform.
 
-Honest by policy: an item appears here if it is not finished, not tested, or
-needs your judgement. Nothing here is described as complete when it is not.
+An item appears here if it is not finished, not tested, or still an open
+question. Nothing here is described as complete when it is not.
 
 For gaps in the **science and the pilot programme** (educational content review,
 the assessment design, retention scheduling), see the root-level
@@ -22,14 +22,14 @@ import an external ephemeris, compute errors — and the API exposes the export
 half. **No comparison has ever been run.** The scenario, the exports, the
 landing page and the API description all say so explicitly.
 
-Two false claims were found during the migration audit and corrected:
+Two earlier false claims have been corrected:
 
 * `tests/test_control_implementation.py` asserted "GMAT validates the nonlinear
   propagator and the LVLH relative-state reconstruction". It never did.
 * `app.py` described the workflow in the present tense as something that
   "validates the engine's higher-fidelity propagator".
 
-**Requires your judgement.** To claim "benchmarked against NASA GMAT under
+**Open item.** To claim "benchmarked against NASA GMAT under
 matched assumptions", the comparison must actually be run: export a two-body or
 J2-only scenario, reproduce the initial state at full precision in GMAT, match
 the force model and step, export the ephemeris, compare.
@@ -100,7 +100,7 @@ engine is CPU-bound pure Python.
 
 The participant journeys were exercised **by hand** in a browser. There is no
 Playwright or Cypress suite, so a regression in a page-level flow would not be
-caught automatically. Component and API behaviour *are* covered (519 tests).
+caught automatically. Component and API behaviour *are* covered (525 tests).
 
 The Streamlit version has 27 automated journey tests via `AppTest`. The React
 version does not yet have an equivalent.
@@ -150,15 +150,14 @@ The light theme exists for projection and printing and is one control away.
 
 | Item | Why |
 | --- | --- |
-| Streamlit application | **Kept and functional** — the regression reference the brief requires |
+| Streamlit application | **Kept and functional** as the regression reference |
 | `orbital_core/plotting.py` | Matplotlib helpers for experiment scripts; the web app plots client-side |
-| Server-side chart rendering | The brief asks for numeric data with React controlling presentation |
-| `old_project_backup/` | Archived 2D prototype, untouched |
+| Server-side chart rendering | The API returns numeric data and React controls presentation |
 | No-JavaScript fallback | Streamlit required JS too; the engine remains runnable from the command line |
 
 ---
 
-## 5. Needs your judgement
+## 5. Open questions
 
 ### 5.1 Which application is the deployment target
 
