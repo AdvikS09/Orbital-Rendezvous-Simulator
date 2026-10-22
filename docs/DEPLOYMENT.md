@@ -167,8 +167,6 @@ anything. Both print a password-free description of the database.
 | Return visits work | Sign in with the same code tomorrow; return rate rises |
 | No secrets in the repo | `git grep -nE 'PILOT_ADMIN_PASSWORD=|postgres.*:.*@'` |
 
-Then work through [`MANUAL_REVIEW_CHECKLIST.md`](../MANUAL_REVIEW_CHECKLIST.md).
-
 ---
 
 ## 5. Capacity, honestly

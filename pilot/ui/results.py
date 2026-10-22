@@ -22,9 +22,7 @@ from . import figures
 from .common import format_number, show_assumptions_and_limits
 
 
-# --------------------------------------------------------------------------
 # Per-kind renderers
-# --------------------------------------------------------------------------
 def _render_orbit(result) -> None:
     row = result["validation"].iloc[0]
     columns = st.columns(3)
@@ -407,9 +405,7 @@ _RENDERERS = {
 }
 
 
-# --------------------------------------------------------------------------
 # Entry point
-# --------------------------------------------------------------------------
 def render_result(scenario, outcome, params: dict, app_version: str = "1.0.0",
                   on_download=None) -> None:
     """Render one completed run: numbers, plots, reading, caveats, downloads."""

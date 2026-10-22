@@ -34,9 +34,7 @@ _engine_url: str | None = None
 _lock = threading.Lock()
 
 
-# --------------------------------------------------------------------------
 # Engine
-# --------------------------------------------------------------------------
 def _create_engine(settings: Settings) -> Engine:
     url = make_url(settings.database_url)
     kwargs: dict = {"future": True, "pool_pre_ping": True}
@@ -109,9 +107,7 @@ def safe_database_label(settings: Settings | None = None) -> str:
     return f"{backend} ({host}/{database})"
 
 
-# --------------------------------------------------------------------------
 # Migrations
-# --------------------------------------------------------------------------
 def _migration_001_initial(connection) -> None:
     """Create the full initial schema."""
     metadata.create_all(connection, checkfirst=True)

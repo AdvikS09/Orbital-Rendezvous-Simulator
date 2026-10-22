@@ -92,7 +92,7 @@ appearing or disappearing is a failure rather than a coincidence.
 
 ## 4. What was compared, by category
 
-The brief asks specifically about these. Each is covered by a named test.
+Each of these is covered by a named test.
 
 | Category | Covered by | Result |
 | --- | --- | --- |

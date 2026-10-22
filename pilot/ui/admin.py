@@ -28,9 +28,7 @@ from ..config import get_settings
 from ..db import healthcheck, safe_database_label
 
 
-# --------------------------------------------------------------------------
 # Sign-in
-# --------------------------------------------------------------------------
 def _sign_in() -> None:
     st.title("Administrator sign-in")
     settings = get_settings()
@@ -58,9 +56,7 @@ def _sign_in() -> None:
             st.error(result.message, icon="🚫")
 
 
-# --------------------------------------------------------------------------
 # Filters
-# --------------------------------------------------------------------------
 def _filters() -> ReportFilters:
     settings = get_settings()
     st.sidebar.subheader("Report filters")
@@ -113,9 +109,7 @@ def _filters() -> ReportFilters:
                          user_type=user_type, include_demo=include_demo)
 
 
-# --------------------------------------------------------------------------
 # Panels
-# --------------------------------------------------------------------------
 def _headline(filters: ReportFilters) -> dict:
     metrics = analytics.summary_metrics(filters)
 
@@ -401,9 +395,7 @@ def _definitions_text(filters: ReportFilters) -> str:
     ])
 
 
-# --------------------------------------------------------------------------
 # Entry point
-# --------------------------------------------------------------------------
 def admin_dashboard() -> None:
     if not st.session_state.get("admin_authenticated"):
         _sign_in()

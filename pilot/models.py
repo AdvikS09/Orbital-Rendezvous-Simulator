@@ -48,9 +48,7 @@ from sqlalchemy import (
 metadata = MetaData()
 
 
-# --------------------------------------------------------------------------
 # Pilot structure
-# --------------------------------------------------------------------------
 organisations = Table(
     "organisations", metadata,
     Column("id", Integer, primary_key=True, autoincrement=True),
@@ -77,9 +75,7 @@ pilot_codes = Table(
     Column("expires_at", DateTime, nullable=True),
 )
 
-# --------------------------------------------------------------------------
 # Anonymous participants and sessions
-# --------------------------------------------------------------------------
 participants = Table(
     "participants", metadata,
     Column("id", Integer, primary_key=True, autoincrement=True),
@@ -116,9 +112,7 @@ sessions = Table(
     Column("is_demo", Boolean, nullable=False, server_default="0"),
 )
 
-# --------------------------------------------------------------------------
 # Analytics events
-# --------------------------------------------------------------------------
 events = Table(
     "events", metadata,
     Column("id", Integer, primary_key=True, autoincrement=True),
@@ -149,9 +143,7 @@ Index("ix_events_type_date", events.c.event_type, events.c.occurred_date)
 Index("ix_events_participant", events.c.participant_id)
 Index("ix_events_org", events.c.organisation_id)
 
-# --------------------------------------------------------------------------
 # Educational pre/post assessment
-# --------------------------------------------------------------------------
 assessments = Table(
     "assessments", metadata,
     Column("id", Integer, primary_key=True, autoincrement=True),
@@ -174,9 +166,7 @@ assessments = Table(
                      name="uq_assessment_participant_phase"),
 )
 
-# --------------------------------------------------------------------------
 # Feedback
-# --------------------------------------------------------------------------
 feedback = Table(
     "feedback", metadata,
     Column("id", Integer, primary_key=True, autoincrement=True),
@@ -199,9 +189,7 @@ feedback = Table(
     Column("is_demo", Boolean, nullable=False, server_default="0"),
 )
 
-# --------------------------------------------------------------------------
 # Schema versioning
-# --------------------------------------------------------------------------
 schema_migrations = Table(
     "schema_migrations", metadata,
     Column("version", Integer, primary_key=True),

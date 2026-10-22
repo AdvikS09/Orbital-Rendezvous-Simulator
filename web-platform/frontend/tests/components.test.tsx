@@ -22,7 +22,7 @@ import { Callout } from '@/components/ui/Callout'
 import { TrackChip, TrackChips } from '@/components/ui/TrackChip'
 import { TIMES } from '@/formatting/number'
 
-// --------------------------------------------------------------- fixtures
+// fixtures
 function numberParam(overrides: Partial<ParamSpec> = {}): ParamSpec {
   return {
     name: 'altitude_km',
@@ -58,7 +58,7 @@ function metric(overrides: Partial<Metric> = {}): Metric {
   }
 }
 
-// ------------------------------------------------------------- NumberValue
+// NumberValue
 describe('NumberValue', () => {
   it('renders a tiny value as scientific notation, never machine notation', () => {
     render(<NumberValue value={2e-12} fmt="scientific" precision={2} />)
@@ -88,7 +88,7 @@ describe('NumberValue', () => {
   })
 })
 
-// ------------------------------------------------------------------ inputs
+// inputs
 describe('NumberField', () => {
   it('associates its label with the input', () => {
     render(
@@ -221,7 +221,7 @@ describe('ParamPanel', () => {
   })
 })
 
-// ----------------------------------------------------------------- results
+// results
 describe('MetricGrid', () => {
   it('formats a tiny metric as scientific notation', () => {
     render(<MetricGrid metrics={[metric()]} />)
@@ -311,7 +311,7 @@ describe('CSV export', () => {
   })
 })
 
-// -------------------------------------------------------------- accessibility
+// accessibility
 describe('Callout', () => {
   it('announces severity in text, not by colour alone', () => {
     render(<Callout severity="warning">Separation exceeds the characterised range.</Callout>)

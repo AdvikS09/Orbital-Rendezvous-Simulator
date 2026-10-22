@@ -14,7 +14,7 @@ validated path as any other simulation.
 import numpy as np
 import pytest
 
-from pilot.content.activities import ACTIVITIES, ACTIVITIES_BY_ID, get_activity
+from pilot.content.activities import ACTIVITIES, get_activity
 from pilot.content.assessments import (
     INSTRUMENTS,
     ORBITAL_BASICS,
@@ -25,9 +25,7 @@ from pilot.content.scenarios_catalog import default_params, get_scenario
 from pilot.runner import run_scenario, validate_params
 
 
-# --------------------------------------------------------------------------
 # Activity structure
-# --------------------------------------------------------------------------
 def test_activities_have_unique_ids_and_content():
     ids = [activity.id for activity in ACTIVITIES]
     assert len(ids) == len(set(ids))
@@ -81,9 +79,7 @@ def test_activities_are_flagged_as_needing_teacher_review():
         assert "review" in activity.review_status.lower()
 
 
-# --------------------------------------------------------------------------
 # The numbers quoted to learners must be true
-# --------------------------------------------------------------------------
 def test_period_at_1200km_is_about_109_minutes():
     """Activity 1 step 2 tells learners to expect ~109 minutes."""
     from src import orbit
@@ -211,9 +207,7 @@ def test_radial_offset_is_much_worse_than_along_track(pilot_env):
         f"radial {radial_error:.1f} m vs along-track {along_error:.1f} m")
 
 
-# --------------------------------------------------------------------------
 # Assessment instrument
-# --------------------------------------------------------------------------
 def test_instrument_structure():
     for instrument in INSTRUMENTS.values():
         assert instrument.items
@@ -273,9 +267,7 @@ def test_assessment_items_cover_the_activity_topics():
             "modelling"}.issubset(topics)
 
 
-# --------------------------------------------------------------------------
 # Exports
-# --------------------------------------------------------------------------
 def test_scenario_config_is_reproducible_and_clean():
     from pilot.export import config_json, scenario_config
 

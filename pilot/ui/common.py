@@ -51,9 +51,7 @@ STAGES = ("landing", "consent", "entry", "track", "assessment_pre",
           "workspace", "assessment_post", "feedback", "confirmation")
 
 
-# --------------------------------------------------------------------------
 # Session state
-# --------------------------------------------------------------------------
 def init_state() -> None:
     """Seed the session-state keys the flow relies on."""
     defaults = {
@@ -100,9 +98,7 @@ def require_context() -> bool:
     return True
 
 
-# --------------------------------------------------------------------------
 # Layout
-# --------------------------------------------------------------------------
 def page_header(title: str, subtitle: str = "") -> None:
     st.title(title)
     if subtitle:
@@ -196,9 +192,7 @@ def user_type_label(user_type: str) -> str:
     return USER_TYPE_LABELS.get(user_type, "Other")
 
 
-# --------------------------------------------------------------------------
 # Parameter widgets
-# --------------------------------------------------------------------------
 def render_params(scenario, values: dict, key_prefix: str,
                   show_advanced: bool) -> dict:
     """Render a scenario's parameters and return the current values.

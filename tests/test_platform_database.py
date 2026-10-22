@@ -1,6 +1,5 @@
 """Tests for the database layer: migrations, health, and secret handling."""
 
-import pytest
 from sqlalchemy import inspect, select
 
 from pilot import db
@@ -48,7 +47,7 @@ def test_healthcheck_does_not_raise_on_a_bad_url(monkeypatch):
 
     monkeypatch.setenv("DATABASE_URL", "postgresql://user:hunter2@nonexistent.invalid/db")
     db.reset_engine()
-    settings = config.get_settings(refresh=True)
+    config.get_settings(refresh=True)
     try:
         health = db.healthcheck()
         assert health["ok"] is False

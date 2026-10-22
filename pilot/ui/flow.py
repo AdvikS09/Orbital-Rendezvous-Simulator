@@ -17,7 +17,6 @@ from .common import (
     CONSENT_VERSION,
     PRIVACY_SUMMARY,
     STATUS_STATEMENT,
-    TRACK_LABELS,
     VALIDATION_STATEMENT,
     context,
     goto,
@@ -25,9 +24,7 @@ from .common import (
 )
 
 
-# --------------------------------------------------------------------------
 # 1. Landing
-# --------------------------------------------------------------------------
 def landing() -> None:
     page_header(
         "Orbital Rendezvous Simulator",
@@ -109,9 +106,7 @@ def landing() -> None:
             "The next page explains what is recorded and asks your consent.")
 
 
-# --------------------------------------------------------------------------
 # 2. Privacy notice and consent
-# --------------------------------------------------------------------------
 def consent() -> None:
     settings = get_settings()
     page_header("Before you begin",
@@ -174,9 +169,7 @@ def consent() -> None:
         st.caption("You need to tick the box to continue.")
 
 
-# --------------------------------------------------------------------------
 # 3. Participant entry
-# --------------------------------------------------------------------------
 def entry() -> None:
     settings = get_settings()
     page_header("Sign in anonymously",
@@ -265,9 +258,7 @@ def entry() -> None:
     goto("track")
 
 
-# --------------------------------------------------------------------------
 # 4. Track selection
-# --------------------------------------------------------------------------
 def track_selection() -> None:
     participant_context = context()
     page_header("How would you like to use the simulator?",
@@ -322,9 +313,7 @@ def track_selection() -> None:
                 goto("workspace")
 
 
-# --------------------------------------------------------------------------
 # 10. Confirmation
-# --------------------------------------------------------------------------
 def confirmation() -> None:
     page_header("Thank you", "Your session is complete.")
 

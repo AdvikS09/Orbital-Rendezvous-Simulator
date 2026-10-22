@@ -75,7 +75,7 @@ class _BaselineAssertions(unittest.TestCase):
 class TestEngineRegression(_BaselineAssertions):
     """Locks the headline numerical results of the simulation engine."""
 
-    # --- two-body integrator quality -------------------------------------
+    # two-body integrator quality
     def test_two_body_conservation_and_period(self):
         base = BASE["two_body"]
         times = np.linspace(0.0, 2.0 * PERIOD, 4001)
@@ -94,7 +94,7 @@ class TestEngineRegression(_BaselineAssertions):
     def test_mean_motion(self):
         self.assertClose(N, BASE["mean_motion_rad_s"], "mean motion")
 
-    # --- CW integration vs the closed-form solution ----------------------
+    # CW integration vs the closed-form solution
     def test_cw_rk4_matches_state_transition_matrix(self):
         times = np.linspace(0.0, PERIOD, 2001)
         state0 = np.array([1000.0, 0.0, 500.0, 0.0, 0.0, 0.0])
@@ -104,7 +104,7 @@ class TestEngineRegression(_BaselineAssertions):
         self.assertClose(err, BASE["cw_rk4_vs_stm_max_err_m"], "CW RK4 vs STM")
         self.assertLess(err, 1e-6)
 
-    # --- controlled rendezvous -------------------------------------------
+    # controlled rendezvous
     def test_pd_rendezvous_metrics(self):
         base = BASE["pd_rendezvous"]
         times = np.linspace(0.0, PERIOD, 1112)
@@ -115,7 +115,7 @@ class TestEngineRegression(_BaselineAssertions):
         for key, expected in base.items():
             self.assertClose(float(row[key]), expected, f"rendezvous {key}")
 
-    # --- CW vs high-fidelity, per perturbation toggle --------------------
+    # CW vs high-fidelity, per perturbation toggle
     def test_cw_vs_high_fidelity_toggles(self):
         times = np.linspace(0.0, PERIOD, 1001)
         rel0 = np.array([0.0, 1000.0, 0.0, 0.0, 0.0, 0.0])
@@ -145,7 +145,7 @@ class TestEngineRegression(_BaselineAssertions):
         with_drag = BASE["cw_vs_hf_toggles"]["drag"]["max_pos_error_m"]
         self.assertLess(abs(with_drag - two_body), 0.01)
 
-    # --- gain sweep -------------------------------------------------------
+    # gain sweep
     def test_gain_sweep_critically_damped_point(self):
         times = np.linspace(0.0, PERIOD, 556)
         table = validation.gain_sweep(

@@ -28,9 +28,7 @@ class StrictModel(BaseModel):
     model_config = ConfigDict(extra="forbid", populate_by_name=True)
 
 
-# --------------------------------------------------------------------------
 # Presentation hints
-# --------------------------------------------------------------------------
 class NumberFormat(str, Enum):
     """How the frontend should render a value.
 
@@ -86,9 +84,7 @@ class Interpretation(StrictModel):
     title: str | None = None
 
 
-# --------------------------------------------------------------------------
 # Plot metadata
-# --------------------------------------------------------------------------
 class PlotKind(str, Enum):
     LINE = "line"
     SCATTER_3D = "scatter3d"
@@ -149,9 +145,7 @@ class PlotSpec(StrictModel):
     height: int = 380
 
 
-# --------------------------------------------------------------------------
 # Tables
-# --------------------------------------------------------------------------
 class ColumnSpec(StrictModel):
     key: str
     label: str
@@ -172,9 +166,7 @@ class TableSpec(StrictModel):
     downloadable: bool = True
 
 
-# --------------------------------------------------------------------------
 # Provenance
-# --------------------------------------------------------------------------
 class SolverInfo(StrictModel):
     """What actually computed the answer. Shipped with every result and export."""
 
@@ -206,9 +198,7 @@ class ProvenanceInfo(StrictModel):
     licence: str = "MIT"
 
 
-# --------------------------------------------------------------------------
 # Errors
-# --------------------------------------------------------------------------
 class FieldError(StrictModel):
     """A validation failure attributable to one input, so the UI can mark it."""
 

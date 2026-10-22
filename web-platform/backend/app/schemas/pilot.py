@@ -19,9 +19,7 @@ Track = Literal["guided", "professional", "free"]
 Phase = Literal["pre", "post"]
 
 
-# --------------------------------------------------------------------------
 # Sessions
-# --------------------------------------------------------------------------
 class SessionRequest(StrictModel):
     """Start an anonymous session.
 
@@ -63,9 +61,7 @@ class TrackSelection(StrictModel):
     track: Track
 
 
-# --------------------------------------------------------------------------
 # Feedback
-# --------------------------------------------------------------------------
 class FeedbackRequest(StrictModel):
     """One feedback submission.
 
@@ -90,9 +86,7 @@ class Acknowledgement(StrictModel):
     message: str = ""
 
 
-# --------------------------------------------------------------------------
 # Assessments
-# --------------------------------------------------------------------------
 class AssessmentItem(StrictModel):
     id: str
     question: str
@@ -139,9 +133,7 @@ class AssessmentResult(StrictModel):
     caveat: str = ""
 
 
-# --------------------------------------------------------------------------
 # Educational activities
-# --------------------------------------------------------------------------
 class ActivityStepModel(StrictModel):
     id: str
     title: str
@@ -166,9 +158,7 @@ class ActivityModel(StrictModel):
     steps: list[ActivityStepModel]
 
 
-# --------------------------------------------------------------------------
 # Administration
-# --------------------------------------------------------------------------
 class ReportQuery(StrictModel):
     start: str | None = None
     end: str | None = None

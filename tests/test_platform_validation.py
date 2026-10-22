@@ -1,7 +1,7 @@
 """Tests for input validation and the resource safeguards.
 
-Every "silent wrong answer" recorded in CURRENT_STATE_AUDIT.md §4.5 gets a test
-here proving it is now caught before the engine runs.
+Every input that used to give a silently wrong answer gets a test here proving
+it is now caught before the engine runs.
 """
 
 import pytest
@@ -16,9 +16,7 @@ from pilot.validation import (
 )
 
 
-# --------------------------------------------------------------------------
 # The audit's silent-wrong-answer cases
-# --------------------------------------------------------------------------
 def test_negative_altitude_is_rejected():
     """Audit §4.5: this produced an all-NaN trajectory with no error at all."""
     result = validate_simulation_request(altitude_km=-7000.0)
@@ -70,9 +68,7 @@ def test_chaser_exactly_on_target_is_rejected():
     assert any("nothing to simulate" in error for error in result.errors)
 
 
-# --------------------------------------------------------------------------
 # Valid input passes
-# --------------------------------------------------------------------------
 def test_the_published_reference_case_is_accepted():
     result = validate_simulation_request(
         altitude_km=400.0, inclination_deg=51.6, duration_s=5553.62, dt_s=5.0,
@@ -91,9 +87,7 @@ def test_valid_request_predicts_a_cost():
     assert result.estimated_seconds > 0.0
 
 
-# --------------------------------------------------------------------------
 # Warnings (run proceeds, but the result must be read carefully)
-# --------------------------------------------------------------------------
 def test_large_separation_warns_about_cw_validity():
     result = validate_simulation_request(
         altitude_km=400.0, rel_pos=[0.0, 80_000.0, 0.0], duration_s=5553.62, dt_s=5.0)
@@ -127,9 +121,7 @@ def test_very_low_altitude_warns_about_the_atmosphere_model():
     assert any("atmosphere" in warning for warning in result.warnings)
 
 
-# --------------------------------------------------------------------------
 # Resource limits
-# --------------------------------------------------------------------------
 def test_step_budget_is_enforced():
     result = validate_simulation_request(altitude_km=400.0, duration_s=5553.62,
                                          dt_s=0.05, model="cw", max_steps=40_000)
@@ -161,9 +153,7 @@ def test_raise_if_invalid():
     validate_simulation_request(altitude_km=400.0).raise_if_invalid()  # must not raise
 
 
-# --------------------------------------------------------------------------
 # check_number
-# --------------------------------------------------------------------------
 @pytest.mark.parametrize("value", ["abc", None, [1, 2]])
 def test_check_number_rejects_non_numbers(value):
     number, error = check_number(value, "Thing", 0.0, 10.0)
@@ -175,9 +165,7 @@ def test_check_number_reports_the_unit():
     assert "km" in error
 
 
-# --------------------------------------------------------------------------
 # Identity codes
-# --------------------------------------------------------------------------
 def test_participant_code_is_normalised_to_upper_case():
     code, error = validate_participant_code("  alice-01 ")
     assert error is None

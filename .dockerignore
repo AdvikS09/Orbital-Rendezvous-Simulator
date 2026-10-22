@@ -7,7 +7,7 @@ __pycache__
 .pytest_cache
 outputs
 pilot_data
-old_project_backup
+research-engine
 experiments
 docs
 *.db

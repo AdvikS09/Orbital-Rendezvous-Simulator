@@ -7,7 +7,7 @@ Ordered by how much it should affect a decision to use the platform.
 
 ---
 
-## 1. Things the brief asked for that do not exist
+## 1. Capabilities that do not exist
 
 Three capabilities implied by the pilot specification are **not present in this
 repository**. They were checked for specifically, and are documented rather than
@@ -19,7 +19,7 @@ faked.
 
 `src/external_validation.py` provides the *plumbing* for such a comparison —
 export a scenario, import an external tool's ephemeris, compute position and
-velocity error. It has been there since before this work and is well tested
+velocity error. It has been part of the engine from the start and is well tested
 (8 tests). But **no GMAT or STK run has ever been performed**, no external
 ephemeris is committed, and `outputs/` contains no comparison.
 
@@ -32,8 +32,8 @@ as a result. The scenario, the exports, the README and the landing page all say
 explicitly that no benchmark ships with the software, and the project is not
 affiliated with NASA or Ansys/AGI.
 
-**Requires your judgement.** If you want the claim "benchmarked against NASA
-GMAT under matched assumptions", you must actually run the comparison: export a
+**Open item.** The claim "benchmarked against NASA GMAT under matched
+assumptions" needs the comparison to be run: export a
 two-body or J2-only scenario from the platform, reproduce the initial state to
 full precision in GMAT, propagate with a matched force model and step, export the
 ephemeris, and compare. That would be a genuine contribution — and until it is
@@ -44,7 +44,7 @@ done, the claim cannot be made.
 The engine has **one** integrator: fixed-step classical RK4. There is no Euler,
 Verlet, adaptive or symplectic scheme to compare against.
 
-The archived 2D prototype (`old_project_backup/`) did compare Euler, RK4 and
+The earlier 2D prototype (tag `v1.0.0`) did compare Euler, RK4 and
 velocity-Verlet, and used SciPy's adaptive RK45 as truth. That was deliberately
 dropped when the 3D engine standardised on a single deterministic integrator.
 
@@ -60,7 +60,7 @@ bifurcation tooling anywhere in `src/`. Nothing of the kind has been written.
 
 ---
 
-## 2. Needs your scientific judgement
+## 2. Open scientific questions
 
 ### 2.1 The reference model is not ground truth
 
@@ -72,7 +72,7 @@ atmosphere — and, per §1.1, has never been checked against an independent too
 Every number of the form "CW is wrong by 2.78 m" means "CW differs from *this
 engine's* non-linear model by 2.78 m". The platform words it as "the gap between
 the two models" rather than "the error", but a reader may still take it as
-truth. **Whether that framing is adequate for your audience is your call.**
+truth. **Whether that framing suits a given audience is an open question.**
 
 ### 2.2 The drag result is partly an artefact of the setup
 
@@ -301,25 +301,7 @@ must be handled outside this platform.
 
 ---
 
-## 7. Corrected during this work — check nothing was lost
-
-* `old_project_backup/` (22 files, the archived 2D prototype) had been **deleted
-  from the working tree** but not committed. Restored from `HEAD`. **Please
-  confirm you did not intend to delete it.**
-* Substantial uncommitted research work — `docs/`, six experiment scripts,
-  `src/collision.py`, `src/external_validation.py`, three test files — was
-  untracked and one `git clean` from destruction. Committed as `3294749` before
-  any platform work.
-* A stray git repository exists at `<project-root>` — your entire home
-  directory, with no commits and a stale index referencing a
-  `Desktop/Orbital Stability Platform` folder that no longer exists. It is
-  unrelated to this project and was **left untouched**, but it is a hazard:
-  running `git` from a parent directory silently targets it. Consider removing
-  `~/.git` once you have confirmed nothing depends on it.
-
----
-
-## 8. Suggested order of work
+## 7. Suggested order of work
 
 **Before a pilot with real participants**
 

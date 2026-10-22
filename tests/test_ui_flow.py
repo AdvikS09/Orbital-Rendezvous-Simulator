@@ -97,14 +97,12 @@ def _event_types(settings) -> list[str]:
         return [row[0] for row in connection.execute(select(events.c.event_type)).all()]
 
 
-# --------------------------------------------------------------------------
 # 1. Landing
-# --------------------------------------------------------------------------
 def test_landing_renders_with_the_required_disclaimers(app):
     assert not app.exception
     text = _all_text(app)
     assert "Orbital Rendezvous Simulator" in text
-    # The three claims the brief forbids must be explicitly denied.
+    # The three claims the platform must never make are explicitly denied.
     assert "not NASA-approved" in text or "not\nNASA-approved" in text
     assert "flight-certified" in text
     assert "GMAT" in text
@@ -117,9 +115,7 @@ def test_landing_states_the_limitations(app):
     assert "atmosphere" in text.lower() or "drag" in text.lower()
 
 
-# --------------------------------------------------------------------------
 # 2. Consent
-# --------------------------------------------------------------------------
 def test_consent_is_required_before_continuing(app):
     _button(app, "Start").click().run()
     assert "privacy" in _all_text(app).lower() or "consent" in _all_text(app).lower()
@@ -147,9 +143,7 @@ def test_cannot_skip_straight_into_the_flow_without_consent(app):
     assert app.session_state["stage"] == "landing"
 
 
-# --------------------------------------------------------------------------
 # 3. Entry
-# --------------------------------------------------------------------------
 def test_entry_rejects_an_email_shaped_participant_code(app, pilot_env):
     _button(app, "Start").click().run()
     app.checkbox[0].check().run()
@@ -197,9 +191,7 @@ def test_unregistered_pilot_code_is_grouped_not_rejected(app, pilot_env):
     assert app.session_state["context"].organisation_name == "Unregistered pilot code"
 
 
-# --------------------------------------------------------------------------
 # 4. Track selection
-# --------------------------------------------------------------------------
 def test_choosing_the_free_track_records_it(app, pilot_env):
     _sign_in(app)
     _button(app, "Choose free simulation").click().run()
@@ -214,9 +206,7 @@ def test_guided_track_offers_the_pre_assessment_first(app):
     assert app.session_state["stage"] == "assessment_pre"
 
 
-# --------------------------------------------------------------------------
 # 5-7. Running a simulation and downloading results
-# --------------------------------------------------------------------------
 def test_running_a_simulation_records_a_completed_event(app, pilot_env):
     _sign_in(app)
     _button(app, "Choose free simulation").click().run()
@@ -279,9 +269,7 @@ def test_two_runs_count_as_two(app, pilot_env):
     assert _event_types(pilot_env).count(EventType.SIMULATION_COMPLETED) == 2
 
 
-# --------------------------------------------------------------------------
 # 8. Feedback
-# --------------------------------------------------------------------------
 def test_feedback_submission_is_recorded(app, pilot_env):
     _sign_in(app)
     _button(app, "Choose free simulation").click().run()
@@ -314,9 +302,7 @@ def test_feedback_can_be_skipped(app, pilot_env):
     assert app.session_state["stage"] == "confirmation"
 
 
-# --------------------------------------------------------------------------
 # 10. Confirmation
-# --------------------------------------------------------------------------
 def test_confirmation_explains_what_happens_to_feedback(app):
     _sign_in(app)
     _button(app, "Choose free simulation").click().run()
@@ -330,9 +316,7 @@ def test_confirmation_explains_what_happens_to_feedback(app):
     assert "1" in text  # the completed-run count
 
 
-# --------------------------------------------------------------------------
 # Assessments
-# --------------------------------------------------------------------------
 def test_pre_and_post_assessment_are_recorded_and_measured(app, pilot_env):
     from pilot.content.assessments import ORBITAL_BASICS
 
@@ -381,9 +365,7 @@ def test_assessment_can_be_skipped(app):
     assert app.session_state["stage"] == "workspace"
 
 
-# --------------------------------------------------------------------------
 # Guided activity
-# --------------------------------------------------------------------------
 def test_guided_step_requires_a_prediction_before_running(app):
     _sign_in(app)
     _button(app, "Choose guided").click().run()
@@ -413,9 +395,7 @@ def test_guided_step_runs_and_shows_the_takeaway(app, pilot_env):
     assert _event_types(pilot_env).count(EventType.SIMULATION_COMPLETED) == 1
 
 
-# --------------------------------------------------------------------------
 # Administrator area
-# --------------------------------------------------------------------------
 def test_admin_area_requires_a_password(pilot_env):
     instance = _admin_app()
 

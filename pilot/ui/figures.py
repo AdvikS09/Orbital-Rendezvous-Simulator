@@ -48,9 +48,7 @@ def _scene(fig, title, x, y, z, height=520):
     return fig
 
 
-# --------------------------------------------------------------------------
 # Absolute orbits
-# --------------------------------------------------------------------------
 def orbit_3d(states, title="Orbit (Earth-centred inertial frame)"):
     positions = np.asarray(states)[:, :3] / 1000.0
     fig = go.Figure()

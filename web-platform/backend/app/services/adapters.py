@@ -44,9 +44,7 @@ from app.services.formatting import format_scientific
 BLUE, ORANGE, GREEN, PINK, AMBER, SKY, BLACK = range(7)
 
 
-# --------------------------------------------------------------------------
 # Helpers
-# --------------------------------------------------------------------------
 def _clean(value: Any) -> Any:
     """Make a value JSON-safe without changing it.
 
@@ -133,9 +131,7 @@ def _now_iso() -> str:
     return datetime.now(timezone.utc).isoformat(timespec="seconds")
 
 
-# --------------------------------------------------------------------------
 # Per-result-kind builders
-# --------------------------------------------------------------------------
 def _build_orbit(result: dict, series: dict, plots: list, metrics: list,
                  tables: list, interpretations: list) -> None:
     validation = _row_to_dict(result["validation"])
@@ -904,9 +900,7 @@ _BUILDERS = {
 }
 
 
-# --------------------------------------------------------------------------
 # Entry point
-# --------------------------------------------------------------------------
 def build_result(
     scenario: Any,
     params: dict[str, Any],

@@ -1,6 +1,6 @@
 """Input validation and resource safeguards for the simulation boundary.
 
-The audit (``CURRENT_STATE_AUDIT.md`` §4.5) found that the scenario API accepts
+On its own, the scenario API accepts
 inputs that produce **silently wrong answers** rather than errors: a negative
 altitude yields an all-``NaN`` trajectory, an over-long horizon is quietly
 truncated to a fifth of what was asked for, and ``NaN`` inputs propagate to
@@ -27,9 +27,7 @@ from dataclasses import dataclass, field
 
 from orbital_core import orbit
 
-# --------------------------------------------------------------------------
 # Physical and practical limits
-# --------------------------------------------------------------------------
 #: Below ~150 km an object is in the process of re-entering; the exponential
 #: atmosphere in this engine is not calibrated there either.
 MIN_ALTITUDE_KM = 150.0
@@ -68,7 +66,6 @@ MIN_MAX_ACCEL = 1e-6
 MAX_MAX_ACCEL = 10.0
 
 #: Measured cost per RK4 step, used to predict runtime before running.
-#: See CURRENT_STATE_AUDIT.md §4.6 for the measurements these come from.
 SECONDS_PER_STEP = {
     "cw": 6.0e-5,
     "orbit": 6.5e-5,
@@ -96,9 +93,7 @@ class ValidationResult:
             raise ValidationError("; ".join(self.errors))
 
 
-# --------------------------------------------------------------------------
 # Scalar helpers
-# --------------------------------------------------------------------------
 def check_number(value, name: str, minimum: float, maximum: float,
                  unit: str = "") -> tuple[float | None, str | None]:
     """Coerce to float and bounds-check, returning ``(value, error)``.
@@ -141,9 +136,7 @@ def check_vector(values, name: str, limit: float, unit: str) -> tuple[list | Non
     return (out if not errors else None), errors
 
 
-# --------------------------------------------------------------------------
 # The main gate
-# --------------------------------------------------------------------------
 def validate_simulation_request(*, altitude_km=None, inclination_deg=None,
                                 duration_s=None, dt_s=None, n_orbits=None,
                                 rel_pos=None, rel_vel=None, kp=None, kd=None,
@@ -265,7 +258,7 @@ def validate_simulation_request(*, altitude_km=None, inclination_deg=None,
         if error:
             errors.append(error)
 
-    # --- cost prediction ---------------------------------------------------
+    # cost prediction
     n_steps = 0
     if duration is not None and dt is not None and dt > 0:
         n_steps = int(round(duration / dt))
@@ -312,9 +305,7 @@ def _safe_norm(vector) -> float:
         return 0.0
 
 
-# --------------------------------------------------------------------------
 # Identity-code validation
-# --------------------------------------------------------------------------
 MIN_CODE_LENGTH = 3
 MAX_CODE_LENGTH = 40
 

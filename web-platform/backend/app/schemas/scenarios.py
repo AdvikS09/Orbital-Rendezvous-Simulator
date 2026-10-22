@@ -25,9 +25,7 @@ from .common import (
 )
 
 
-# --------------------------------------------------------------------------
 # Parameters
-# --------------------------------------------------------------------------
 class ParamKind(str):
     NUMBER = "number"
     SLIDER = "slider"
@@ -102,9 +100,7 @@ class ScenarioDetail(StrictModel):
     estimated_seconds: float | None = None
 
 
-# --------------------------------------------------------------------------
 # Simulation
-# --------------------------------------------------------------------------
 class SimulationRequest(StrictModel):
     """Parameter values for one run.
 
@@ -177,9 +173,7 @@ class SimulationResult(StrictModel):
     extras: dict[str, Any] = Field(default_factory=dict)
 
 
-# --------------------------------------------------------------------------
 # Health
-# --------------------------------------------------------------------------
 class HealthResponse(BaseModel):
     model_config = ConfigDict(extra="forbid")
 

@@ -56,9 +56,7 @@ from .models import (
 logger = logging.getLogger("pilot.analytics")
 
 
-# --------------------------------------------------------------------------
 # Event vocabulary -- the only event types that may be written
-# --------------------------------------------------------------------------
 class EventType:
     PILOT_ACCESSED = "pilot_accessed"
     CONSENT_GIVEN = "consent_given"
@@ -100,9 +98,7 @@ SAFE_DETAIL_KEYS = frozenset({
 })
 
 
-# --------------------------------------------------------------------------
 # Anonymous identity
-# --------------------------------------------------------------------------
 def participant_hash(pilot_code: str, participant_code: str,
                      settings: Settings | None = None) -> str:
     """Irreversible, salt-keyed identifier for an anonymous participant.
@@ -121,9 +117,7 @@ def new_session_token() -> str:
     return secrets.token_hex(16)
 
 
-# --------------------------------------------------------------------------
 # Identity context passed around the UI
-# --------------------------------------------------------------------------
 @dataclass
 class ParticipantContext:
     """Everything the analytics layer needs to attribute an event."""
@@ -141,9 +135,7 @@ class ParticipantContext:
     pilot_code: str | None = None
 
 
-# --------------------------------------------------------------------------
 # Organisation / pilot-code resolution
-# --------------------------------------------------------------------------
 def resolve_pilot_code(code: str, settings: Settings | None = None):
     """Look up a pilot code. Returns ``(pilot_code_row, organisation_row)``.
 
@@ -221,9 +213,7 @@ def ensure_unlisted_pilot_code(code: str, organisation_id: int,
         ).returning(pilot_codes.c.id)).scalar_one())
 
 
-# --------------------------------------------------------------------------
 # Session start
-# --------------------------------------------------------------------------
 def start_session(pilot_code: str, participant_code: str, user_type: str,
                   consent_version: str, settings: Settings | None = None
                   ) -> ParticipantContext:
@@ -310,9 +300,7 @@ def start_session(pilot_code: str, participant_code: str, user_type: str,
     return context
 
 
-# --------------------------------------------------------------------------
 # Event recording
-# --------------------------------------------------------------------------
 def _sanitise_detail(detail: dict | None, settings: Settings) -> str | None:
     """Drop anything that is not an approved, non-identifying key."""
     if not detail:
@@ -405,9 +393,7 @@ def set_track(context: ParticipantContext, track: str,
                  settings=settings)
 
 
-# --------------------------------------------------------------------------
 # Assessments and feedback
-# --------------------------------------------------------------------------
 def record_assessment(context: ParticipantContext, *, instrument_id: str,
                       instrument_version: str, phase: str, score: int,
                       max_score: int, item_responses: list | None = None,
@@ -506,9 +492,7 @@ def record_feedback(context: ParticipantContext, *,
     return True
 
 
-# --------------------------------------------------------------------------
 # Reporting
-# --------------------------------------------------------------------------
 def _demo_filter(table, include_demo: bool):
     return None if include_demo else (table.c.is_demo == False)  # noqa: E712
 

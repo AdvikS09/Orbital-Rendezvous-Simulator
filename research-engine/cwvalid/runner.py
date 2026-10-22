@@ -1,18 +1,3 @@
-"""Configuration-driven batch runner with checkpoints, resumability and a manifest.
-
-Usage (from the repository root)::
-
-    python -m cwvalid.runner <campaign.json> [--workers 7] [--limit N]
-
-A campaign JSON names an output directory, a scenario list file (JSONL of
-:class:`cwvalid.scenario.Scenario` dicts) and a :class:`RunConfig` override.
-Results are appended one JSON line per scenario to ``results.jsonl`` by the
-parent process only (single writer); completed scenario IDs are skipped on
-restart. Exceptions are captured per scenario and recorded as failed runs in
-``failures.jsonl``; nothing is silently discarded. ``manifest.json`` records
-counts of completed / failed / unexecuted scenarios plus software versions.
-"""
-
 import argparse
 import json
 import math
@@ -26,14 +11,14 @@ from concurrent.futures import ProcessPoolExecutor, as_completed
 import numpy as np
 
 from . import __version__
-from .experiment import RunConfig, run_scenario
-from .metrics import OutcomeCriteria
+from .experiment import RunCfg, runscen
+from .metrics import OutcCrit
 from .scenario import Scenario
-from .simulate import EciConfig, SolverConfig
-from .dynamics import InertialForce
+from .simulate import EciCfg, SolverCfg
+from .dynamics import InertForce
 
 
-def software_versions():
+def softwvers():
     import pandas
     import scipy
     import matplotlib
@@ -44,7 +29,7 @@ def software_versions():
             "cwvalid": __version__}
 
 
-def _jsonable(v):
+def jsonable(v):
     if isinstance(v, (np.floating,)):
         v = float(v)
     if isinstance(v, (np.integer,)):
@@ -56,30 +41,28 @@ def _jsonable(v):
     return v
 
 
-def config_from_dict(d):
+def configdict(d):
     d = dict(d or {})
-    solver = SolverConfig(**d.pop("solver", {}))
-    crit = OutcomeCriteria(**d.pop("crit", {}))
-    eci_d = d.pop("eci", None)
-    eci = EciConfig()
-    if eci_d:
-        eci = EciConfig(inclination=eci_d.get("inclination", eci.inclination),
-                        force_target=InertialForce(**eci_d.get("force_target", {})),
-                        force_chaser=InertialForce(**eci_d.get("force_chaser", {})),
-                        exact_frame_rate=eci_d.get("exact_frame_rate", True))
+    solver = SolverCfg(**d.pop("solver", {}))
+    crit = OutcCrit(**d.pop("crit", {}))
+    ecid = d.pop("eci", None)
+    eci = EciCfg()
+    if ecid:
+        eci = EciCfg(inclination=ecid.get("inclination", eci.inclination),
+                     force_target=InertForce(**ecid.get("force_target", {})),
+                     force_chaser=InertForce(**ecid.get("force_chaser", {})),
+                     exact_frame_rate=ecid.get("exact_frame_rate", True))
     if "models" in d:
         d["models"] = tuple(d["models"])
-    return RunConfig(solver=solver, crit=crit, eci=eci, **d)
+    return RunCfg(solver=solver, crit=crit, eci=eci, **d)
 
 
-def config_hash(cfg_dict):
+def cfghash(cfgdict):
     import hashlib
-    return hashlib.sha256(json.dumps(cfg_dict, sort_keys=True, default=str).encode()).hexdigest()[:16]
+    return hashlib.sha256(json.dumps(cfgdict, sort_keys=True, default=str).encode()).hexdigest()[:16]
 
 
-def _read_jsonl(path, log=print):
-    """Read a JSONL file, skipping (and reporting) unparsable lines such as a
-    partial last line left by an interrupted write."""
+def readjsonl2(path, log=print):
     rows, bad = [], 0
     with open(path) as fh:
         for line in fh:
@@ -96,102 +79,100 @@ def _read_jsonl(path, log=print):
 
 
 def _work(args):
-    scn_d, cfg_d, hist_dir = args
-    scn = Scenario.from_dict(scn_d)
-    cfg = config_from_dict(cfg_d)
-    keep = bool(scn.meta.get("keep_history", False)) and hist_dir is not None
+    scnd, cfgd, histdir = args
+    scn = Scenario.from_dict(scnd)
+    cfg = configdict(cfgd)
+    keep = bool(scn.meta.get("keep_history", False)) and histdir is not None
     stride = int(scn.meta.get("hist_stride", 4))
     t0 = time.perf_counter()
     try:
-        row, hist = run_scenario(scn, cfg, keep_histories=keep, hist_stride=stride)
+        row, hist = runscen(scn, cfg, keep_histories=keep, hist_stride=stride)
         row["run_wall_s"] = time.perf_counter() - t0
-        row["config_hash"] = config_hash(cfg_d)
+        row["config_hash"] = cfghash(cfgd)
         if keep and hist is not None:
-            np.savez_compressed(os.path.join(hist_dir, f"{scn.sid}.npz"), **hist)
+            np.savez_compressed(os.path.join(histdir, f"{scn.sid}.npz"), **hist)
             row["history_file"] = f"{scn.sid}.npz"
-        return {"ok": True, "row": {k: _jsonable(v) for k, v in row.items()}}
+        return {"ok": True, "row": {k: jsonable(v) for k, v in row.items()}}
     except Exception:
         return {"ok": False, "sid": scn.sid, "family": scn.family,
                 "error": traceback.format_exc(), "wall_s": time.perf_counter() - t0}
 
 
-def run_campaign(out_dir, scenarios, cfg_dict, workers=7, limit=None, keep_hist=True, log=print):
+def runcamp(out_dir, scenarios, cfgdict, workers=7, limit=None, keephist=True, log=print):
     os.makedirs(out_dir, exist_ok=True)
-    hist_dir = os.path.join(out_dir, "histories") if keep_hist else None
-    if hist_dir:
-        os.makedirs(hist_dir, exist_ok=True)
-    res_path = os.path.join(out_dir, "results.jsonl")
-    fail_path = os.path.join(out_dir, "failures.jsonl")
+    histdir = os.path.join(out_dir, "histories") if keephist else None
+    if histdir:
+        os.makedirs(histdir, exist_ok=True)
+    respath = os.path.join(out_dir, "results.jsonl")
+    failpath = os.path.join(out_dir, "failures.jsonl")
     done = set()
-    if os.path.exists(res_path):
-        done = {r["sid"] for r in _read_jsonl(res_path, log) if "sid" in r}
-        # make sure the file ends with a newline before appending (interrupted writes)
-        with open(res_path, "rb+") as fh:
+    if os.path.exists(respath):
+        done = {r["sid"] for r in readjsonl2(respath, log) if "sid" in r}
+        with open(respath, "rb+") as fh:
             fh.seek(0, os.SEEK_END)
             if fh.tell() > 0:
                 fh.seek(-1, os.SEEK_END)
                 if fh.read(1) != b"\n":
                     fh.write(b"\n")
-    # configuration guard: refuse to mix settings within one results file
-    h = config_hash(cfg_dict)
-    rc_path = os.path.join(out_dir, "run_config.json")
-    if os.path.exists(rc_path) and done:
-        prev = json.load(open(rc_path))
-        prev_h = prev.get("config_hash") or config_hash(prev.get("config", {}))
-        if prev_h != h:
+    h = cfghash(cfgdict)
+    rcpath = os.path.join(out_dir, "config.json")
+    if os.path.exists(rcpath) and done:
+        prev = json.load(open(rcpath))
+        prevh = prev.get("config_hash") or cfghash(prev.get("config", {}))
+        if prevh != h:
             raise RuntimeError(f"{out_dir}: configuration differs from the one used for existing results "
-                               f"({prev_h} vs {h}); use a new output directory")
-    with open(rc_path, "w") as fh:
-        json.dump({"config": cfg_dict, "config_hash": h, "software": software_versions()}, fh, indent=2, default=str)
-    all_ids = [s["sid"] if isinstance(s, dict) else s.sid for s in scenarios]
-    if len(set(all_ids)) != len(all_ids):
+                               f"({prevh} vs {h}); use a new output directory")
+    with open(rcpath, "w") as fh:
+        json.dump({"config": cfgdict, "config_hash": h, "software": softwvers()}, fh, indent=2, default=str)
+    allids = [s["sid"] if isinstance(s, dict) else s.sid for s in scenarios]
+    if len(set(allids)) != len(allids):
         raise ValueError("duplicate scenario IDs in campaign")
     todo = [s if isinstance(s, dict) else s.to_dict() for s in scenarios]
     todo = [s for s in todo if s["sid"] not in done]
     if limit is not None:
         todo = todo[:limit]
-    log(f"[runner] {out_dir}: {len(all_ids)} scenarios, {len(done)} already done, {len(todo)} to run")
-    n_ok = n_fail = 0
-    t_start = time.perf_counter()
+    log(f"[runner] {out_dir}: {len(allids)} scenarios, {len(done)} already done, {len(todo)} to run")
+    nok = nfail = 0
+    tstart = time.perf_counter()
     if todo:
         with ProcessPoolExecutor(max_workers=workers) as ex, \
-                open(res_path, "a") as fres, open(fail_path, "a") as ffail:
-            futs = [ex.submit(_work, (s, cfg_dict, hist_dir)) for s in todo]
+                open(respath, "a") as fres, open(failpath, "a") as ffail:
+            futs = [ex.submit(_work, (s, cfgdict, histdir)) for s in todo]
             for k, fut in enumerate(as_completed(futs)):
                 r = fut.result()
                 if r["ok"]:
                     fres.write(json.dumps(r["row"]) + "\n")
                     fres.flush()
-                    n_ok += 1
+                    nok += 1
                 else:
                     ffail.write(json.dumps(r) + "\n")
                     ffail.flush()
-                    n_fail += 1
+                    nfail += 1
                 if (k + 1) % 100 == 0:
-                    el = time.perf_counter() - t_start
-                    log(f"[runner] {k + 1}/{len(todo)} done ({n_fail} failed), {el:.0f}s elapsed")
-    write_manifest(out_dir, all_ids)
-    log(f"[runner] finished: {n_ok} ok, {n_fail} failed, {time.perf_counter() - t_start:.1f}s")
-    return n_ok, n_fail
+                    el = time.perf_counter() - tstart
+                    log(f"[runner] {k + 1}/{len(todo)} done ({nfail} failed), {el:.0f}s elapsed")
+    writeman(out_dir, allids)
+    log(f"[runner] finished: {nok} ok, {nfail} failed, {time.perf_counter() - tstart:.1f}s")
+    return nok, nfail
 
 
-def write_manifest(out_dir, all_ids):
-    res_path = os.path.join(out_dir, "results.jsonl")
-    fail_path = os.path.join(out_dir, "failures.jsonl")
+def writeman(out_dir, allids):
+    respath = os.path.join(out_dir, "results.jsonl")
+    failpath = os.path.join(out_dir, "failures.jsonl")
     ok, failed = set(), set()
-    num_fail_rows = set()
-    if os.path.exists(res_path):
-        for r in _read_jsonl(res_path):
+    numrows = set()
+    if os.path.exists(respath):
+        for r in readjsonl2(respath):
             ok.add(r["sid"])
             if r.get("ambiguous") and "numerical_failure" in (r.get("ambiguity_flags") or ""):
-                num_fail_rows.add(r["sid"])
-    if os.path.exists(fail_path):
-        for r in _read_jsonl(fail_path):
+                numrows.add(r["sid"])
+    if os.path.exists(failpath):
+        for r in readjsonl2(failpath):
             failed.add(r["sid"])
     failed -= ok
-    unexec = [s for s in all_ids if s not in ok and s not in failed]
-    man = {"total": len(all_ids), "completed": len(ok), "failed_exception": len(failed),
-           "completed_with_branch_numerical_failure": len(num_fail_rows),
+    unexec = [s for s in allids if s not in ok and s not in failed]
+    man = {"total": len(allids), "completed": len(ok), "failed_exception": len(failed),
+           "completed_with_branch_numerical_failure": len(numrows),
            "unexecuted": len(unexec), "failed_ids": sorted(failed), "unexecuted_ids": unexec,
            "written": time.strftime("%Y-%m-%d %H:%M:%S")}
     with open(os.path.join(out_dir, "manifest.json"), "w") as fh:
@@ -199,9 +180,9 @@ def write_manifest(out_dir, all_ids):
     return man
 
 
-def load_results(out_dir):
+def loadres(out_dir):
     import pandas as pd
-    rows = _read_jsonl(os.path.join(out_dir, "results.jsonl"))
+    rows = readjsonl2(os.path.join(out_dir, "results.jsonl"))
     df = pd.DataFrame(rows)
     return df.replace({"inf": np.inf, "-inf": -np.inf})
 
@@ -214,11 +195,11 @@ def main(argv=None):
     a = ap.parse_args(argv)
     camp = json.load(open(a.campaign))
     base = os.path.dirname(os.path.abspath(a.campaign))
-    out_dir = os.path.join(base, camp["out_dir"]) if not os.path.isabs(camp["out_dir"]) else camp["out_dir"]
-    scen_file = os.path.join(base, camp["scenarios"]) if not os.path.isabs(camp["scenarios"]) else camp["scenarios"]
-    scenarios = [json.loads(l) for l in open(scen_file) if l.strip()]
-    run_campaign(out_dir, scenarios, camp.get("config", {}), workers=a.workers, limit=a.limit,
-                 keep_hist=camp.get("keep_histories", True))
+    outdir = os.path.join(base, camp["out_dir"]) if not os.path.isabs(camp["out_dir"]) else camp["out_dir"]
+    scenfile = os.path.join(base, camp["scenarios"]) if not os.path.isabs(camp["scenarios"]) else camp["scenarios"]
+    scen = [json.loads(l) for l in open(scenfile) if l.strip()]
+    runcamp(outdir, scen, camp.get("config", {}), workers=a.workers, limit=a.limit,
+            keephist=camp.get("keep_histories", True))
 
 
 if __name__ == "__main__":

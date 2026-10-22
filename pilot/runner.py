@@ -148,7 +148,7 @@ def run_scenario(scenario: Scenario, params: dict,
     """
     settings = settings or get_settings()
 
-    # --- 1. validate -------------------------------------------------------
+    # 1. validate
     validation = validate_params(scenario, params, settings)
     if not validation.ok:
         if context is not None:
@@ -164,7 +164,7 @@ def run_scenario(scenario: Scenario, params: dict,
                           warnings=validation.warnings, n_steps=validation.n_steps,
                           error_class="ValidationError", rejected=True)
 
-    # --- 2. rate limit -----------------------------------------------------
+    # 2. rate limit
     if context is not None:
         decision = get_limiter().consume(context.session_token)
         if not decision.allowed:
@@ -182,7 +182,7 @@ def run_scenario(scenario: Scenario, params: dict,
 
     detail = _safe_detail(scenario, params, validation)
 
-    # --- 3. run ------------------------------------------------------------
+    # 3. run
     if context is not None:
         record_event(context, EventType.SIMULATION_STARTED,
                      scenario_category=scenario.category, scenario_id=scenario.id,
@@ -211,7 +211,7 @@ def run_scenario(scenario: Scenario, params: dict,
 
     elapsed_ms = int((time.perf_counter() - started) * 1000)
 
-    # --- 4. record success -------------------------------------------------
+    # 4. record success
     if context is not None:
         record_event(context, EventType.SIMULATION_COMPLETED,
                      scenario_category=scenario.category, scenario_id=scenario.id,

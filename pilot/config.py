@@ -74,37 +74,37 @@ def _default_database_url() -> str:
 class Settings:
     """Resolved platform configuration."""
 
-    # --- environment ---
+    # environment
     environment: str = "development"
     app_version: str = "1.0.0"
 
-    # --- database ---
+    # database
     database_url: str = ""
     database_url_is_default: bool = True
 
-    # --- privacy / identity ---
+    # privacy / identity
     participant_salt: str = ""
     participant_salt_is_ephemeral: bool = True
     log_raw_parameters: bool = False
     retention_days: int = 730
 
-    # --- admin ---
+    # admin
     admin_username: str = ""
     admin_password: str = ""
     admin_password_hash: str = ""
     admin_max_attempts: int = 5
 
-    # --- safeguards ---
+    # safeguards
     max_runs_per_session: int = 300
     max_runs_per_minute: int = 20
     max_simulation_steps: int = 40_000
     max_estimated_seconds: float = 20.0
 
-    # --- pilot behaviour ---
+    # pilot behaviour
     require_known_pilot_code: bool = False
     open_pilot_codes: tuple = field(default_factory=tuple)
 
-    # ---------------------------------------------------------------- helpers
+    # helpers
     @property
     def is_production(self) -> bool:
         return self.environment == "production"
