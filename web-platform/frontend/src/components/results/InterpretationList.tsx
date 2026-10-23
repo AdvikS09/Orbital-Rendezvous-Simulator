@@ -1,32 +1,10 @@
-/**
- * What the numbers mean, in the engine's own words.
- *
- * Interpretations arrive as short passages of text carrying a severity. They
- * are the part of a result that stops a figure being read as more certain than
- * it is, so they sit directly under the metrics rather than at the bottom of
- * the page.
- *
- * The text contains a deliberately tiny subset of Markdown: `**bold**`,
- * `*italic*`, and blank-line paragraph breaks. Nothing else is interpreted.
- * The renderer below builds React elements, so every other character reaches
- * the DOM as a text node and is escaped by React. There is no
- * `dangerouslySetInnerHTML` here and there must never be: the text is written
- * by the engine today, but a renderer that trusts its input is a hole waiting
- * for the day some of that text comes from a user-supplied scenario name.
- */
-
 import type { ReactNode } from 'react'
 import type { Interpretation } from '@/api/types'
 import { Callout } from '@/components/ui/Callout'
 import './InterpretationList.css'
 
-/**
- * Bold before italic, so `**text**` is never mistaken for an empty emphasis
- * followed by a stray asterisk. Italic spans do not cross a line break.
- */
 const INLINE_PATTERN = /\*\*([\s\S]+?)\*\*|\*([^*\n]+?)\*/g
 
-/** Inline emphasis only. Everything unmatched is returned as plain text. */
 export function renderInlineMarkdown(text: string): ReactNode[] {
   const nodes: ReactNode[] = []
   const pattern = new RegExp(INLINE_PATTERN.source, 'g')
@@ -57,17 +35,9 @@ export function renderInlineMarkdown(text: string): ReactNode[] {
 }
 
 export interface MarkdownOptions {
-  /** Class applied to each paragraph. */
   className?: string
 }
 
-/**
- * Blank-line separated paragraphs with inline emphasis.
- *
- * A single newline inside a paragraph is treated as a space, which is how
- * Markdown itself treats it, and keeps hard-wrapped source text from arriving
- * on screen with the wrapping baked in.
- */
 export function renderMarkdown(
   text: string | null | undefined,
   options: MarkdownOptions = {},
@@ -89,7 +59,6 @@ export function renderMarkdown(
 
 export interface InterpretationListProps {
   interpretations: Interpretation[]
-  /** Optional visible heading above the group. */
   title?: string
   headingLevel?: 2 | 3 | 4
 }

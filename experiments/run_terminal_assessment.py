@@ -1,30 +1,3 @@
-"""Terminal position AND velocity assessment.
-
-The main study classifies an approach by position only ("sustained position
-arrival": the relative position stays within 1 m for the rest of the orbit).
-A rendezvous assessment should also report the relative velocity, because a
-position gate alone does not distinguish a controlled arrival from a high-speed
-pass through the 1 m ball.
-
-For representative cases (the three offset directions at separations spanning the
-converging regime, the onset, and the non-arrival regime) this script extracts,
-from the nonlinear-reference closed loop (the physically meaningful trajectory):
-
-  * relative speed at first 1 m entry;
-  * final relative speed;
-  * maximum relative speed while inside the 1 m ball;
-  * closest approach;
-  * position-only classification (sustained arrival) and a combined
-    position-and-velocity classification for two illustrative terminal-speed
-    gates (0.10 and 0.05 m/s, order-of-magnitude docking contact values from
-    Fehse, Automated Rendezvous and Docking of Spacecraft, 2003).
-
-Output (project root):
-  TERMINAL_POSITION_VELOCITY_ASSESSMENT.csv
-
-Run:  python experiments/run_terminal_assessment.py
-"""
-
 import os
 import sys
 
@@ -52,7 +25,7 @@ def main():
     fm = perturbations.ForceModel.two_body()
     ctrl = controller.PDController.critically_damped(omega_n, max_accel=a_max)
 
-    v_gates = [0.10, 0.05]  # illustrative terminal relative-speed gates [m/s]
+    v_gates = [0.10, 0.05]
 
     cases = {
         "radial": [500.0, 1000.0, 2000.0, 4000.0, 5500.0, 8000.0, 14000.0],
@@ -75,7 +48,7 @@ def main():
             conv_t = validation.convergence_time(times, perr, pos_tol)
             arrived_pos = np.isfinite(conv_t) and perr[-1] < pos_tol
             if inside.any():
-                first = int(np.argmax(inside))  # first True
+                first = int(np.argmax(inside))
                 v_entry = float(verr[first])
                 t_entry = float(times[first])
                 v_max_inside = float(verr[inside].max())
@@ -102,7 +75,6 @@ def main():
     with pd.option_context("display.float_format", lambda v: f"{v:.4g}",
                            "display.width", 200, "display.max_columns", 20):
         print(df.to_string(index=False))
-    # Agreement between position-only and combined classification.
     for g in v_gates:
         col = f"arrived_pos_and_v_lt_{g:g}"
         agree = int((df["arrived_position"] == df[col]).sum())

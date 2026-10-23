@@ -31,6 +31,13 @@ postgresql+psycopg://USER:PASSWORD@HOST:5432/DBNAME?sslmode=require
 Note the `+psycopg` driver prefix. If your provider gives you a plain
 `postgres://...` URL, rewrite the scheme.
 
+The driver is not in `requirements.txt` because the local SQLite fallback does not
+need it. Install it in the deployment environment:
+
+```bash
+python -m pip install "psycopg[binary]==3.2.3"
+```
+
 ### A participant salt
 
 ```bash

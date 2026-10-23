@@ -1,5 +1,3 @@
-"""Health, exports and the protected administrator reporting endpoints."""
-
 from __future__ import annotations
 
 import csv
@@ -30,7 +28,6 @@ from app.services import catalogue  # noqa: E402
 
 router = APIRouter(tags=["system"])
 
-#: Shipped with every export so a spreadsheet cannot drift from its meaning.
 METRIC_DEFINITIONS: dict[str, str] = {
     "unique_user": (
         "An anonymous participant who has completed at least one simulation. "
@@ -91,7 +88,6 @@ def health() -> HealthResponse:
     )
 
 
-# Exports
 @router.post(
     "/exports/{scenario_id}/config",
     response_class=PlainTextResponse,
@@ -155,7 +151,6 @@ def export_notes(
     )
 
 
-# Administration
 def _filters(
     start: str | None, end: str | None, organisation_id: int | None,
     user_type: str | None, include_demo: bool,

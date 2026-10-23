@@ -2,17 +2,6 @@ import { fileURLToPath, URL } from 'node:url'
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 
-/**
- * Vite configuration.
- *
- * In development the frontend runs on :5173 and proxies /api to the FastAPI
- * backend on :8000, so the browser only ever talks to one origin and there is
- * no CORS configuration to get wrong.
- *
- * In production the built assets are copied into the backend image and served
- * by FastAPI from the same origin, so API calls use a relative /api path and
- * no host is ever hard-coded.
- */
 export default defineConfig({
   plugins: [react()],
   resolve: {
@@ -33,8 +22,6 @@ export default defineConfig({
   build: {
     outDir: 'dist',
     sourcemap: true,
-    // Plotly is large. Splitting it out keeps the initial bundle small and lets
-    // the charts chunk load only when a result is actually rendered.
     rollupOptions: {
       output: {
         manualChunks: {

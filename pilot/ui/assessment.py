@@ -1,9 +1,3 @@
-"""Anonymous pre- and post-assessment pages for educational users.
-
-Step 9 of the participant journey. Both are optional and clearly skippable: a
-learner who does not want to be tested can still use everything.
-"""
-
 from __future__ import annotations
 
 import streamlit as st

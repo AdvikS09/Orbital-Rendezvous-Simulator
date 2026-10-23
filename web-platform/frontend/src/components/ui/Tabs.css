@@ -1,11 +1,3 @@
-/*
- * Tabs.
- *
- * A single underline marks the selected tab. Selection is not signalled by
- * colour alone: the selected tab is also the only one at full text contrast
- * and the only one carrying the rule beneath it.
- */
-
 .tabs {
   display: flex;
   align-items: stretch;

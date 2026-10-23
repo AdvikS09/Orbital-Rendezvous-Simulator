@@ -1,23 +1,3 @@
-/**
- * Explanatory text supplied by the API, rendered as blocks.
- *
- * Scenario explanations and activity briefs are authored in the Python content
- * modules as light Markdown: paragraphs, bullet lists, the occasional heading
- * and bold run. Dropping that into a `<p>` as a single string would show the
- * asterisks; pulling in a full Markdown parser would be a dependency and an
- * injection surface for a handful of constructs.
- *
- * Inline emphasis is not reimplemented here — it comes from
- * `renderInlineMarkdown`, which the result panels already use, so there is one
- * implementation of what `**` means rather than two that can disagree. This
- * module adds only the block structure that longer prose needs and short
- * interpretation strings do not.
- *
- * As there, everything is built as React elements and never as HTML, so any
- * character the block rules do not recognise reaches the DOM as an escaped text
- * node. There is no `dangerouslySetInnerHTML` here and there must never be.
- */
-
 import { renderInlineMarkdown } from '@/components/results/InterpretationList'
 import './Prose.css'
 
@@ -67,8 +47,6 @@ export function Prose({ text, className }: ProseProps) {
           )
         }
 
-        // A single newline inside a paragraph is a space, as in Markdown, so
-        // hard-wrapped source text does not arrive with the wrapping baked in.
         return (
           <p className="prose__paragraph" key={blockIndex}>
             {renderInlineMarkdown(lines.join(' '))}

@@ -1,32 +1,3 @@
-"""Compact gain-and-horizon robustness of the central result.
-
-The central separation sweep uses one controller bandwidth (omega_n = 6 n) and a
-one-orbit horizon. This experiment repeats the direction-resolved CW-to-reference
-divergence for a small grid of controller bandwidths and integration horizons, to
-test whether the two headline conclusions survive:
-
-  1. the directional ranking (radial worst, then along-track, then cross-track);
-  2. feedback masking (the one-metre agreement crossing sits far beyond the
-     open-loop CW validity range).
-
-Grid:
-  omega_n / n in {4, 6, 8}        (controller bandwidth relative to orbit rate)
-  horizon     in {0.5, 1, 2}      orbits
-  direction   in {radial, along-track, cross-track}
-  separation  : 16 log-spaced points, 50 m .. 50 km
-
-For every cell the one-metre CW-to-reference crossing is estimated by log-log
-interpolation of the peak trajectory difference against initial separation.
-Sampling is held at ~2000 samples/orbit (the converged regime from the
-convergence study), so the omega_n=6 n, 1-orbit cells reproduce the main sweep.
-
-Outputs (written to the project root, one level above the platform):
-  ROBUSTNESS_GAIN_HORIZON.csv          full per-(dir,gain,horizon,separation) grid
-  ROBUSTNESS_GAIN_HORIZON_crossings.csv one-metre crossing per (dir,gain,horizon)
-
-Run:  python experiments/run_robustness_gain_horizon.py
-"""
-
 import os
 import sys
 
@@ -36,21 +7,20 @@ import pandas as pd
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if ROOT not in sys.path:
     sys.path.insert(0, ROOT)
-PROJ = os.path.dirname(ROOT)  # "Orbital Mechanics Research"
+PROJ = os.path.dirname(ROOT)
 
 from src import controller, cw, orbit, perturbations, validation
 
 
 def log_crossing(seps, diffs, level=1.0):
-    """First upward crossing of ``level`` in log-log; None if never/always."""
     seps = np.asarray(seps, float)
     diffs = np.asarray(diffs, float)
     order = np.argsort(seps)
     seps, diffs = seps[order], diffs[order]
     if np.all(diffs >= level):
-        return ("below_range", float(seps[0]))       # crosses below smallest tested
+        return ("below_range", float(seps[0]))
     if np.all(diffs < level):
-        return ("above_range", float(seps[-1]))      # never reaches level in range
+        return ("above_range", float(seps[-1]))
     for i in range(1, len(seps)):
         if diffs[i - 1] < level <= diffs[i]:
             lx0, lx1 = np.log(seps[i - 1]), np.log(seps[i])
@@ -75,8 +45,8 @@ def main():
         "along-track": np.array([0.0, 1.0, 0.0]),
         "cross-track": np.array([0.0, 0.0, 1.0]),
     }
-    bandwidths = [4.0, 6.0, 8.0]          # omega_n / n
-    horizons = [0.5, 1.0, 2.0]            # orbits
+    bandwidths = [4.0, 6.0, 8.0]
+    horizons = [0.5, 1.0, 2.0]
     separations = np.geomspace(50.0, 50_000.0, 16)
 
     grid_rows = []
@@ -111,7 +81,6 @@ def main():
     grid = pd.DataFrame(grid_rows)
     grid.to_csv(os.path.join(PROJ, "ROBUSTNESS_GAIN_HORIZON.csv"), index=False)
 
-    # One-metre crossing per (direction, bandwidth, horizon).
     cross_rows = []
     for wratio in bandwidths:
         for h in horizons:
@@ -139,7 +108,6 @@ def main():
                 values="one_metre_crossing_km")
             print(f"\n{dname}:")
             print(piv.to_string())
-        # ranking check per cell
         print("\n=== directional ranking per cell (should be radial < along < cross) ===")
         ok = True
         for wratio in bandwidths:

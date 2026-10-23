@@ -1,9 +1,3 @@
-"""Participant flow: landing, consent, sign-in, track choice, confirmation.
-
-Implements steps 1-4 and step 10 of the pilot user journey. The simulation
-workspace, assessments and feedback form live in their own modules.
-"""
-
 from __future__ import annotations
 
 import streamlit as st
@@ -24,7 +18,6 @@ from .common import (
 )
 
 
-# 1. Landing
 def landing() -> None:
     page_header(
         "Orbital Rendezvous Simulator",
@@ -106,7 +99,6 @@ def landing() -> None:
             "The next page explains what is recorded and asks your consent.")
 
 
-# 2. Privacy notice and consent
 def consent() -> None:
     settings = get_settings()
     page_header("Before you begin",
@@ -169,7 +161,6 @@ def consent() -> None:
         st.caption("You need to tick the box to continue.")
 
 
-# 3. Participant entry
 def entry() -> None:
     settings = get_settings()
     page_header("Sign in anonymously",
@@ -258,7 +249,6 @@ def entry() -> None:
     goto("track")
 
 
-# 4. Track selection
 def track_selection() -> None:
     participant_context = context()
     page_header("How would you like to use the simulator?",
@@ -287,7 +277,6 @@ def track_selection() -> None:
          "Best if you want to explore on your own terms."),
     ]
 
-    # Nudge, do not force: the recommended track is highlighted but all are open.
     recommended = {"student": "guided", "teacher": "guided",
                    "engineer_researcher": "professional"}.get(user_type, "free")
 
@@ -307,13 +296,11 @@ def track_selection() -> None:
                 st.session_state.scenario_id = None
                 if participant_context is not None:
                     analytics.set_track(participant_context, track_id)
-                # Educational users get the pre-assessment offered first.
                 if track_id == "guided" and not st.session_state.assessment_pre_done:
                     goto("assessment_pre")
                 goto("workspace")
 
 
-# 10. Confirmation
 def confirmation() -> None:
     page_header("Thank you", "Your session is complete.")
 

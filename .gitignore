@@ -1,14 +1,11 @@
-# Python
 __pycache__/
 *.py[cod]
 *.egg-info/
 .pytest_cache/
 
-# Virtual environment
 .venv/
 venv/
 
-# Generated artifacts (figures and result tables)
 outputs/
 pilot_data/
 .env
@@ -18,7 +15,6 @@ pilot_data/
 *.sqlite
 *.sqlite3
 
-# Web platform
 web-platform/frontend/node_modules/
 web-platform/frontend/dist/
 web-platform/frontend/.vite/

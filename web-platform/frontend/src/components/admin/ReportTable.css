@@ -1,12 +1,3 @@
-/*
- * Report tables.
- *
- * Denser than the result tables on the participant side: an administrator is
- * scanning for an outlier across many rows, not reading one row carefully. The
- * table scrolls inside its own container so the page never scrolls sideways,
- * and the header row stays put while the body moves.
- */
-
 .report-table {
   display: flex;
   flex-direction: column;
@@ -97,10 +88,6 @@
   vertical-align: top;
 }
 
-/*
- * Free-text columns (a bug report, a feature request) would otherwise force the
- * table many screens wide. They wrap inside a bounded measure instead.
- */
 .report-table__td:not(.report-table__td--numeric) {
   max-width: 42ch;
   overflow-wrap: anywhere;

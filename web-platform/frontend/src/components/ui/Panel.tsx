@@ -7,30 +7,17 @@ import './Panel.css'
 export interface PanelProps {
   title?: ReactNode
   subtitle?: ReactNode
-  /** Small glyph beside the title. Supporting only. */
   icon?: IconName
-  /** Controls rendered at the right of the header, typically small buttons. */
   actions?: ReactNode
-  /** Content below a rule at the foot of the panel. */
   footer?: ReactNode
-  /** Pad the body. Turn off for tables and plots that bleed to the border. */
   padded?: boolean
-  /** Heading level for the title, so panels sit correctly in the outline. */
   headingLevel?: 2 | 3 | 4
-  /** Square off the side borders, for panels flush with a column edge. */
   flush?: boolean
   id?: string
   className?: string
   children: ReactNode
 }
 
-/**
- * Bordered surface with an optional header.
- *
- * When a title is given the panel renders as a labelled `<section>`, which puts
- * it in the document outline and lets a screen reader jump between regions.
- * Without a title it is a plain `<div>`: an unlabelled region is noise.
- */
 export function Panel({
   title,
   subtitle,

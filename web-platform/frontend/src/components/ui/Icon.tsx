@@ -1,18 +1,3 @@
-/**
- * Line icons.
- *
- * The Streamlit version used emoji as status markers and section decoration.
- * Emoji render inconsistently across platforms, carry a tone that does not suit
- * a research tool, and are announced verbatim by screen readers ("triangular
- * ruler"), which is noise rather than information.
- *
- * These replace them: restrained 1.5px stroke glyphs on a 24-unit grid,
- * inheriting `currentColor` so they take the colour of the surrounding text.
- * Every icon is `aria-hidden` by default, because in this interface an icon
- * always sits beside a text label that already says what it means. Pass a
- * `title` only where an icon genuinely stands alone.
- */
-
 import type { SVGProps } from 'react'
 
 export type IconName =
@@ -196,7 +181,6 @@ export function Icon({ name, size = 16, title, ...rest }: IconProps) {
   )
 }
 
-/** Icon paired with each status severity. */
 export const SEVERITY_ICON = {
   info: 'info',
   success: 'success',

@@ -1,11 +1,3 @@
-/**
- * Scenario selector, grouped by category.
- *
- * Shows every scenario the API offers, with the track it belongs to. Nothing is
- * hidden by track here: a professional user browsing the guided scenarios is a
- * legitimate thing to do, and the Streamlit version allowed it too.
- */
-
 import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 

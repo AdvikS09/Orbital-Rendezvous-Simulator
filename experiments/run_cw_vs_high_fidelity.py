@@ -1,17 +1,3 @@
-"""Experiment 3 -- CW vs high-fidelity validation.
-
-Three parts:
-
-1. Two-body orbit validation: propagate a circular LEO with RK4 and confirm
-   energy / angular-momentum conservation and the orbital period.
-2. Same controlled rendezvous scenario run in CW and in a high-fidelity
-   (two-body + J2 + drag) model; compare position and velocity error over time.
-3. Perturbation-toggle study: uncontrolled free-drift divergence of CW from the
-   high-fidelity model for each force-model toggle (two-body, J2, drag, J2+drag).
-
-Run:  python experiments/run_cw_vs_high_fidelity.py
-"""
-
 import os
 import sys
 
@@ -31,14 +17,13 @@ from src import controller, cw, orbit, perturbations, plotting, validation
 
 def main():
     radius = orbit.DEFAULT_RADIUS
-    inclination = np.radians(51.6)              # ISS-like, exercises 3D + J2
+    inclination = np.radians(51.6)
     mu = orbit.MU_EARTH
     n = cw.cw_mean_motion(radius)
     period = orbit.orbital_period(radius)
     target0 = orbit.circular_orbit_state(radius, mu, inclination)
     times = np.linspace(0.0, period, 4001)
 
-    # Part 1: two-body energy / period validation (2 orbits)
     t2 = np.linspace(0.0, 2.0 * period, 8001)
     tb_states = orbit.propagate(perturbations.ForceModel.two_body().derivatives, target0, t2)
     verify = validation.verify_orbit(t2, tb_states, mu, analytic_period=period)
@@ -47,7 +32,6 @@ def main():
     print("Two-body orbit validation (RK4, 2 orbits):")
     print(verify.to_string(index=False))
 
-    # Part 2: controlled rendezvous, CW vs high-fidelity (J2 + drag)
     rel0 = np.array([200.0, -300.0, 80.0, 0.0, 0.0, 0.0])
     pd_ctrl = controller.PDController.critically_damped(6.0 * n, max_accel=0.05)
     fm_hf = perturbations.ForceModel.j2_drag(area=1.0, mass=100.0)
@@ -69,8 +53,7 @@ def main():
         title="CW vs high-fidelity error over time (controlled rendezvous)",
     )
 
-    # Part 3: perturbation-toggle free-drift study
-    rel0_drift = np.array([0.0, 1000.0, 0.0, 0.0, 0.0, 0.0])  # 1 km along-track
+    rel0_drift = np.array([0.0, 1000.0, 0.0, 0.0, 0.0, 0.0])
     models = [
         perturbations.ForceModel.two_body(),
         perturbations.ForceModel.j2_only(),

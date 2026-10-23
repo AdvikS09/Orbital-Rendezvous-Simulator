@@ -1,18 +1,3 @@
-/**
- * Headline figures for the administrator report.
- *
- * A metric here is worthless without its definition. "Unique users" and "active
- * users" differ by whether the reporting period applies, and a reader who
- * assumes the wrong one draws the wrong conclusion, so every tile that has a
- * definition carries it on an info affordance beside the label.
- *
- * That affordance is a real button with `aria-describedby`, not a `title`
- * attribute: a `title` is invisible to keyboard users, unreliable on touch, and
- * announced inconsistently. The tooltip is hidden with opacity rather than
- * `display: none`, because either of the latter would drop it out of the
- * accessibility tree and break the reference it exists to serve.
- */
-
 import { useId } from 'react'
 
 import type { NumberFormatName } from '@/api/types'
@@ -21,27 +6,20 @@ import { Icon } from '@/components/ui'
 import './MetricTiles.css'
 
 export interface MetricTile {
-  /** Stable key, used for React reconciliation only. */
   key: string
   label: string
-  /** A string passes through verbatim; anything numeric is formatted. */
   value: number | string | null
-  /** Presentation. Counts should pass 'integer', fractions 'percent'. */
   fmt?: NumberFormatName
   precision?: number | null
   unit?: string
-  /** The metric's definition. Omit only where there is genuinely nothing to say. */
   help?: string
 }
 
 export interface MetricTilesProps {
   tiles: readonly MetricTile[]
-  /** Visible heading above the group. */
   title?: string
   headingLevel?: 2 | 3 | 4
-  /** Accessible name used when there is no visible title. */
   ariaLabel?: string
-  /** Preferred column count at full width. The grid still reflows below it. */
   columns?: 2 | 3 | 4
   className?: string
 }

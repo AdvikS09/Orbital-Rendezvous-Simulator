@@ -1,11 +1,3 @@
-"""The feedback form.
-
-Step 8 of the participant journey. Short by design — a long form gets abandoned
-and a pilot with no responses measures nothing. Questions adapt to who is
-answering: professionals are asked about usefulness for real work, learners
-about whether the explanations made sense.
-"""
-
 from __future__ import annotations
 
 import streamlit as st

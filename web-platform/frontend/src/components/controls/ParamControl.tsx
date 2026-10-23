@@ -1,13 +1,3 @@
-/**
- * Dispatch a single `ParamSpec` to the control that suits its kind.
- *
- * The parameter set is defined by the backend, so a value arriving here is
- * typed only as `number | string | boolean` and may be missing entirely when a
- * scenario gains a parameter between one visit and the next. Each branch
- * coerces defensively and falls back to the spec's own default, so a control
- * always renders something the user can act on rather than an empty box.
- */
-
 import type { ParamSpec } from '@/api/types'
 import { CheckboxField } from './CheckboxField'
 import { NumberField } from './NumberField'
@@ -16,7 +6,6 @@ import { SliderField } from './SliderField'
 
 export type ParamValue = number | string | boolean
 
-/** Coerce to a finite number, falling back when the value is not usable. */
 function toNumber(value: ParamValue | undefined, fallback: number): number {
   if (typeof value === 'number') return Number.isFinite(value) ? value : fallback
   if (typeof value === 'string') {
@@ -50,7 +39,6 @@ export interface ParamControlProps {
   param: ParamSpec
   value: ParamValue | undefined
   onChange: (value: ParamValue) => void
-  /** Message for this field, usually from the server's validation response. */
   error?: string
   disabled?: boolean
 }

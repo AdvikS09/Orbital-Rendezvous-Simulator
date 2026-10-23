@@ -1,11 +1,3 @@
-"""Tests for the simulation runner, rate limiter and admin authentication.
-
-The runner tests matter most for the pilot: they prove that completing a
-simulation records exactly the analytics events the reporting definitions rely
-on, and that a failing simulation is recorded as a failure rather than crashing
-the participant's page.
-"""
-
 import numpy as np
 import pytest
 from sqlalchemy import select
@@ -28,7 +20,6 @@ def _event_types(settings):
         return [row[0] for row in connection.execute(select(events.c.event_type)).all()]
 
 
-# Catalogue integrity
 def test_every_scenario_has_unique_id_and_required_content():
     ids = [scenario.id for scenario in SCENARIOS]
     assert len(ids) == len(set(ids))
@@ -42,7 +33,6 @@ def test_every_scenario_has_unique_id_and_required_content():
 
 
 def test_scenario_defaults_validate():
-    """Every scenario must be runnable straight out of the box."""
     for scenario in SCENARIOS:
         result = validate_params(scenario, default_params(scenario))
         assert result.ok, f"{scenario.id} default parameters rejected: {result.errors}"
@@ -60,7 +50,6 @@ def test_guided_track_excludes_the_expert_only_scenarios():
 
 
 def test_no_scenario_claims_external_validation_as_a_result():
-    """Guard against the software ever claiming a benchmark it has not run."""
     forbidden = ("nasa-approved", "nasa approved", "nasa-validated", "nasa validated",
                  "flight-certified", "flight certified", "operational mission software")
     for scenario in SCENARIOS:
@@ -75,7 +64,6 @@ def test_no_scenario_claims_external_validation_as_a_result():
     assert "no such comparison has been run" in blob or "no benchmark result" in blob
 
 
-# Running scenarios
 def test_running_a_scenario_records_the_full_event_sequence(participant, pilot_env):
     scenario = get_scenario("pd_rendezvous")
     outcome = run_scenario(scenario, default_params(scenario), participant, pilot_env)
@@ -93,7 +81,6 @@ def test_running_a_scenario_records_the_full_event_sequence(participant, pilot_e
 
 
 def test_a_completed_simulation_makes_the_participant_a_unique_user(participant, pilot_env):
-    """The end-to-end link between running a simulation and the headline metric."""
     before = analytics.summary_metrics(ReportFilters(include_demo=True), pilot_env)
     assert before["unique_users"] == 0
 
@@ -145,14 +132,12 @@ def test_an_engine_exception_is_recorded_as_a_failure_not_raised(participant, pi
     def explode(_params):
         raise RuntimeError("simulated engine fault")
 
-    # Scenario is a frozen dataclass, so build a copy with a failing runner.
     patched = dataclasses.replace(scenario, runner=explode)
 
     outcome = run_scenario(patched, default_params(scenario), participant, pilot_env)
     assert not outcome.ok
     assert outcome.error_class == "RuntimeError"
     assert not outcome.rejected
-    # The message shown to the participant must not be a traceback.
     assert "Traceback" not in " ".join(outcome.errors)
 
     types = _event_types(pilot_env)
@@ -171,7 +156,6 @@ def test_warnings_are_carried_through_to_the_outcome(participant, pilot_env):
 
 
 def test_running_without_a_context_still_works(pilot_env):
-    """Free/offline use must not require analytics."""
     scenario = get_scenario("two_body_orbit")
     outcome = run_scenario(scenario, default_params(scenario), None, pilot_env)
     assert outcome.ok
@@ -198,7 +182,6 @@ def test_analytics_detail_holds_only_buckets_not_raw_values(participant, pilot_e
     assert payload["steps_bucket"]
 
 
-# Every scenario actually runs
 @pytest.mark.parametrize("scenario_id", [scenario.id for scenario in SCENARIOS])
 def test_every_scenario_runs_with_its_defaults(scenario_id, participant, pilot_env):
     scenario = get_scenario(scenario_id)
@@ -208,7 +191,6 @@ def test_every_scenario_runs_with_its_defaults(scenario_id, participant, pilot_e
 
 
 def test_scenario_results_are_deterministic(pilot_env):
-    """Same inputs, same answer -- the reproducibility claim in the export."""
     scenario = get_scenario("pd_rendezvous")
     params = default_params(scenario)
     first = run_scenario(scenario, params, None, pilot_env).result
@@ -216,7 +198,6 @@ def test_scenario_results_are_deterministic(pilot_env):
     np.testing.assert_array_equal(first["states"], second["states"])
 
 
-# Rate limiting
 def test_rate_limiter_allows_up_to_the_burst_limit():
     limiter = SessionRateLimiter(max_per_minute=3, max_per_session=100)
     for _ in range(3):
@@ -232,7 +213,6 @@ def test_rate_limiter_window_expires():
     assert limiter.consume("token", now=0.0).allowed
     assert limiter.consume("token", now=1.0).allowed
     assert not limiter.consume("token", now=2.0).allowed
-    # After the window has passed the burst allowance is back.
     assert limiter.consume("token", now=70.0).allowed
 
 
@@ -281,7 +261,6 @@ def test_rate_limited_runs_are_recorded_and_blocked(participant, pilot_env, monk
     ratelimit.reset_limiter()
 
 
-# Admin authentication
 def test_password_hash_roundtrip():
     encoded = auth.hash_password("correct horse battery staple", iterations=1000)
     assert auth.verify_password("correct horse battery staple", encoded)

@@ -1,13 +1,3 @@
-/**
- * The conditions under which the numbers above are true.
- *
- * This panel is never collapsed by default and has no toggle that hides it. A
- * result separated from its assumptions is how a wrong belief forms: the figure
- * is remembered, the caveat is not, and six weeks later it is quoted in a
- * design review as though it were unconditional. Keeping both on screen at the
- * same time costs a little vertical space and prevents that.
- */
-
 import { useId } from 'react'
 import { Icon } from '@/components/ui/Icon'
 import './AssumptionsPanel.css'

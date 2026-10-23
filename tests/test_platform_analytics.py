@@ -1,10 +1,3 @@
-"""Tests for anonymous analytics: identity, events, privacy and metrics.
-
-The privacy tests are the important ones. They assert the guarantees the
-privacy notice makes to participants, so the notice cannot quietly become
-untrue.
-"""
-
 import json
 from datetime import date, timedelta
 
@@ -16,7 +9,6 @@ from pilot.analytics import EventType, ReportFilters
 from pilot.models import events, feedback, participants, sessions
 
 
-# Anonymous identity
 def test_participant_hash_is_stable_for_the_same_codes(pilot_env):
     first = analytics.participant_hash("ORG1", "ALICE01", pilot_env)
     second = analytics.participant_hash("ORG1", "ALICE01", pilot_env)
@@ -59,7 +51,6 @@ def test_the_raw_participant_code_is_never_stored(pilot_env):
     assert rows[0]["participant_ref"] == rows[0]["participant_hash"][:8]
 
 
-# Sessions and return visits
 def test_returning_on_the_same_day_is_not_a_return_visit(pilot_env):
     first = analytics.start_session("ORG", "USER1", "student", "1.0", pilot_env)
     second = analytics.start_session("ORG", "USER1", "student", "1.0", pilot_env)
@@ -70,7 +61,6 @@ def test_returning_on_the_same_day_is_not_a_return_visit(pilot_env):
 def test_returning_on_a_later_date_is_a_return_visit(pilot_env):
     first = analytics.start_session("ORG", "USER1", "student", "1.0", pilot_env)
 
-    # Simulate yesterday's visit by backdating the stored last-seen date.
     engine = db.get_engine(pilot_env)
     yesterday = date.today() - timedelta(days=1)
     with engine.begin() as connection:
@@ -103,12 +93,10 @@ def test_unknown_pilot_codes_get_the_unregistered_organisation(pilot_env):
     context = analytics.start_session("NOT-REGISTERED", "USER1", "other", "1.0", pilot_env)
     assert context.organisation_id is not None
     assert context.organisation_name == "Unregistered pilot code"
-    # The code itself is still recorded, so the cohort remains identifiable.
     assert context.pilot_code_id is not None
 
 
 def test_two_unregistered_cohorts_stay_distinguishable(pilot_env):
-    """Both group under one organisation, but must not merge into one cohort."""
     from pilot.models import pilot_codes
 
     first = analytics.start_session("SCHOOL-X", "P1", "student", "1.0", pilot_env)
@@ -150,7 +138,6 @@ def test_usage_by_pilot_code_separates_cohorts(pilot_env):
 
 
 def test_registered_codes_keep_their_real_organisation(pilot_env):
-    """Registering a code must override the unregistered grouping."""
     from pilot.db import utcnow
     from pilot.models import organisations, pilot_codes
 
@@ -169,7 +156,6 @@ def test_registered_codes_keep_their_real_organisation(pilot_env):
     assert context.pilot_code_id is not None
 
 
-# Event recording and the privacy filter
 def test_record_event_writes_a_row(participant, pilot_env):
     assert analytics.record_event(participant, EventType.SIMULATION_COMPLETED,
                                   scenario_category="relative_motion",
@@ -231,23 +217,20 @@ def test_events_are_marked_as_demo_outside_production(participant, pilot_env):
 
 
 def test_analytics_failure_does_not_raise(participant, pilot_env):
-    """A broken database must not be able to break a participant's run."""
     db.reset_engine()
     from pilot import config
 
     original = pilot_env.database_url
     broken = config.Settings(**{**pilot_env.__dict__,
                                 "database_url": "sqlite:///?bad?path?/nope.db"})
-    # Any failure here must be swallowed and reported as False, not raised.
     result = analytics.record_event(participant, EventType.SIMULATION_COMPLETED,
                                     settings=broken)
-    assert result in (True, False)  # must return, not raise
+    assert result in (True, False)
     db.reset_engine()
-    assert original  # sanity
+    assert original
 
 
 def test_no_column_can_hold_an_email_or_a_name():
-    """The schema itself must have nowhere to put direct identifiers."""
     forbidden = {"email", "name", "full_name", "first_name", "surname", "age",
                  "date_of_birth", "dob", "ip", "ip_address", "user_agent", "phone"}
     for table in (participants, sessions, events, feedback):
@@ -255,7 +238,6 @@ def test_no_column_can_hold_an_email_or_a_name():
         assert not (columns & forbidden), f"{table.name} exposes {columns & forbidden}"
 
 
-# Tracks, assessments, feedback
 def test_set_track_updates_the_session(participant, pilot_env):
     analytics.set_track(participant, "guided", pilot_env)
     assert participant.track == "guided"
@@ -298,7 +280,6 @@ def test_record_feedback_writes_a_row(participant, pilot_env):
     assert rows[0]["usefulness_rating"] == 4
 
 
-# Metric definitions
 def _complete_runs(context, count, settings):
     for _ in range(count):
         analytics.record_event(context, EventType.SIMULATION_COMPLETED,
@@ -312,7 +293,6 @@ def test_summary_metric_definitions(pilot_env):
 
     alice = analytics.start_session("ORG", "ALICE", "student", "1.0", pilot_env)
     bob = analytics.start_session("ORG", "BOB", "engineer_researcher", "1.0", pilot_env)
-    # Carol starts a session but never completes a simulation.
     analytics.start_session("ORG", "CAROL", "teacher", "1.0", pilot_env)
 
     _complete_runs(alice, 3, pilot_env)
@@ -322,7 +302,6 @@ def test_summary_metric_definitions(pilot_env):
 
     metrics = analytics.summary_metrics(filters, pilot_env)
 
-    # Unique user = completed at least one simulation. Carol does not count.
     assert metrics["unique_users"] == 2
     assert metrics["active_users"] == 2
     assert metrics["completed_runs"] == 4
@@ -339,7 +318,6 @@ def test_returning_user_requires_two_separate_dates(pilot_env):
     filters = ReportFilters(include_demo=True)
     assert analytics.summary_metrics(filters, pilot_env)["returning_users"] == 0
 
-    # Backdate one event to yesterday: now two distinct dates exist.
     engine = db.get_engine(pilot_env)
     yesterday = date.today() - timedelta(days=1)
     with engine.begin() as connection:
@@ -444,7 +422,6 @@ def test_date_filter_windows_active_users(pilot_env):
     windowed = analytics.summary_metrics(
         ReportFilters(include_demo=True, start=future, end=future), pilot_env)
     assert windowed["active_users"] == 0
-    # "Unique" is not date-limited by design.
     assert windowed["unique_users"] == 1
 
 

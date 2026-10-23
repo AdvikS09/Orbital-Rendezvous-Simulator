@@ -1,5 +1,3 @@
-/* One step of a guided activity: a single column, read top to bottom. */
-
 .activity-page {
   display: flex;
   flex-direction: column;
@@ -34,7 +32,6 @@
   font-size: var(--text-sm);
 }
 
-/* ---------------------------------------------------------- progress */
 .activity-page__progress {
   appearance: none;
   width: 100%;
@@ -57,7 +54,6 @@
   background: var(--accent);
 }
 
-/* -------------------------------------------------------- prediction */
 .activity-page__predict {
   border: 0;
   margin: 0;
@@ -100,7 +96,6 @@
   line-height: var(--leading-normal);
 }
 
-/* ------------------------------------------------------------ pieces */
 .activity-page__caption {
   color: var(--text-muted);
   font-size: var(--text-xs);

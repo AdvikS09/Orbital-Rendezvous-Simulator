@@ -1,5 +1,3 @@
-"""Tests for the PD rendezvous controller."""
-
 import os
 import sys
 import unittest
@@ -42,7 +40,6 @@ class TestController(unittest.TestCase):
         self.assertLessEqual(np.linalg.norm(u), 0.01 + 1e-12)
 
     def test_cross_track_convergence(self):
-        # Pure cross-track offset should also be driven to zero by the PD law.
         pd = controller.PDController.critically_damped(6.0 * self.n)
         x0 = np.array([0.0, 0.0, 120.0, 0.0, 0.0, 0.0])
         t = np.linspace(0.0, self.period, 4001)

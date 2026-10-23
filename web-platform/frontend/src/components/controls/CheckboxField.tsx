@@ -1,11 +1,3 @@
-/**
- * A checkbox with its label and help text.
- *
- * The label wraps the input, so the whole row is a hit target and the
- * association needs no `htmlFor` gymnastics; an explicit `htmlFor` is set
- * anyway, because the help text below has to be tied to the same id.
- */
-
 import { useId } from 'react'
 import type { ParamSpec } from '@/api/types'
 import { Icon } from '@/components/ui'

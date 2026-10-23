@@ -1,14 +1,3 @@
-/**
- * Routing.
- *
- * Page modules are lazy-loaded so the initial bundle stays small; the charts
- * chunk (Plotly, ~3 MB) loads only when a result is first rendered.
- *
- * Consent is enforced here rather than in each page: a deep link into the
- * middle of the participant flow redirects back to the notice, which mirrors
- * the `_REQUIRE_SESSION` gate in the Streamlit router.
- */
-
 import { Suspense, lazy } from 'react'
 import { Navigate, Route, Routes, useLocation } from 'react-router-dom'
 
@@ -61,13 +50,6 @@ function PageFallback() {
   )
 }
 
-/**
- * Gate for pages that belong to the participant journey.
- *
- * The administrator area is deliberately NOT behind this: it has its own
- * server-side credential check, and requiring participant consent to reach a
- * sign-in form would be nonsense.
- */
 function RequireConsent({ children }: { children: React.ReactNode }) {
   const { hasConsented } = useSession()
   const location = useLocation()

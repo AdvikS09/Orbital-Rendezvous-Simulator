@@ -1,5 +1,3 @@
-"""Tests for the validation utilities: metrics, gain sweep, CW-vs-high-fidelity."""
-
 import os
 import sys
 import unittest
@@ -33,7 +31,7 @@ class TestValidation(unittest.TestCase):
 
     def test_convergence_time_semantics(self):
         t = np.array([0.0, 1.0, 2.0, 3.0, 4.0])
-        err = np.array([10.0, 5.0, 0.5, 0.2, 0.1])  # drops below tol=1 after index 1
+        err = np.array([10.0, 5.0, 0.5, 0.2, 0.1])
         self.assertEqual(validation.convergence_time(t, err, 1.0), 2.0)
         self.assertEqual(validation.convergence_time(t, np.full(5, 0.1), 1.0), 0.0)
         self.assertTrue(np.isnan(validation.convergence_time(t, np.full(5, 10.0), 1.0)))
@@ -54,7 +52,6 @@ class TestValidation(unittest.TestCase):
         j2 = validation.compare_cw_high_fidelity(
             self.target0, rel0, t, perturbations.ForceModel.j2_only(), self.n
         )["summary"].iloc[0]["max_pos_error_m"]
-        # Adding J2 makes the CW linearisation diverge more from the truth.
         self.assertGreater(j2, tb)
 
     def test_gain_sweep_shape(self):

@@ -1,11 +1,3 @@
-"""Expose the scenario catalogue over the API.
-
-Reads ``pilot.content.scenarios_catalog`` directly. There is no second copy of
-any scenario definition, parameter bound or piece of explanatory text: the
-Streamlit application and this API describe scenarios from the same objects, so
-they cannot disagree.
-"""
-
 from __future__ import annotations
 
 from typing import Any
@@ -27,9 +19,6 @@ from pilot import validation as pilot_validation  # noqa: E402
 from app.schemas.common import NumberFormat  # noqa: E402
 from app.schemas.scenarios import ParamSpec, ScenarioDetail, ScenarioSummary  # noqa: E402
 
-#: Bounds enforced by pilot.validation, keyed by parameter name. These are
-#: tighter than some widget ranges and are what actually rejects a run, so the
-#: frontend shows them and blocks before a pointless round-trip.
 _HARD_BOUNDS: dict[str, tuple[float | None, float | None]] = {
     "altitude_km": (pilot_validation.MIN_ALTITUDE_KM, pilot_validation.MAX_ALTITUDE_KM),
     "inclination_deg": (
@@ -59,11 +48,6 @@ for _axis in ("rel_vx", "rel_vy", "rel_vz"):
 
 
 def _format_for(param: Param) -> tuple[NumberFormat, int | None]:
-    """Choose a display format from the parameter's unit and magnitude.
-
-    Gains sit around 1e-5 and 1e-2, so fixed notation would render them as
-    ``0.00005``. They get scientific notation; everything else is automatic.
-    """
     if param.kind == "checkbox" or param.kind == "select":
         return NumberFormat.AUTO, None
     if param.name in ("kp", "kd"):
@@ -151,13 +135,6 @@ def category_labels() -> dict[str, str]:
 
 
 def coerce_params(scenario: Scenario, supplied: dict[str, Any]) -> dict[str, Any]:
-    """Merge supplied values over the defaults, dropping unknown names.
-
-    Coercion is type-only. Range checking belongs to ``pilot.validation``, which
-    produces the explanatory messages participants actually see; silently
-    clamping here would recreate exactly the silent-wrong-answer problem the
-    validation layer exists to fix.
-    """
     resolved = default_params(scenario)
     by_name = {param.name: param for param in scenario.params}
 
@@ -173,6 +150,5 @@ def coerce_params(scenario: Scenario, supplied: dict[str, Any]) -> dict[str, Any
             try:
                 resolved[name] = float(value)
             except (TypeError, ValueError):
-                # Leave it as supplied; the validator reports it properly.
                 resolved[name] = value
     return resolved

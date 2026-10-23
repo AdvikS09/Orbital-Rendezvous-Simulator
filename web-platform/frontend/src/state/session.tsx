@@ -1,15 +1,3 @@
-/**
- * Session and consent state.
- *
- * Deliberately small. The anonymous session token lives in sessionStorage
- * (cleared when the tab closes); everything else derived from it is held in
- * memory and re-fetched rather than persisted, so a stale participant identity
- * cannot outlive a visit.
- *
- * Administrator credentials are NEVER stored here or anywhere else — they live
- * only in the admin page's own component state for the lifetime of that view.
- */
-
 import {
   createContext,
   useCallback,
@@ -76,9 +64,7 @@ function readStored<T>(key: string): T | null {
 function writeStored(key: string, value: unknown): void {
   try {
     window.sessionStorage.setItem(key, JSON.stringify(value))
-  } catch {
-    /* private browsing: the app still works, the session just will not resume */
-  }
+  } catch {}
 }
 
 export function SessionProvider({ children }: { children: ReactNode }) {
@@ -91,7 +77,6 @@ export function SessionProvider({ children }: { children: ReactNode }) {
       ...(meta ?? {}),
       token,
       consentVersion: consent,
-      // Run count is per page load, not per session: it describes this visit.
       completedRuns: 0,
     }
   })
@@ -136,9 +121,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     try {
       window.sessionStorage.removeItem(SESSION_META_KEY)
       window.sessionStorage.removeItem(CONSENT_KEY)
-    } catch {
-      /* ignore */
-    }
+    } catch {}
     setState({ ...EMPTY })
   }, [])
 

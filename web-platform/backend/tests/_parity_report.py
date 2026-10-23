@@ -1,13 +1,3 @@
-"""Measure API-versus-engine differences for docs/ENGINE_PARITY_REPORT.md.
-
-Run from ``web-platform/backend``::
-
-    python tests/_parity_report.py
-
-Prints one row per scenario: the largest absolute and relative difference across
-every returned array, every scalar metric and every table cell.
-"""
-
 from __future__ import annotations
 
 import json
@@ -18,9 +8,6 @@ from pathlib import Path
 
 BACKEND = Path(__file__).resolve().parents[1]
 REPO_ROOT = BACKEND.parents[1]
-# Order matters: the backend directory must precede the repository root,
-# because the root holds app.py (the legacy Streamlit MVP) and this package is
-# also called `app`. Root-first would shadow the package.
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 if str(BACKEND) not in sys.path:

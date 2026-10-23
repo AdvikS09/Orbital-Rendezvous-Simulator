@@ -1,11 +1,3 @@
-/*
- * Badge.
- *
- * A short, static label: propagator name, validation state, a count. Tinted
- * background rather than a solid fill, so a row of badges does not shout.
- * Tone is decoration; the text inside is what carries the meaning.
- */
-
 .badge {
   display: inline-flex;
   align-items: center;

@@ -1,27 +1,3 @@
-"""Administrator authentication.
-
-Credentials come only from the environment -- there is no default password, no
-credential file and nothing checked into the repository. If nothing is
-configured, the admin area refuses to unlock at all rather than falling back to
-something guessable.
-
-Two credential forms are supported:
-
-``PILOT_ADMIN_PASSWORD_HASH``
-    Preferred. A PBKDF2-HMAC-SHA256 hash in the format
-    ``pbkdf2_sha256$<iterations>$<salt_hex>$<hash_hex>``, produced by
-    ``scripts/hash_password.py``. The plaintext never exists in the deployment
-    environment.
-
-``PILOT_ADMIN_PASSWORD``
-    Plain text in an environment secret. Simpler, and acceptable for a small
-    pilot, but the hash form is better and the admin area says so.
-
-Both comparisons are constant-time. Failed attempts are counted per process and
-lock the form after a threshold, which makes online guessing impractical
-without needing any storage.
-"""
-
 from __future__ import annotations
 
 import hashlib
@@ -39,20 +15,17 @@ logger = logging.getLogger("pilot.auth")
 PBKDF2_ITERATIONS = 240_000
 _HASH_PREFIX = "pbkdf2_sha256"
 
-#: Lock-out duration after too many failures, in seconds.
 LOCKOUT_SECONDS = 300.0
 
 
 def hash_password(password: str, iterations: int = PBKDF2_ITERATIONS,
                   salt: bytes | None = None) -> str:
-    """Produce a storable password hash."""
     salt = salt or secrets.token_bytes(16)
     digest = hashlib.pbkdf2_hmac("sha256", password.encode("utf-8"), salt, iterations)
     return f"{_HASH_PREFIX}${iterations}${salt.hex()}${digest.hex()}"
 
 
 def verify_password(password: str, encoded: str) -> bool:
-    """Check a password against an encoded hash, in constant time."""
     try:
         algorithm, iterations, salt_hex, digest_hex = encoded.split("$")
         if algorithm != _HASH_PREFIX:
@@ -73,8 +46,6 @@ class AuthResult:
 
 
 class AdminAuthenticator:
-    """Credential check with per-process failure counting and lock-out."""
-
     def __init__(self, settings: Settings | None = None):
         self.settings = settings or get_settings()
         self._failures = 0
@@ -111,8 +82,6 @@ class AdminAuthenticator:
         else:
             password_ok = hmac.compare_digest(password or "", self.settings.admin_password)
 
-        # Evaluate both before branching so the response time does not reveal
-        # which half was wrong.
         if username_ok and password_ok:
             with self._lock:
                 self._failures = 0
@@ -155,7 +124,6 @@ def get_authenticator(settings: Settings | None = None) -> AdminAuthenticator:
 
 
 def reset_authenticator() -> None:
-    """Drop the process-wide authenticator. Used by tests."""
     global _authenticator
     with _authenticator_lock:
         _authenticator = None

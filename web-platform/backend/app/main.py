@@ -1,19 +1,3 @@
-"""FastAPI application entry point.
-
-Serves the versioned JSON API under ``/api/v1`` and, in production, the built
-React application from the same origin. One origin means no CORS configuration
-to get wrong, one deployment and one custom domain.
-
-Run in development:
-
-    uvicorn app.main:app --reload --port 8000
-
-The engine itself is imported, not reimplemented: physics comes from
-``orbital_core`` and the scenario definitions, validation, run path, analytics
-and exports come from ``pilot`` -- the same modules the legacy Streamlit
-application uses.
-"""
-
 from __future__ import annotations
 
 import logging
@@ -48,8 +32,6 @@ logger = logging.getLogger("api")
 
 API_PREFIX = "/api/v1"
 
-#: Machine-readable class names for the status codes the API raises, so a client
-#: can branch on the cause rather than parse prose.
 _ERROR_CLASSES: dict[int, str] = {
     400: "BadRequest",
     401: "Unauthorized",
@@ -62,8 +44,6 @@ _ERROR_CLASSES: dict[int, str] = {
     503: "ServiceUnavailable",
 }
 
-#: Where the built React application lives inside the production image. The
-#: multi-stage Dockerfile copies frontend/dist here.
 STATIC_DIR = Path(
     os.environ.get("FRONTEND_DIST", Path(__file__).resolve().parent / "static")
 )
@@ -71,12 +51,6 @@ STATIC_DIR = Path(
 
 @asynccontextmanager
 async def lifespan(_app: FastAPI):
-    """Migrate on startup, but never refuse to start because of it.
-
-    A database outage must not take the simulator offline: the physics does not
-    need a database, and losing analytics is a lesser failure than losing the
-    application.
-    """
     settings = get_settings()
     try:
         applied = run_migrations(get_engine(settings))
@@ -113,8 +87,6 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
-# CORS is only needed when the frontend dev server runs on a different port.
-# In production both are served from this origin and the list stays empty.
 _origins = [
     origin.strip()
     for origin in os.environ.get("CORS_ALLOW_ORIGINS", "").split(",")
@@ -134,20 +106,8 @@ app.include_router(scenario_routes.router, prefix=API_PREFIX)
 app.include_router(pilot_routes.router, prefix=API_PREFIX)
 
 
-# Error handling: structured messages, never a traceback
 @app.exception_handler(StarletteHTTPException)
 async def http_exception_handler(_request: Request, exc: StarletteHTTPException):
-    """Give raised HTTPExceptions the same shape as every other error.
-
-    Without this, FastAPI's default ``{"detail": ...}`` comes back for 401,
-    404, 422 and 503, which carries no ``error_class`` and no per-field
-    attribution. The frontend's ``ApiError`` could not read it, so the useful
-    message -- "That pilot code is not registered on this deployment" -- was
-    replaced by a generic one at exactly the moment it mattered.
-
-    ``detail`` may be a plain string or, from the routes that attribute errors
-    to inputs, a list of ``{field, message}`` objects. Both are normalised here.
-    """
     detail = exc.detail
     if isinstance(detail, list):
         fields = [
@@ -196,7 +156,6 @@ async def validation_error_handler(_request: Request, exc: RequestValidationErro
 
 @app.exception_handler(Exception)
 async def unhandled_error_handler(_request: Request, exc: Exception):
-    """Last resort. Logs the class, returns an explanation, leaks nothing."""
     logger.exception("unhandled error")
     return JSONResponse(
         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -210,7 +169,6 @@ async def unhandled_error_handler(_request: Request, exc: Exception):
     )
 
 
-# Static frontend (production only)
 if STATIC_DIR.is_dir():
     app.mount(
         "/assets",

@@ -1,16 +1,3 @@
-/**
- * The whole result, in reading order.
- *
- * Warnings, then the headline numbers, then the plots, then what the engine
- * makes of them, then how to read it, then the conditions it holds under, then
- * how it was computed, then the raw rows, then the downloads.
- *
- * That order is deliberate. The answer comes first because that is what the
- * run was for. Everything that qualifies the answer comes before the raw data
- * and the export buttons, so nobody reaches the download without having passed
- * the caveats on the way.
- */
-
 import { useId } from 'react'
 import type { InputEcho, ParamValues, SimulationResult } from '@/api/types'
 import { PlotlyChart } from '@/charts/PlotlyChart'
@@ -26,24 +13,10 @@ import './ResultView.css'
 
 export interface ResultViewProps {
   result: SimulationResult
-  /**
-   * The parameters that produced this result, forwarded to the export
-   * endpoints. Omit it and the echoed inputs on the result are used instead,
-   * which is the same set of values the run was given.
-   */
   params?: ParamValues
-  /** Defaults to the scenario the result came from. */
   scenarioId?: string
 }
 
-/**
- * Reconstruct the parameter set from the result's own input echo.
- *
- * The echo is what the engine actually used after validation and clamping, so
- * it is arguably the better record of the run than the form state that produced
- * it. Nulls are dropped: a parameter the engine did not receive should not be
- * invented on the way back out.
- */
 function paramsFromInputs(inputs: InputEcho[]): ParamValues {
   const values: ParamValues = {}
   for (const input of inputs) {

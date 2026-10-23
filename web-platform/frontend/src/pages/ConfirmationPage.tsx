@@ -1,12 +1,3 @@
-/**
- * Step 10: the end of the journey.
- *
- * The three explanatory sections are carried across verbatim from
- * `pilot.ui.flow.confirmation`, including the statement that no promise is made
- * about any particular suggestion. That sentence is the honest part of the page
- * and must not be softened.
- */
-
 import { useNavigate } from 'react-router-dom'
 
 import { Button, Callout } from '@/components/ui'

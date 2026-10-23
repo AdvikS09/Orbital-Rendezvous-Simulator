@@ -1,13 +1,3 @@
-/**
- * One chart.
- *
- * Everything drawn here comes from the `PlotSpec` and the numeric arrays the
- * API returned. The component selects, colours and lays out; it never derives a
- * value. If Plotly cannot be loaded at all, the chart degrades to a notice
- * rather than taking the results page down with it - the numbers are the
- * result, the picture is a reading aid.
- */
-
 import { useEffect, useMemo, useRef, useState } from 'react'
 import type { PlotSpec } from '@/api/types'
 import { Callout } from '@/components/ui/Callout'
@@ -27,14 +17,6 @@ export interface PlotlyChartProps {
   className?: string
 }
 
-/**
- * Track the active theme.
- *
- * Plotly bakes colours into the drawn figure, so a theme switch has to trigger
- * a redraw. The theme lives in `data-theme` on the document root, which a
- * MutationObserver watches; that keeps the charts independent of whichever
- * component owns the toggle.
- */
 function useDarkTheme(): boolean {
   const [dark, setDark] = useState<boolean>(isDarkTheme)
 
@@ -57,7 +39,6 @@ function useDarkTheme(): boolean {
   return dark
 }
 
-/** What a screen reader is told the figure shows. */
 function chartDescription(plot: PlotSpec): string {
   const x = axisLabel(plot.x)
   const y = axisLabel(plot.y)
@@ -84,8 +65,6 @@ export function PlotlyChart({ plot, series, className }: PlotlyChartProps) {
       displayModeBar: true,
       scrollZoom: false,
       doubleClick: 'reset' as const,
-      /* Keep the modebar to the tools that make sense on a research chart:
-         zoom, pan, reset, and a PNG export named after the plot. */
       modeBarButtonsToRemove: [
         'sendDataToCloud',
         'lasso2d',
@@ -103,8 +82,6 @@ export function PlotlyChart({ plot, series, className }: PlotlyChartProps) {
     [plot.id],
   )
 
-  /* Pull in the bundle once. The promise behind loadPlotly is memoised, so a
-     page of eight charts triggers one download. */
   useEffect(() => {
     let active = true
     loadPlotly()
@@ -125,8 +102,6 @@ export function PlotlyChart({ plot, series, className }: PlotlyChartProps) {
     }
   }, [])
 
-  /* Draw, and redraw on any change of data or theme. Plotly.react diffs
-     against what is already on screen rather than tearing the figure down. */
   useEffect(() => {
     const node = containerRef.current
     const plotly = plotlyRef.current
@@ -143,14 +118,7 @@ export function PlotlyChart({ plot, series, className }: PlotlyChartProps) {
     })
   }, [status, plot, series, dark, config])
 
-  /* Plotly attaches listeners and WebGL contexts of its own; purge releases
-     them. Without this, navigating between results leaks a context per chart
-     and the browser eventually refuses to create more. */
   useEffect(() => {
-    // Captured on mount rather than read in the cleanup: by the time cleanup
-    // runs React may already have detached the node, leaving containerRef.current
-    // null and the purge silently skipped -- which is precisely the leak this
-    // effect exists to prevent.
     const node = containerRef.current
     return () => {
       const plotly = plotlyRef.current
@@ -160,8 +128,6 @@ export function PlotlyChart({ plot, series, className }: PlotlyChartProps) {
     }
   }, [])
 
-  /* `responsive: true` reacts to window resizes only. The charts also sit in
-     panels that resize when a drawer opens or the params column collapses. */
   useEffect(() => {
     const node = containerRef.current
     if (status !== 'ready' || node === null || typeof ResizeObserver === 'undefined') {

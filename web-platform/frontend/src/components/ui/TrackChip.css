@@ -1,11 +1,3 @@
-/*
- * Track chip.
- *
- * A calm, uniform base so a row of them does not shout; the glyph and the word
- * carry the difference between tracks. The per-track icon tint is deliberately
- * faint and never the only cue (see Icon shape + label).
- */
-
 .track-chips {
   display: inline-flex;
   flex-wrap: wrap;
@@ -32,10 +24,6 @@
   color: var(--text-muted);
 }
 
-/*
- * Faint per-track tint on the glyph only. Blue for the guided path, the tool's
- * cyan accent for the full-depth interface, neutral for the open sandbox.
- */
 .track-chip--guided .track-chip__icon {
   color: var(--status-info);
 }

@@ -1,10 +1,3 @@
-"""The simulation workspace: guided activities, professional and free modes.
-
-Step 5 of the participant journey. All three tracks converge on the same run
-path (:func:`pilot.runner.run_scenario`), so validation, safeguards and
-analytics behave identically no matter how a participant got here.
-"""
-
 from __future__ import annotations
 
 import streamlit as st
@@ -41,7 +34,6 @@ def _record_download(kind: str) -> None:
 
 
 def _run_and_store(scenario, params: dict) -> None:
-    """Run a scenario and hold the outcome in session state."""
     participant_context = context()
     with st.spinner("Running the simulation…"):
         outcome = run_scenario(scenario, params, participant_context)
@@ -78,7 +70,6 @@ def _budget_caption() -> None:
         st.caption(f"{decision.runs_remaining} simulation runs left in this session.")
 
 
-# Guided track
 def _guided() -> None:
     activity_id = st.session_state.get("activity_id")
 
@@ -130,7 +121,6 @@ def _guided() -> None:
 
     st.markdown(step.brief)
 
-    # predict before running
     prediction_key = f"{activity.id}_{step.id}"
     predictions = st.session_state.setdefault("predictions", {})
     with st.container(border=True):
@@ -196,7 +186,6 @@ def _guided() -> None:
             st.rerun()
 
 
-# Professional and free tracks
 def _scenario_picker(track: str) -> None:
     available = scenarios_for(track)
     by_category: dict[str, list] = {}
@@ -237,7 +226,6 @@ def _explore(track: str) -> None:
             st.caption("References: " + "; ".join(scenario.references))
 
     params = st.session_state.get("params") or default_params(scenario)
-    # Guard against a stale parameter dict from a previously selected scenario.
     valid_names = {param.name for param in scenario.params}
     params = {key: value for key, value in params.items() if key in valid_names}
     for param in scenario.params:
@@ -248,7 +236,6 @@ def _explore(track: str) -> None:
                            show_advanced=(track == "professional"))
     st.session_state.params = params
 
-    # Live feasibility feedback, before anything is run.
     check = validate_params(scenario, params)
     if check.ok:
         st.caption(f"Estimated {check.n_steps:,} integration steps "
@@ -280,7 +267,6 @@ def _explore(track: str) -> None:
         _show_outcome(scenario, outcome, st.session_state.get("params", params))
 
 
-# Entry point
 def workspace() -> None:
     track = st.session_state.get("track") or "free"
 

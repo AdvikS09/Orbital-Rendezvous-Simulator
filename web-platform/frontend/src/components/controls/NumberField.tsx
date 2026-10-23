@@ -1,20 +1,3 @@
-/**
- * A labelled numeric input.
- *
- * Three decisions worth stating, because they are easy to get wrong:
- *
- * 1. The control is `type="text"` with `inputMode="decimal"`, not
- *    `type="number"`. A number input silently discards `4.6e-5` in several
- *    browsers, hides the value behind spinner buttons, and reports an empty
- *    string for anything it cannot parse. Orbital parameters are routinely
- *    entered in scientific form, so the text is parsed here instead.
- * 2. Nothing is clamped. The engine owns its bounds and returns a message that
- *    explains which bound was hit and why; quietly snapping a typed value to a
- *    limit would hide the fact that the user asked for something else.
- * 3. Unparseable text is an error, never a zero. Typing `4.6e` mid-entry leaves
- *    the last valid value in place and shows what is wrong.
- */
-
 import { useEffect, useId, useState } from 'react'
 import type { ParamSpec } from '@/api/types'
 import { Icon } from '@/components/ui'
@@ -22,12 +5,6 @@ import { NumberValue } from '@/components/NumberValue'
 import { MINUS, rawValue } from '@/formatting/number'
 import './NumberField.css'
 
-/**
- * Parse text typed by a user into a number, or null if it is not one.
- *
- * Accepts plain decimals and scientific notation, and tolerates the Unicode
- * minus sign, because a value copied out of the results table carries one.
- */
 export function parseNumericInput(text: string): number | null {
   const trimmed = text.trim().replace(new RegExp(MINUS, 'g'), '-')
   if (trimmed === '') return null
@@ -35,7 +12,6 @@ export function parseNumericInput(text: string): number | null {
   return Number.isFinite(parsed) ? parsed : null
 }
 
-/** The editable representation: full precision, no presentation formatting. */
 export function toInputText(value: number): string {
   return rawValue(value)
 }
@@ -44,7 +20,6 @@ export interface NumberFieldProps {
   param: ParamSpec
   value: number
   onChange: (value: number) => void
-  /** Validation message from the server. Takes precedence over parse errors. */
   error?: string
   disabled?: boolean
 }
@@ -62,13 +37,6 @@ export function NumberField({
   const boundsId = `${inputId}-bounds`
   const errorId = `${inputId}-error`
 
-  /*
-   * While the user is typing, the text they have entered is the truth: a draft
-   * of `1.2e` is not yet a number and must not be rewritten. Once the draft
-   * parses, the parsed number is pushed upward and the draft is kept so the
-   * caret does not jump. The draft is dropped whenever the value changes from
-   * outside, which is what makes 'reset to defaults' visible in the field.
-   */
   const [draft, setDraft] = useState<string | null>(null)
 
   useEffect(() => {
@@ -109,8 +77,6 @@ export function NumberField({
   }
 
   function handleBlur() {
-    // A draft that parses is equivalent to the value it produced, so drop it
-    // and let the canonical representation take over.
     if (draft !== null && parseNumericInput(draft) !== null) setDraft(null)
   }
 

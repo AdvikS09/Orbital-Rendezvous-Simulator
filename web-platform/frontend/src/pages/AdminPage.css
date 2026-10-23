@@ -1,16 +1,3 @@
-/*
- * Administrator dashboard.
- *
- * A two-column working layout: filters pinned on the left, report on the right.
- * The filters stay in view while the reader scrolls a long table, because
- * changing the period is the action they repeat most and scrolling back up to
- * find it is friction on every single iteration.
- *
- * Below 1024px the sidebar becomes an ordinary block above the report. It is
- * not collapsed behind a control: on a narrow screen an administrator still
- * needs to see which filters produced the figures they are reading.
- */
-
 .admin-page {
   display: flex;
   flex-direction: column;
@@ -20,7 +7,6 @@
   padding: var(--space-6) var(--space-6) var(--space-12);
 }
 
-/* ------------------------------------------------------------------ header */
 .admin-page__header {
   display: flex;
   flex-wrap: wrap;
@@ -54,7 +40,6 @@
   gap: var(--space-3);
 }
 
-/* ------------------------------------------------------------------- shell */
 .admin-page__body {
   display: grid;
   grid-template-columns: var(--sidebar-width) minmax(0, 1fr);
@@ -121,7 +106,6 @@
   padding: var(--space-12) 0;
 }
 
-/* ---------------------------------------------------------------- controls */
 .admin-page__field {
   display: flex;
   flex-direction: column;
@@ -227,7 +211,6 @@
   line-height: var(--leading-relaxed);
 }
 
-/* ---------------------------------------------------------------- sign-in */
 .admin-page__sign-in {
   max-width: 30rem;
   margin: 0 auto;
@@ -260,7 +243,6 @@
   line-height: var(--leading-normal);
 }
 
-/* --------------------------------------------------------------- sections */
 .admin-page__section {
   display: flex;
   flex-direction: column;
@@ -281,7 +263,6 @@
   font-size: var(--text-md);
 }
 
-/* ------------------------------------------------------------ definitions */
 .admin-page__definitions {
   display: flex;
   flex-direction: column;
@@ -321,7 +302,6 @@
   }
 }
 
-/* ------------------------------------------------- qualitative feedback */
 .admin-page__cards {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(24rem, 1fr));

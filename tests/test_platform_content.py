@@ -1,16 +1,3 @@
-"""Tests for educational content: activities, assessments and exports.
-
-Two things matter here beyond "does it run".
-
-First, **the numbers quoted to learners must be true**. Activity text tells
-students what to expect ("about 1595 s", "roughly 3770 m", "about 5.8 m"), and a
-wrong expected value teaches the wrong lesson more effectively than no value at
-all. Those claims are checked against the engine here.
-
-Second, **every activity step must actually be runnable** through the same
-validated path as any other simulation.
-"""
-
 import numpy as np
 import pytest
 
@@ -25,7 +12,6 @@ from pilot.content.scenarios_catalog import default_params, get_scenario
 from pilot.runner import run_scenario, validate_params
 
 
-# Activity structure
 def test_activities_have_unique_ids_and_content():
     ids = [activity.id for activity in ACTIVITIES]
     assert len(ids) == len(set(ids))
@@ -45,7 +31,6 @@ def test_every_activity_step_points_at_a_real_scenario():
 
 
 def test_every_activity_step_has_a_prediction_and_a_takeaway():
-    """Predict-then-check is the point; a step without a prediction is a demo."""
     for activity in ACTIVITIES:
         for step in activity.steps:
             assert step.predict_prompt, f"{activity.id}/{step.id} has no prediction"
@@ -74,14 +59,11 @@ def test_every_activity_step_runs(activity_id, pilot_env):
 
 
 def test_activities_are_flagged_as_needing_teacher_review():
-    """The draft status must stay visible until a teacher has actually reviewed."""
     for activity in ACTIVITIES:
         assert "review" in activity.review_status.lower()
 
 
-# The numbers quoted to learners must be true
 def test_period_at_1200km_is_about_109_minutes():
-    """Activity 1 step 2 tells learners to expect ~109 minutes."""
     from src import orbit
 
     period = orbit.orbital_period(orbit.R_EARTH + 1_200_000.0)
@@ -96,7 +78,6 @@ def test_period_at_400km_is_about_92_6_minutes():
 
 
 def test_radial_offset_drift_matches_the_quoted_3770m(pilot_env):
-    """Activity 2 step 2 tells learners to expect about -3770 m along-track."""
     activity = get_activity("relative_motion")
     step = next(s for s in activity.steps if s.id == "step2_radial")
     scenario = get_scenario(step.scenario_id)
@@ -105,12 +86,10 @@ def test_radial_offset_drift_matches_the_quoted_3770m(pilot_env):
     assert outcome.ok
     final_along_track = float(outcome.result["states"][-1, 1])
     assert final_along_track == pytest.approx(-3770.0, rel=0.02)
-    # And it is the textbook -12*pi*x0 result.
     assert final_along_track == pytest.approx(-12 * np.pi * 100.0, rel=0.02)
 
 
 def test_alongtrack_parking_really_stays_put(pilot_env):
-    """Activity 2 step 1 claims the chaser 'barely moves'."""
     activity = get_activity("relative_motion")
     step = next(s for s in activity.steps if s.id == "step1_alongtrack")
     scenario = get_scenario(step.scenario_id)
@@ -123,7 +102,6 @@ def test_alongtrack_parking_really_stays_put(pilot_env):
 
 
 def test_cross_track_returns_to_where_it_started(pilot_env):
-    """Activity 2 step 3 claims a full sine cycle returning to the start."""
     activity = get_activity("relative_motion")
     step = next(s for s in activity.steps if s.id == "step3_crosstrack")
     scenario = get_scenario(step.scenario_id)
@@ -132,13 +110,11 @@ def test_cross_track_returns_to_where_it_started(pilot_env):
     assert outcome.ok
     states = outcome.result["states"]
     assert float(states[-1, 2]) == pytest.approx(200.0, abs=1.0)
-    # In-plane components must stay at zero -- the decoupling claim.
     assert float(np.max(np.abs(states[:, 0]))) < 1e-6
     assert float(np.max(np.abs(states[:, 1]))) < 1e-6
 
 
 def test_rendezvous_numbers_quoted_in_activity_three(pilot_env):
-    """Activity 3 step 1 quotes ~1595 s, ~2.33 m/s and ~0.017 m/s^2."""
     activity = get_activity("control_and_cost")
     step = next(s for s in activity.steps if s.id == "step1_rendezvous")
     scenario = get_scenario(step.scenario_id)
@@ -149,12 +125,10 @@ def test_rendezvous_numbers_quoted_in_activity_three(pilot_env):
     assert float(metrics["convergence_time_s"]) == pytest.approx(1595.0, abs=25.0)
     assert float(metrics["delta_v_mps"]) == pytest.approx(2.33, abs=0.05)
     assert float(metrics["max_control_accel_mps2"]) == pytest.approx(0.017, abs=0.001)
-    # And the claim that it is "comfortably under the 0.05 limit".
     assert float(metrics["max_control_accel_mps2"]) < 0.05
 
 
 def test_higher_bandwidth_is_faster_and_costlier(pilot_env):
-    """Activity 3 step 2 claims faster but more expensive. Verify the direction."""
     scenario = get_scenario("pd_rendezvous")
     base = {**default_params(scenario), "rel_x": 200.0, "rel_y": -300.0, "rel_z": 80.0,
             "altitude_km": 400.0, "duration_s": 5553.62, "dt_s": 5.0, "max_accel": 0.05}
@@ -171,7 +145,6 @@ def test_higher_bandwidth_is_faster_and_costlier(pilot_env):
 
 
 def test_j2_roughly_doubles_the_model_gap_as_the_activity_claims(pilot_env):
-    """Activity 3 step 4 quotes ~2.8 m without J2 and ~5.8 m with it."""
     scenario = get_scenario("cw_vs_reference")
     base = {**default_params(scenario), "rel_x": 0.0, "rel_y": 1000.0, "rel_z": 0.0,
             "rel_vx": 0.0, "rel_vy": 0.0, "rel_vz": 0.0, "altitude_km": 400.0,
@@ -189,7 +162,6 @@ def test_j2_roughly_doubles_the_model_gap_as_the_activity_claims(pilot_env):
 
 
 def test_radial_offset_is_much_worse_than_along_track(pilot_env):
-    """Activity 3 step 4's closing claim, and a scenario limitation elsewhere."""
     scenario = get_scenario("cw_vs_reference")
     base = {**default_params(scenario), "rel_vx": 0.0, "rel_vy": 0.0, "rel_vz": 0.0,
             "altitude_km": 400.0, "inclination_deg": 51.6, "duration_s": 5553.62,
@@ -207,7 +179,6 @@ def test_radial_offset_is_much_worse_than_along_track(pilot_env):
         f"radial {radial_error:.1f} m vs along-track {along_error:.1f} m")
 
 
-# Assessment instrument
 def test_instrument_structure():
     for instrument in INSTRUMENTS.values():
         assert instrument.items
@@ -253,7 +224,6 @@ def test_scoring_handles_unanswered_items():
 
 
 def test_scored_responses_store_no_free_text():
-    """Only correctness is persisted -- never a written answer."""
     responses = {item.id: item.correct_index for item in ORBITAL_BASICS.items}
     _, per_item = score_responses(ORBITAL_BASICS, responses)
     for entry in per_item:
@@ -261,13 +231,11 @@ def test_scored_responses_store_no_free_text():
 
 
 def test_assessment_items_cover_the_activity_topics():
-    """The instrument should measure what the activities actually teach."""
     topics = {item.topic for item in ORBITAL_BASICS.items}
     assert {"orbits", "perturbations", "relative_motion", "control",
             "modelling"}.issubset(topics)
 
 
-# Exports
 def test_scenario_config_is_reproducible_and_clean():
     from pilot.export import config_json, scenario_config
 
@@ -282,7 +250,6 @@ def test_scenario_config_is_reproducible_and_clean():
     assert config["engine_version"]
     assert config["environment"]["numpy"]
     assert config["assumptions"] and config["limitations"]
-    # It must be JSON-serialisable.
     assert config_json(scenario, params)
 
 

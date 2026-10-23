@@ -1,23 +1,3 @@
-"""Guided educational activities.
-
-*** REQUIRES TEACHER REVIEW BEFORE CLASSROOM USE ***
-
-These activities were written against what the engine genuinely does, and every
-expected outcome quoted in them was checked against the simulator. They have
-**not** been reviewed by a subject teacher or trialled with students -- reading
-level, pacing and curriculum fit are all unverified. See ``KNOWN_GAPS.md``.
-
-Structure of an activity
-------------------------
-Each activity is a short sequence of steps. A step names a scenario from the
-catalogue, supplies starting parameters, asks the learner to **predict** before
-running, and then says what to look for. Predict-then-check is deliberate: it
-is what turns a simulator from an animation into an experiment.
-
-Nothing here contains physics. The steps reference scenario ids, and the
-platform runs them through the same validated path as every other simulation.
-"""
-
 from __future__ import annotations
 
 from dataclasses import dataclass, field
@@ -25,8 +5,6 @@ from dataclasses import dataclass, field
 
 @dataclass(frozen=True)
 class ActivityStep:
-    """One predict-run-observe step."""
-
     id: str
     title: str
     scenario_id: str
@@ -40,11 +18,9 @@ class ActivityStep:
 
 @dataclass(frozen=True)
 class Activity:
-    """A guided sequence of steps on one theme."""
-
     id: str
     title: str
-    level: str                 # introductory | intermediate
+    level: str
     duration_minutes: int
     summary: str
     learning_points: tuple[str, ...]
@@ -53,7 +29,6 @@ class Activity:
     review_status: str = "DRAFT - not yet reviewed by a subject teacher"
 
 
-# Activity 1 -- orbits and what disturbs them
 ORBITS_AND_PERTURBATIONS = Activity(
     id="orbits_and_perturbations",
     title="What keeps a satellite up, and what pulls it down",
@@ -168,7 +143,6 @@ ORBITS_AND_PERTURBATIONS = Activity(
 )
 
 
-# Activity 2 -- relative motion
 RELATIVE_MOTION = Activity(
     id="relative_motion",
     title="Why you cannot just fly straight at another spacecraft",
@@ -262,7 +236,6 @@ RELATIVE_MOTION = Activity(
 )
 
 
-# Activity 3 -- control and its cost
 CONTROL_AND_COST = Activity(
     id="control_and_cost",
     title="Flying the rendezvous, and paying for it",

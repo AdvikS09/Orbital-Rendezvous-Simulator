@@ -1,11 +1,3 @@
-/**
- * Result rendering.
- *
- * `ResultView` composes the whole thing; the individual panels are exported so
- * a page can assemble a different arrangement (an activity step, for instance,
- * that shows only the metrics it asked the reader to predict).
- */
-
 export { MetricGrid } from './MetricGrid'
 export type { MetricGridProps } from './MetricGrid'
 

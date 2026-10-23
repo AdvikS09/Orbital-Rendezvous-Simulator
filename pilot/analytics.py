@@ -1,33 +1,3 @@
-"""Anonymous usage analytics: identity, event recording and metric queries.
-
-Privacy rules enforced here, not merely documented:
-
-* No name, email address, exact age, IP address or user agent is accepted by any
-  function in this module -- there are no parameters for them.
-* The participant code is never stored. Only ``HMAC-SHA256(salt, pilot||code)``
-  is, so a returning participant is recognisable but not identifiable.
-* Event detail is restricted to **categories and derived numbers**. Raw
-  user-supplied orbital parameters are dropped unless
-  ``PILOT_LOG_RAW_PARAMETERS`` is explicitly enabled.
-* Every write carries ``is_demo``, set from ``PILOT_ENV``, and every reporting
-  query excludes demo rows by default.
-
-Metric definitions (used consistently across the admin area and exports):
-
-===================== =========================================================
-Unique user           an anonymous participant who has completed at least one
-                      simulation
-Active user           an anonymous participant who completed a simulation during
-                      the selected reporting period
-Returning user        an anonymous participant who used the platform on at least
-                      two separate dates
-Completed run         a simulation that finished successfully and displayed
-                      results (one ``simulation_completed`` event)
-Measured-impact user  a participant who completed both the pre- and the post-
-                      assessment for the same instrument
-===================== =========================================================
-"""
-
 from __future__ import annotations
 
 import hashlib
@@ -56,7 +26,6 @@ from .models import (
 logger = logging.getLogger("pilot.analytics")
 
 
-# Event vocabulary -- the only event types that may be written
 class EventType:
     PILOT_ACCESSED = "pilot_accessed"
     CONSENT_GIVEN = "consent_given"
@@ -88,8 +57,6 @@ USER_TYPE_LABELS = {
 }
 TRACKS = ("guided", "professional", "free")
 
-#: Keys that may appear in ``detail_json`` without raw-parameter consent. These
-#: are derived, bucketed or categorical -- never a value the participant typed.
 SAFE_DETAIL_KEYS = frozenset({
     "model", "force_model", "controlled", "n_samples", "steps_bucket",
     "duration_orbits_bucket", "separation_bucket_m", "altitude_bucket_km",
@@ -98,15 +65,8 @@ SAFE_DETAIL_KEYS = frozenset({
 })
 
 
-# Anonymous identity
 def participant_hash(pilot_code: str, participant_code: str,
                      settings: Settings | None = None) -> str:
-    """Irreversible, salt-keyed identifier for an anonymous participant.
-
-    Deterministic for a given (pilot code, participant code, salt), so the same
-    person is recognised on a later visit; not reversible to the code they
-    chose, and not comparable across deployments with different salts.
-    """
     settings = settings or get_settings()
     message = f"{pilot_code.strip().upper()}|{participant_code.strip().upper()}"
     return hmac.new(settings.participant_salt.encode("utf-8"),
@@ -117,11 +77,8 @@ def new_session_token() -> str:
     return secrets.token_hex(16)
 
 
-# Identity context passed around the UI
 @dataclass
 class ParticipantContext:
-    """Everything the analytics layer needs to attribute an event."""
-
     participant_id: int
     participant_ref: str
     session_id: int
@@ -135,14 +92,7 @@ class ParticipantContext:
     pilot_code: str | None = None
 
 
-# Organisation / pilot-code resolution
 def resolve_pilot_code(code: str, settings: Settings | None = None):
-    """Look up a pilot code. Returns ``(pilot_code_row, organisation_row)``.
-
-    Returns ``(None, None)`` when the code is unknown. Whether an unknown code
-    is allowed is a policy decision made by the caller via
-    ``settings.require_known_pilot_code``.
-    """
     settings = settings or get_settings()
     normalised = code.strip().upper()
     if not normalised:
@@ -163,11 +113,6 @@ def resolve_pilot_code(code: str, settings: Settings | None = None):
 
 
 def ensure_unlisted_organisation(settings: Settings | None = None) -> int:
-    """Organisation used for participants whose pilot code is not registered.
-
-    Keeps such sessions countable without inventing an institutional
-    relationship: the organisation is literally called "Unregistered pilot code".
-    """
     settings = settings or get_settings()
     engine = get_engine(settings)
     code = "UNREGISTERED"
@@ -186,17 +131,6 @@ def ensure_unlisted_organisation(settings: Settings | None = None) -> int:
 
 def ensure_unlisted_pilot_code(code: str, organisation_id: int,
                                settings: Settings | None = None) -> int:
-    """Record an unregistered pilot code so cohorts stay distinguishable.
-
-    Without this, every unregistered code collapses into the single
-    "Unregistered pilot code" organisation and two different cohorts that both
-    forgot to register become impossible to tell apart in reporting.
-
-    The code itself is recorded, but the *organisation* stays "Unregistered
-    pilot code" -- so nothing here invents an institution or an institutional
-    relationship. A pilot code is a shared cohort identifier chosen by a
-    coordinator, not personal data.
-    """
     settings = settings or get_settings()
     normalised = code.strip().upper()
     engine = get_engine(settings)
@@ -213,15 +147,9 @@ def ensure_unlisted_pilot_code(code: str, organisation_id: int,
         ).returning(pilot_codes.c.id)).scalar_one())
 
 
-# Session start
 def start_session(pilot_code: str, participant_code: str, user_type: str,
                   consent_version: str, settings: Settings | None = None
                   ) -> ParticipantContext:
-    """Register (or recognise) an anonymous participant and open a session.
-
-    Also maintains the two facts that "returning user" depends on:
-    ``distinct_active_days`` and ``last_seen_date``.
-    """
     settings = settings or get_settings()
     if user_type not in USER_TYPES:
         user_type = "other"
@@ -239,7 +167,6 @@ def start_session(pilot_code: str, participant_code: str, user_type: str,
     else:
         organisation_id = ensure_unlisted_organisation(settings)
         organisation_name = "Unregistered pilot code"
-        # Record the code itself so two unregistered cohorts stay distinguishable.
         pilot_code_id = ensure_unlisted_pilot_code(
             pilot_code, organisation_id, settings) if pilot_code.strip() else None
 
@@ -262,7 +189,6 @@ def start_session(pilot_code: str, participant_code: str, user_type: str,
         else:
             participant_id = int(existing["id"])
             new_day = existing["last_seen_date"] != today
-            # "Returning" means a *separate date*, not merely a new session.
             is_return_visit = new_day
             connection.execute(participants.update()
                                .where(participants.c.id == participant_id)
@@ -272,7 +198,6 @@ def start_session(pilot_code: str, participant_code: str, user_type: str,
                                    distinct_active_days=(
                                        existing["distinct_active_days"] + 1
                                        if new_day else existing["distinct_active_days"]),
-                                   # Keep the newest known pilot/org attribution.
                                    pilot_code_id=pilot_code_id or existing["pilot_code_id"],
                                    organisation_id=organisation_id or existing["organisation_id"],
                                ))
@@ -300,9 +225,7 @@ def start_session(pilot_code: str, participant_code: str, user_type: str,
     return context
 
 
-# Event recording
 def _sanitise_detail(detail: dict | None, settings: Settings) -> str | None:
-    """Drop anything that is not an approved, non-identifying key."""
     if not detail:
         return None
     if settings.log_raw_parameters:
@@ -326,12 +249,6 @@ def record_event(context: ParticipantContext | None, event_type: str, *,
                  error_class: str | None = None,
                  detail: dict | None = None,
                  settings: Settings | None = None) -> bool:
-    """Write one analytics event. Never raises.
-
-    Analytics must not be able to break a simulation the participant is running,
-    so a database failure is logged and swallowed. The return value says whether
-    the write succeeded, which the tests assert on.
-    """
     settings = settings or get_settings()
     if event_type not in KNOWN_EVENT_TYPES:
         logger.warning("refusing to record unknown event type %r", event_type)
@@ -369,14 +286,12 @@ def record_event(context: ParticipantContext | None, event_type: str, *,
                                    .values(last_active_at=now))
         return True
     except SQLAlchemyError as exc:
-        # Log the class and message, never the values (they may hold parameters).
         logger.error("failed to record %s event: %s", event_type, type(exc).__name__)
         return False
 
 
 def set_track(context: ParticipantContext, track: str,
               settings: Settings | None = None) -> None:
-    """Record the participant's chosen track on the session and in events."""
     settings = settings or get_settings()
     if track not in TRACKS:
         return
@@ -393,17 +308,11 @@ def set_track(context: ParticipantContext, track: str,
                  settings=settings)
 
 
-# Assessments and feedback
 def record_assessment(context: ParticipantContext, *, instrument_id: str,
                       instrument_version: str, phase: str, score: int,
                       max_score: int, item_responses: list | None = None,
                       confidence_rating: int | None = None,
                       settings: Settings | None = None) -> bool:
-    """Store one pre- or post-assessment result.
-
-    ``item_responses`` holds per-item correctness only (the item id and whether
-    it was right), never the free text of an answer.
-    """
     settings = settings or get_settings()
     if phase not in ("pre", "post"):
         return False
@@ -431,7 +340,6 @@ def record_assessment(context: ParticipantContext, *, instrument_id: str,
                 "user_type": context.user_type, "is_demo": settings.is_demo_data,
             }
             if existing is not None:
-                # Re-taking overwrites: one pre and one post per participant.
                 connection.execute(assessments.update()
                                    .where(assessments.c.id == existing)
                                    .values(**values))
@@ -460,7 +368,6 @@ def record_feedback(context: ParticipantContext, *,
                     bug_report: str | None = None,
                     feature_request: str | None = None,
                     settings: Settings | None = None) -> bool:
-    """Store one feedback submission."""
     settings = settings or get_settings()
     now = utcnow()
 
@@ -492,7 +399,6 @@ def record_feedback(context: ParticipantContext, *,
     return True
 
 
-# Reporting
 def _demo_filter(table, include_demo: bool):
     return None if include_demo else (table.c.is_demo == False)  # noqa: E712
 
@@ -518,8 +424,6 @@ def _apply_filters(query, table, *, include_demo: bool,
 
 @dataclass
 class ReportFilters:
-    """Filter set shared by every admin query."""
-
     start: date | None = None
     end: date | None = None
     organisation_id: int | None = None
@@ -528,7 +432,6 @@ class ReportFilters:
 
 
 def summary_metrics(filters: ReportFilters, settings: Settings | None = None) -> dict:
-    """Headline pilot metrics, using the definitions documented above."""
     settings = settings or get_settings()
     engine = get_engine(settings)
     completed = events.c.event_type == EventType.SIMULATION_COMPLETED
@@ -557,9 +460,6 @@ def summary_metrics(filters: ReportFilters, settings: Settings | None = None) ->
         completed_runs = count_events(completed)
         failed_runs = count_events(failed)
 
-        # Unique users: at least one completed simulation *ever* within the
-        # organisation/user-type filter -- deliberately not date-limited, since
-        # "unique" is a property of the participant, not of the window.
         unique_query = select(func.count(distinct(events.c.participant_id))).where(completed)
         unique_query = _apply_filters(unique_query, events,
                                       include_demo=filters.include_demo,
@@ -569,8 +469,6 @@ def summary_metrics(filters: ReportFilters, settings: Settings | None = None) ->
                                       user_type=filters.user_type)
         unique_users = int(connection.execute(unique_query).scalar() or 0)
 
-        # Returning users: activity on >= 2 separate dates. Deliberately not
-        # date-windowed -- "returning" is a property of the participant.
         returning_inner = (
             select(events.c.participant_id)
             .where(events.c.participant_id.isnot(None))
@@ -585,7 +483,6 @@ def summary_metrics(filters: ReportFilters, settings: Settings | None = None) ->
         returning_users = int(connection.execute(
             select(func.count()).select_from(returning_inner.subquery())).scalar() or 0)
 
-        # Measured-impact users: both pre and post for the same instrument.
         impact_inner = (
             select(assessments.c.participant_id)
             .group_by(assessments.c.participant_id, assessments.c.instrument_id)
@@ -600,7 +497,6 @@ def summary_metrics(filters: ReportFilters, settings: Settings | None = None) ->
             select(func.count(distinct(impact_inner.subquery().c.participant_id)))
         ).scalar() or 0)
 
-        # Organisations with any recorded activity.
         org_query = select(func.count(distinct(events.c.organisation_id)))
         org_query = _apply_filters(org_query, events, include_demo=filters.include_demo,
                                    start=filters.start, end=filters.end,
@@ -687,12 +583,6 @@ def usage_by_organisation(filters: ReportFilters,
 
 def usage_by_pilot_code(filters: ReportFilters,
                         settings: Settings | None = None) -> list[dict]:
-    """Activity per pilot code -- the cohort dimension.
-
-    Separate from :func:`usage_by_organisation` because one organisation may run
-    several cohorts, and because unregistered codes all share the single
-    "Unregistered pilot code" organisation while remaining distinct cohorts.
-    """
     settings = settings or get_settings()
     completed = events.c.event_type == EventType.SIMULATION_COMPLETED
     query = (select(pilot_codes.c.code.label("pilot_code"),
@@ -800,7 +690,6 @@ def simulations_per_user(filters: ReportFilters,
 
 def assessment_changes(filters: ReportFilters,
                        settings: Settings | None = None) -> list[dict]:
-    """Per-participant pre/post scores and the change between them."""
     settings = settings or get_settings()
     pre = assessments.alias("pre")
     post = assessments.alias("post")
@@ -867,7 +756,6 @@ def feedback_rows(filters: ReportFilters, settings: Settings | None = None) -> l
 
 def feedback_ratings_summary(filters: ReportFilters,
                              settings: Settings | None = None) -> dict:
-    """Mean ratings, split so professional usefulness can be read separately."""
     settings = settings or get_settings()
     professional = feedback.c.user_type == "engineer_researcher"
     query = select(
@@ -894,7 +782,6 @@ def feedback_ratings_summary(filters: ReportFilters,
 
 def bug_and_feature_rows(filters: ReportFilters,
                          settings: Settings | None = None) -> list[dict]:
-    """Feedback rows that actually reported a bug or requested a feature."""
     rows = feedback_rows(filters, settings)
     return [row for row in rows if row.get("bug_report") or row.get("feature_request")]
 

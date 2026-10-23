@@ -1,15 +1,3 @@
-/**
- * Step 1 of the participant journey: what this is, who it is for, and — at
- * least as prominently — what it is not.
- *
- * The self-description, the validation statement and the physics limitations
- * are carried across verbatim from `pilot/ui/flow.py` and `pilot/ui/common.py`.
- * They carry scientific qualifications that must not drift, so they live here
- * as constants rather than as prose scattered through the markup. The only
- * changes made to the Streamlit source are typographic: emoji are removed, and
- * the ASCII `--` used there for an em dash is written as a real em dash.
- */
-
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 
@@ -18,14 +6,6 @@ import { STATUS_STATEMENT, VALIDATION_STATEMENT } from '@/components/Layout'
 import { Button, Callout, Disclosure, Panel } from '@/components/ui'
 import { ROUTES } from './participantFlow'
 import './LandingPage.css'
-
-// --------------------------------------------------------------------------
-// Verbatim text
-//
-// STATUS_STATEMENT and VALIDATION_STATEMENT are imported rather than restated:
-// they also appear in the standing footer, and two copies of a claim about
-// validation status is exactly how such claims drift apart.
-// --------------------------------------------------------------------------
 
 const SUBTITLE =
   'An open-source tool for exploring how spacecraft move near one another in ' +
@@ -71,7 +51,6 @@ const AUDIENCES: readonly { lead: string; rest: string }[] = [
   },
 ]
 
-/** The seven known limitations of the physics, from `flow.landing`. */
 const LIMITATIONS: readonly { lead: string; rest: string }[] = [
   {
     lead: 'The relative-motion model is linear.',
@@ -117,23 +96,16 @@ const LIMITATIONS: readonly { lead: string; rest: string }[] = [
   },
 ]
 
-// --------------------------------------------------------------------------
-// Component
-// --------------------------------------------------------------------------
 export function LandingPage() {
   const navigate = useNavigate()
   const [engineVersion, setEngineVersion] = useState<string | null>(null)
 
-  // The engine version is part of the provenance statement, so it is read from
-  // the running server rather than baked into the bundle.
   useEffect(() => {
     const controller = new AbortController()
     api
       .health(controller.signal)
       .then((health) => setEngineVersion(health.engine_version))
       .catch(() => {
-        // A landing page that cannot reach the API is still readable; the
-        // version is omitted rather than guessed.
       })
     return () => controller.abort()
   }, [])

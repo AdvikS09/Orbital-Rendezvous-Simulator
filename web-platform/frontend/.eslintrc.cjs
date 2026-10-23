@@ -1,14 +1,3 @@
-/**
- * ESLint configuration.
- *
- * The rules that matter most here are the accessibility ones: this is a
- * teaching tool that will be used on school hardware and by people relying on
- * screen readers, and an unlabelled input is a defect, not a style preference.
- *
- * `no-restricted-syntax` enforces the project's own rule that no number reaches
- * the screen without going through the shared formatter - the defect this
- * migration exists to fix.
- */
 module.exports = {
   root: true,
   env: { browser: true, es2022: true },
@@ -27,6 +16,7 @@ module.exports = {
   ],
   ignorePatterns: ['dist', 'node_modules', 'coverage', '*.cjs'],
   rules: {
+    'no-empty': ['error', { allowEmptyCatch: true }],
     'react-hooks/rules-of-hooks': 'error',
     'react-hooks/exhaustive-deps': 'warn',
 
@@ -40,30 +30,18 @@ module.exports = {
       {
         prefer: 'type-imports',
         fixStyle: 'separate-type-imports',
-        // The lazy Plotly loader's return type is genuinely `typeof
-        // import('plotly.js-dist-min')`; there is no static import to point at,
-        // because the whole point is that the module is not statically loaded.
         disallowTypeAnnotations: false,
       },
     ],
 
-    // Accessibility, treated as errors rather than warnings.
     'jsx-a11y/label-has-associated-control': [
       'error',
       { assert: 'either', depth: 3 },
     ],
     'jsx-a11y/no-autofocus': 'error',
 
-    // `role="list"` on a <ul> is redundant in the specification but NOT in
-    // practice: Safari with VoiceOver drops list semantics from any list styled
-    // `list-style: none`, which every list in this interface is. Removing the
-    // role would make those lists unannounced for VoiceOver users, so it is
-    // kept deliberately.
     'jsx-a11y/no-redundant-roles': ['error', { ul: ['list'], ol: ['list'] }],
 
-    // A scrollable region must be keyboard-focusable, or a keyboard-only user
-    // cannot scroll it (WCAG 2.1.1). Wide result tables are exactly that: a
-    // labelled `role="region"` with `overflow-x: auto` and `tabIndex={0}`.
     'jsx-a11y/no-noninteractive-tabindex': [
       'error',
       { tags: [], roles: ['tabpanel', 'region'], allowExpressionValues: true },
@@ -94,7 +72,6 @@ module.exports = {
   },
   overrides: [
     {
-      // The formatter is the one place allowed to do primitive number work.
       files: ['src/formatting/**/*.ts'],
       rules: { 'no-restricted-syntax': 'off' },
     },

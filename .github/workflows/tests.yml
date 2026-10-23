@@ -1,8 +1,5 @@
 name: tests
 
-# Runs on the active development branch (v2-platform) and on pull requests.
-# main is intentionally NOT a push trigger: it holds the historical V1 MVP and
-# is never built from here.
 on:
   push:
     branches: [v2-platform]
@@ -14,15 +11,12 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  # ---------------------------------------------------------------- engine
   engine:
     name: Engine + platform tests (Python ${{ matrix.python-version }})
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
-        # 3.14 is the reference interpreter the published results were produced
-        # on; 3.12 catches accidental use of newer-only syntax.
         python-version: ["3.12", "3.14"]
     steps:
       - uses: actions/checkout@v4
@@ -40,7 +34,6 @@ jobs:
           PILOT_PARTICIPANT_SALT: ci-fixed-salt-not-a-real-secret
         run: python -m pytest -q --durations=10
 
-  # -------------------------------------------------------------- regression
   regression:
     name: Numerical regression (reference environment)
     runs-on: ubuntu-latest
@@ -62,7 +55,6 @@ jobs:
           python -m pytest tests/test_regression_baseline.py \
                            tests/test_integrator_convergence.py -q
 
-  # ------------------------------------------------------------- web backend
   backend:
     name: Web API tests (FastAPI, engine parity)
     runs-on: ubuntu-latest
@@ -84,7 +76,6 @@ jobs:
           PILOT_PARTICIPANT_SALT: ci-fixed-salt-not-a-real-secret
         run: python -m pytest -q
 
-  # ------------------------------------------------------------ web frontend
   frontend:
     name: Web frontend (typecheck, lint, tests, build)
     runs-on: ubuntu-latest
@@ -109,7 +100,6 @@ jobs:
       - name: Production build
         run: npm run build
 
-  # ---------------------------------------------------------------- secrets
   secrets:
     name: No secrets committed
     runs-on: ubuntu-latest
@@ -120,10 +110,6 @@ jobs:
           set -e
           fail=0
 
-          # Paths that legitimately contain placeholder / example / local-dev
-          # values (never real secrets): env examples anywhere, markdown docs,
-          # both test suites, the CI workflows, and the local-dev compose file
-          # (its postgres password is a throwaway inside the compose network).
           SAFE=(':!.env.example' ':!web-platform/.env.example'
                 ':!*.md' ':!docs/*'
                 ':!tests/*' ':!web-platform/backend/tests/*'
@@ -141,8 +127,6 @@ jobs:
           if git ls-files | grep -E 'node_modules/'; then
             echo "::error::node_modules is tracked by git"; fail=1
           fi
-          # A populated (non-placeholder) admin password: a value that is not
-          # CHANGE_ME and not a commented line.
           if git grep -nI -P '^[^#]*PILOT_ADMIN_PASSWORD=(?!CHANGE_ME)[^[:space:]]' \
                -- "${SAFE[@]}"; then
             echo "::error::an admin password appears in a tracked file"; fail=1

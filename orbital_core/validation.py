@@ -1,16 +1,3 @@
-"""Validation and analysis: conservation checks, error metrics, studies.
-
-Provides:
-* two-body energy / angular-momentum / period validation,
-* rendezvous error metrics (position, velocity, control effort, delta-v),
-* a high-fidelity relative-motion propagator (full non-linear orbits expressed
-  in the target LVLH frame, with optional control on the deputy),
-* a PD gain-tuning sweep,
-* a CW vs high-fidelity comparison.
-
-Tabular results are returned as pandas DataFrames.
-"""
-
 import numpy as np
 import pandas as pd
 
@@ -23,7 +10,6 @@ def _trapezoid(y, x):
     return func(y, x)
 
 
-# --- Conservation / orbit validation --------------------------------------
 def energy_series(states, mu=orbit.MU_EARTH):
     return np.array([orbit.specific_energy(s, mu) for s in states])
 
@@ -39,7 +25,6 @@ def relative_drift(series):
 
 
 def verify_orbit(times, states, mu=orbit.MU_EARTH, analytic_period=None):
-    """Return a one-row DataFrame of energy/momentum drift and period accuracy."""
     energy = energy_series(states, mu)
     ang_mom = angular_momentum_series(states)
     measured = orbit.measure_period(times, states)
@@ -56,7 +41,6 @@ def verify_orbit(times, states, mu=orbit.MU_EARTH, analytic_period=None):
     return pd.DataFrame([row])
 
 
-# --- Rendezvous error metrics ---------------------------------------------
 def position_error_series(states, target=None):
     pos = np.asarray(states)[:, :3]
     tgt = np.zeros(3) if target is None else np.asarray(target, dtype=float)[:3]
@@ -74,15 +58,10 @@ def control_acceleration_series(controls):
 
 
 def cumulative_delta_v(times, controls):
-    """Total delta-v = integral of |u| dt [m/s]."""
     return float(_trapezoid(control_acceleration_series(controls), np.asarray(times, float)))
 
 
 def convergence_time(times, pos_error, tol):
-    """Time after which the position error stays within ``tol`` for good.
-
-    Returns 0.0 if always within tolerance, ``np.nan`` if it never converges.
-    """
     times = np.asarray(times, dtype=float)
     pos_error = np.asarray(pos_error, dtype=float)
     above = np.where(pos_error > tol)[0]
@@ -95,7 +74,6 @@ def convergence_time(times, pos_error, tol):
 
 
 def rendezvous_metrics(times, states, controls, target=None, pos_tol=1.0):
-    """One-row DataFrame summarising a controlled rendezvous run."""
     perr = position_error_series(states, target)
     verr = velocity_error_series(states, target)
     accel = control_acceleration_series(controls)
@@ -109,15 +87,7 @@ def rendezvous_metrics(times, states, controls, target=None, pos_tol=1.0):
     }])
 
 
-# --- High-fidelity relative propagation -----------------------------------
 def high_fidelity_relative(target_state0, rel_state0, times, force_model, controller=None):
-    """Propagate target + deputy under ``force_model`` and express in LVLH.
-
-    The target is uncontrolled; if ``controller`` is given its LVLH command is
-    rotated into the inertial frame and applied to the deputy, mirroring the CW
-    rendezvous scenario. Returns ``(rel_states, controls, target_states,
-    deputy_states)``.
-    """
     target_state0 = np.asarray(target_state0, dtype=float)
     deputy_state0 = lvlh.lvlh_to_inertial(target_state0, rel_state0)
     times = np.asarray(times, dtype=float)
@@ -145,14 +115,8 @@ def high_fidelity_relative(target_state0, rel_state0, times, force_model, contro
     return rel_states, controls, target_states, deputy_states
 
 
-# --- PD gain-tuning sweep -------------------------------------------------
 def gain_sweep(initial_rel_state, times, n, kp_values, kd_values,
                target=None, max_accel=None, pos_tol=1.0):
-    """Sweep Kp x Kd, running a CW rendezvous for each combination.
-
-    Returns a DataFrame with one row per (kp, kd): final position error, final
-    velocity error, convergence time, max control acceleration and delta-v.
-    """
     rows = []
     for kp in kp_values:
         for kd in kd_values:
@@ -173,14 +137,8 @@ def gain_sweep(initial_rel_state, times, n, kp_values, kd_values,
     return pd.DataFrame(rows)
 
 
-# --- CW vs high-fidelity comparison ---------------------------------------
 def compare_cw_high_fidelity(target_state0, rel_state0, times, force_model,
                              n=None, controller=None):
-    """Run the same scenario in CW and high-fidelity; quantify the divergence.
-
-    Returns a dict with the CW and high-fidelity relative state histories, the
-    position / velocity error-over-time series, and a one-row summary DataFrame.
-    """
     target_state0 = np.asarray(target_state0, dtype=float)
     if n is None:
         n = cw.cw_mean_motion(np.linalg.norm(target_state0[:3]), force_model.mu)

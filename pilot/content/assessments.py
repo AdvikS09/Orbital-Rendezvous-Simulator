@@ -1,34 +1,3 @@
-"""Configurable anonymous pre- and post-assessment instruments.
-
-*** REQUIRES TEACHER REVIEW BEFORE CLASSROOM USE ***
-
-These items were written to match the physics this platform actually
-demonstrates, but they have **not** been reviewed by a subject teacher, trialled
-with students, or checked for reading level, curriculum alignment or item
-discrimination. A pilot coordinator should review and adapt them before running
-them with a class. See ``KNOWN_GAPS.md``.
-
-Design notes
-------------
-* The **same items** are used pre and post. A matched instrument is the most
-  sensitive way to detect change with small cohorts, at the cost of a testing
-  effect: some of the gain will come from having seen the questions before.
-  That limitation is stated in the reporting rather than hidden.
-* Every item is answerable from the guided activities in this platform. No item
-  requires outside knowledge, calculation by hand, or algebra.
-* Only per-item **correctness** is stored, never the text of a response, and the
-  result is attached to the anonymous participant hash.
-* A self-rated confidence question accompanies the score, because confidence and
-  correctness can move independently and both are interesting for a pilot.
-
-Configurability
----------------
-``INSTRUMENTS`` is a dictionary, so a coordinator can add an instrument (a
-different topic, a different level) without touching any other code. The
-platform records ``instrument_id`` and ``instrument_version`` with every result,
-so revising an instrument does not silently pool incomparable data.
-"""
-
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -36,20 +5,16 @@ from dataclasses import dataclass
 
 @dataclass(frozen=True)
 class Item:
-    """One multiple-choice question."""
-
     id: str
     question: str
     options: tuple[str, ...]
     correct_index: int
     topic: str
-    explanation: str = ""      # shown only after the post-assessment
+    explanation: str = ""
 
 
 @dataclass(frozen=True)
 class Instrument:
-    """A named set of items used for both the pre- and post-assessment."""
-
     id: str
     version: str
     title: str
@@ -225,12 +190,6 @@ def get_instrument(instrument_id: str | None = None) -> Instrument:
 
 
 def score_responses(instrument: Instrument, responses: dict[str, int]) -> tuple[int, list]:
-    """Score a set of responses.
-
-    ``responses`` maps item id to the selected option index. Returns
-    ``(score, per_item)`` where ``per_item`` records only the item id, the chosen
-    index and whether it was correct -- never any free text.
-    """
     per_item = []
     score = 0
     for item in instrument.items:

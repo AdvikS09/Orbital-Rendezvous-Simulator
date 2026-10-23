@@ -1,18 +1,3 @@
-/**
- * The closing feedback form.
- *
- * Route: `/feedback`.
- *
- * Short on purpose. A long form gets abandoned and a pilot with no responses
- * measures nothing. Four scales and four free-text boxes, about two minutes.
- *
- * The wording adapts to who is answering. An engineer is asked whether this was
- * useful for real work and whether the assumptions and limitations were clear;
- * a learner is asked whether it helped them understand orbital mechanics and
- * whether the explanations made sense. Asking a student about assumptions and
- * limitations would produce a number that means nothing.
- */
-
 import type { FormEvent } from 'react'
 import { useCallback, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
@@ -107,9 +92,6 @@ function TextField({
 
 export function FeedbackPage() {
   const navigate = useNavigate()
-  // Who is answering comes from the session rather than being asked again: the
-  // participant already said at sign-in, and asking twice implies the first
-  // answer was not kept.
   const { userType } = useSession()
   const resolvedUserType: UserType = userType ?? 'other'
   const isProfessional = resolvedUserType === 'engineer_researcher'

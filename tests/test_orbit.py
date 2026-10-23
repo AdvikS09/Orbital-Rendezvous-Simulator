@@ -1,5 +1,3 @@
-"""Tests for core orbital mechanics: two-body, RK4, elements, energy, period."""
-
 import os
 import sys
 import unittest

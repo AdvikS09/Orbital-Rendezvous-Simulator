@@ -1,12 +1,3 @@
-/*
- * Parameter form layout.
- *
- * The grid is driven by available width rather than a column count, because the
- * same panel is used in the 340px parameter rail and in the full-width guided
- * view. Fields never share a row unless each still has room for its value and
- * unit side by side.
- */
-
 .param-panel {
   display: flex;
   flex-direction: column;
@@ -14,8 +5,6 @@
   min-width: 0;
 }
 
-/* The fieldset is structure, not decoration: the browser default border and
-   padding would draw a box the design does not want. */
 .param-panel__fieldset {
   border: 0;
   margin: 0;
@@ -30,8 +19,6 @@
   align-items: start;
 }
 
-/* min-width: 0 lets a cell shrink below the width of its longest number
-   instead of forcing the grid wider than its container. */
 .param-panel__cell {
   min-width: 0;
 }

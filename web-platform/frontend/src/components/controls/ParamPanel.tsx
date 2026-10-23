@@ -1,17 +1,3 @@
-/**
- * The parameter form for a scenario.
- *
- * Ordinary parameters sit in a responsive grid; anything the backend marks
- * advanced is folded into a disclosure, closed by default. That split is the
- * whole reason the panel exists: a scenario can expose twenty controls, and a
- * student needs the four that matter without the other sixteen shouting at
- * them, while an engineer needs all twenty one click away.
- *
- * The panel holds no parameter state. Values come in, changes go out by name,
- * and validation messages come from the server, so the form can never disagree
- * with what the engine will actually accept.
- */
-
 import { useMemo } from 'react'
 import type { ParamSpec, ParamValues } from '@/api/types'
 import { Disclosure } from '@/components/ui'
@@ -23,12 +9,9 @@ export interface ParamPanelProps {
   params: ParamSpec[]
   values: ParamValues
   onChange: (name: string, value: ParamValue) => void
-  /** Field-level messages keyed by parameter name. */
   errors: Record<string, string>
   disabled?: boolean
-  /** Open the advanced section on first render. */
   advancedOpen?: boolean
-  /** Accessible name for the form region. */
   legend?: string
   className?: string
 }

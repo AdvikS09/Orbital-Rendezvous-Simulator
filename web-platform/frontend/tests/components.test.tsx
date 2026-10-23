@@ -1,12 +1,3 @@
-/**
- * Component tests.
- *
- * Concentrated on the two things this migration was asked to get right and the
- * ones a screenshot cannot verify: that numbers are presented as scientific
- * notation with units rather than machine notation, and that every control is
- * reachable and announced.
- */
-
 import { describe, expect, it, vi } from 'vitest'
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
@@ -22,7 +13,6 @@ import { Callout } from '@/components/ui/Callout'
 import { TrackChip, TrackChips } from '@/components/ui/TrackChip'
 import { TIMES } from '@/formatting/number'
 
-// fixtures
 function numberParam(overrides: Partial<ParamSpec> = {}): ParamSpec {
   return {
     name: 'altitude_km',
@@ -58,7 +48,6 @@ function metric(overrides: Partial<Metric> = {}): Metric {
   }
 }
 
-// NumberValue
 describe('NumberValue', () => {
   it('renders a tiny value as scientific notation, never machine notation', () => {
     render(<NumberValue value={2e-12} fmt="scientific" precision={2} />)
@@ -77,7 +66,6 @@ describe('NumberValue', () => {
     const { container } = render(<NumberValue value={1.1060555202205516e-13} />)
     const element = container.querySelector('[title]')
     expect(element?.getAttribute('title')).toContain('1.1060555202205516e-13')
-    // ...but the visible text is the readable form.
     expect(container.textContent).not.toContain('1.1060555202205516e-13')
   })
 
@@ -88,7 +76,6 @@ describe('NumberValue', () => {
   })
 })
 
-// inputs
 describe('NumberField', () => {
   it('associates its label with the input', () => {
     render(
@@ -101,7 +88,6 @@ describe('NumberField', () => {
   it('shows the unit next to the field, not inside the value', () => {
     render(<ParamControl param={numberParam()} value={400} onChange={vi.fn()} />)
     const input = screen.getByLabelText(/Target altitude/i) as HTMLInputElement
-    // The typed value must be the bare number; the unit is separate markup.
     expect(input.value).toBe('400')
     expect(document.body.textContent).toContain('km')
   })
@@ -160,7 +146,6 @@ describe('SliderField', () => {
     )
     const slider = screen.getByRole('slider')
     expect(slider).toHaveAccessibleName()
-    // The value is announced as formatted text, not a bare number.
     expect(slider).toHaveAttribute('aria-valuetext')
   })
 
@@ -176,8 +161,6 @@ describe('SliderField', () => {
     const valueCell = container.querySelector('.num, [class*="value"]')
     expect(slider).not.toBeNull()
     expect(valueCell).not.toBeNull()
-    // They must not be the same node, and the value must not be a child of the
-    // track -- that is how the Streamlit version overlapped them.
     expect(slider?.contains(valueCell ?? null)).toBe(false)
   })
 })
@@ -221,7 +204,6 @@ describe('ParamPanel', () => {
   })
 })
 
-// results
 describe('MetricGrid', () => {
   it('formats a tiny metric as scientific notation', () => {
     render(<MetricGrid metrics={[metric()]} />)
@@ -301,7 +283,6 @@ describe('CSV export', () => {
     expect(csv).toContain('1.1060555202205516e-13')
     expect(csv).not.toContain(TIMES)
     expect(csv).not.toMatch(/[⁰¹²³⁴⁵⁶⁷⁸⁹⁻]/)
-    // A plain hyphen, so a spreadsheet parses it as a number.
     expect(csv).toContain('-42.5')
     expect(csv).not.toContain('−42.5')
   })
@@ -311,7 +292,6 @@ describe('CSV export', () => {
   })
 })
 
-// accessibility
 describe('Callout', () => {
   it('announces severity in text, not by colour alone', () => {
     render(<Callout severity="warning">Separation exceeds the characterised range.</Callout>)

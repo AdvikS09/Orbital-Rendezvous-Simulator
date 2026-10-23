@@ -1,11 +1,3 @@
-/**
- * Charting layer.
- *
- * Renders the `PlotSpec` and numeric arrays returned by the API. It selects and
- * styles; the Python engine computes. Import from here rather than reaching
- * into the individual modules.
- */
-
 export { PlotlyChart } from './PlotlyChart'
 export type { PlotlyChartProps } from './PlotlyChart'
 

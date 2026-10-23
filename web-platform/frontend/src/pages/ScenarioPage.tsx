@@ -1,22 +1,3 @@
-/**
- * The simulation workspace: one scenario, its parameters, its results.
- *
- * Route: `/scenarios/:scenarioId`.
- *
- * Two things here are deliberate rather than incidental.
- *
- * First, the preflight. Every parameter change is checked against the engine's
- * own validator before anything is run, so a participant learns that a request
- * is infeasible while they are still looking at the control that caused it,
- * rather than after waiting for a run that was never going to finish. The Run
- * button is disabled while the check fails and the offending fields are marked.
- *
- * Second, no computation happens in this file. The parameters go to the API and
- * numeric arrays come back. A trajectory is never derived, interpolated or
- * extrapolated in the browser, because then there would be two implementations
- * of the physics and only one of them would be tested.
- */
-
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useParams } from 'react-router-dom'
 import { ApiError, api } from '@/api/client'
@@ -42,24 +23,12 @@ import { useSession } from '@/state/session'
 import { Prose } from './Prose'
 import './ScenarioPage.css'
 
-/**
- * Long enough that typing a four-digit altitude is one request rather than
- * four, short enough that the estimate feels attached to the control.
- */
 const PREFLIGHT_DELAY_MS = 350
 
 function messageFor(cause: unknown, fallback: string): string {
   return cause instanceof ApiError ? cause.message : fallback
 }
 
-/**
- * A failed run, explained without a stack trace.
- *
- * Rate limiting is separated out because it is not a mistake the participant
- * made and not a defect in their parameters: the run was refused by a pilot
- * safeguard, and the honest thing to say is that the limit belongs to this
- * deployment and not to the engine.
- */
 function RunErrorCallout({ error }: { error: ApiError }) {
   if (error.isRateLimited) {
     const retryAfter = error.body?.retry_after_s ?? null
@@ -114,7 +83,6 @@ export function ScenarioPage() {
   const [running, setRunning] = useState(false)
   const [runError, setRunError] = useState<ApiError | null>(null)
 
-  // ------------------------------------------------------------- load
   useEffect(() => {
     const controller = new AbortController()
     setDetail(null)
@@ -138,7 +106,6 @@ export function ScenarioPage() {
     return () => controller.abort()
   }, [scenarioId])
 
-  // -------------------------------------------------------- preflight
   useEffect(() => {
     if (detail === null) return
     if (Object.keys(params).length === 0) return
@@ -157,8 +124,6 @@ export function ScenarioPage() {
         .catch((cause: unknown) => {
           if (controller.signal.aborted) return
           setChecking(false)
-          // A failed check must not silently enable the Run button, so the
-          // failure is turned into a not-ok result rather than discarded.
           setPreflight({
             ok: false,
             errors:
@@ -187,8 +152,6 @@ export function ScenarioPage() {
     }
   }, [detail, params])
 
-  // Field-level messages come from two places: the preflight check, and a run
-  // the server rejected. Both mark the same controls.
   const fieldErrors = useMemo(() => {
     const collected: Record<string, string> = {}
     for (const item of preflight?.errors ?? []) {
@@ -204,7 +167,6 @@ export function ScenarioPage() {
 
   const blocked = preflight !== null && !preflight.ok
 
-  // ParamPanel holds no state: it reports one changed parameter by name.
   const handleParamChange = useCallback(
     (name: string, value: number | string | boolean) => {
       setParams((current) => ({ ...current, [name]: value }))
@@ -240,7 +202,6 @@ export function ScenarioPage() {
     setRunError(null)
   }, [detail])
 
-  // ----------------------------------------------------------- render
   if (loadError !== null) {
     return (
       <div className="scenario-page scenario-page--message">

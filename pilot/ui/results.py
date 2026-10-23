@@ -1,17 +1,3 @@
-"""Rendering of simulation results: plots, numbers, interpretation, downloads.
-
-Step 6 of the participant journey. Every result view shows four things, in this
-order:
-
-1. the headline numbers,
-2. the plots,
-3. a plain-English reading of what the numbers mean, and
-4. the assumptions and limitations that qualify them.
-
-Point 4 is not optional decoration. A number without its assumptions is how a
-student comes away believing something false.
-"""
-
 from __future__ import annotations
 
 import numpy as np
@@ -22,7 +8,6 @@ from . import figures
 from .common import format_number, show_assumptions_and_limits
 
 
-# Per-kind renderers
 def _render_orbit(result) -> None:
     row = result["validation"].iloc[0]
     columns = st.columns(3)
@@ -405,10 +390,8 @@ _RENDERERS = {
 }
 
 
-# Entry point
 def render_result(scenario, outcome, params: dict, app_version: str = "1.0.0",
                   on_download=None) -> None:
-    """Render one completed run: numbers, plots, reading, caveats, downloads."""
     st.subheader("Results")
 
     renderer = _RENDERERS.get(scenario.result_kind)

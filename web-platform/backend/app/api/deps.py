@@ -1,5 +1,3 @@
-"""Shared FastAPI dependencies: sessions and administrator authentication."""
-
 from __future__ import annotations
 
 import secrets
@@ -22,14 +20,6 @@ _basic = HTTPBasic(auto_error=False)
 
 
 def load_context(session_token: str | None) -> ParticipantContext | None:
-    """Rebuild a :class:`ParticipantContext` from an anonymous session token.
-
-    The API is stateless: the browser holds only the opaque token issued by
-    ``POST /api/v1/sessions``, and every request that should be attributed
-    passes it back. An unknown or missing token is not an error -- the
-    simulator works without analytics, and a database outage must not stop
-    anyone simulating.
-    """
     if not session_token:
         return None
     try:
@@ -86,24 +76,12 @@ def load_context(session_token: str | None) -> ParticipantContext | None:
 def optional_participant(
     x_session_token: Annotated[str | None, Header(alias="X-Session-Token")] = None,
 ) -> ParticipantContext | None:
-    """Attribute a request to an anonymous participant when a token is present."""
     return load_context(x_session_token)
 
 
 def require_admin(
     credentials: Annotated[HTTPBasicCredentials | None, Depends(_basic)] = None,
 ) -> str:
-    """Guard administrator routes.
-
-    HTTP Basic over the deployment's TLS. The credentials come only from
-    environment secrets and are checked by ``pilot.auth``, which does a
-    constant-time comparison against a PBKDF2 hash and locks out after repeated
-    failures.
-
-    The route is genuinely protected rather than merely unadvertised: with no
-    credentials configured it refuses everything, and it never falls back to a
-    default password.
-    """
     settings = get_settings()
     authenticator = get_authenticator(settings)
 
@@ -131,6 +109,5 @@ def require_admin(
             headers={"WWW-Authenticate": 'Basic realm="Pilot administration"'},
         )
 
-    # Constant-time echo so the username cannot be probed by response timing.
     secrets.compare_digest(credentials.username, settings.admin_username)
     return credentials.username

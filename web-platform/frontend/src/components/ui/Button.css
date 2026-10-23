@@ -1,11 +1,3 @@
-/*
- * Button.
- *
- * Four variants, two sizes, nothing larger. Primary is reserved for the single
- * action that starts a simulation; everything else is secondary or ghost so the
- * eye has one place to land per view.
- */
-
 .button {
   display: inline-flex;
   align-items: center;
@@ -25,7 +17,6 @@
     color var(--transition-fast);
 }
 
-/* ------------------------------------------------------------------ sizes */
 .button--sm {
   min-height: 28px;
   padding: 0 var(--space-3);
@@ -52,7 +43,6 @@
   width: 100%;
 }
 
-/* --------------------------------------------------------------- variants */
 .button--primary {
   background: var(--accent);
   border-color: var(--accent);
@@ -112,7 +102,6 @@
   filter: brightness(1.08);
 }
 
-/* ---------------------------------------------------------------- states */
 .button:disabled {
   opacity: 0.45;
   cursor: not-allowed;
@@ -126,7 +115,6 @@
   flex: none;
 }
 
-/* The label keeps its width while loading so the button does not resize. */
 .button__label {
   display: inline-block;
 }

@@ -1,5 +1,3 @@
-/* Headline metrics and their supporting detail. */
-
 .metric-grid {
   display: flex;
   flex-direction: column;
@@ -10,7 +8,6 @@
   margin: 0;
 }
 
-/* --------------------------------------------------------- headline cards */
 .metric-grid__cards {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
@@ -52,7 +49,6 @@
   text-align: left;
 }
 
-/* ------------------------------------------------------- supporting detail */
 .metric-grid__list {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
@@ -90,7 +86,6 @@
   color: var(--text-primary);
 }
 
-/* -------------------------------------------------------------- help tips */
 .metric-grid__help {
   position: relative;
   display: inline-flex;
@@ -115,10 +110,6 @@
   color: var(--accent);
 }
 
-/*
- * Hidden with opacity, never with display or visibility: the element must stay
- * in the accessibility tree for the aria-describedby reference to resolve.
- */
 .metric-grid__tooltip {
   position: absolute;
   bottom: calc(100% + var(--space-2));

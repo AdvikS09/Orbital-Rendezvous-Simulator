@@ -1,19 +1,3 @@
-/**
- * Step 2: the privacy notice and consent.
- *
- * The summary and the full detail are carried across verbatim from
- * `pilot.ui.common.PRIVACY_SUMMARY` and `pilot.ui.flow.consent`. These are the
- * statements the pilot is legally and ethically held to, so they are reproduced
- * word for word; only emoji are removed and the ASCII `--` used in the Python
- * source for an em dash is written as a real em dash.
- *
- * Two facts in the Streamlit version came from server-side settings that the
- * public API does not expose (`retention_days` and `log_raw_parameters`). They
- * are mirrored here as constants matching the deployment defaults in
- * `pilot/config.py`; if a deployment changes either, the API must surface it and
- * these constants must be replaced by the value it returns.
- */
-
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 
@@ -23,10 +7,8 @@ import { useSession } from '@/state/session'
 import { CONSENT_VERSION, ROUTES } from './participantFlow'
 import './ConsentPage.css'
 
-/** `pilot.config.Settings.retention_days` default. */
 const RETENTION_DAYS = 730
 
-/** `pilot.config.Settings.log_raw_parameters` default. */
 const LOG_RAW_PARAMETERS: boolean = false
 
 const SUBTITLE =

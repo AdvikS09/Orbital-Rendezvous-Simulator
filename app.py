@@ -1,14 +1,3 @@
-"""Streamlit MVP interface for the orbital rendezvous research engine.
-
-This is a *thin* frontend. It contains **no physics or simulation logic** -- all
-computation goes through ``src/scenarios.py`` (the frontend-agnostic backend
-API), which returns plain dicts / pandas DataFrames. This file only handles
-inputs, buttons, Plotly plots, explanations, metrics, and downloads, so the
-backend stays reusable if this UI is later replaced by a polished web frontend.
-
-Run:  streamlit run app.py
-"""
-
 import numpy as np
 import pandas as pd
 import plotly.graph_objects as go
@@ -23,11 +12,9 @@ st.set_page_config(page_title="Orbital Rendezvous Engine", page_icon="🛰️", 
 EARTH_R_KM = orbit.R_EARTH / 1000.0
 
 
-# Plotly figure builders (pure presentation: data in -> go.Figure out)
 def fig_orbit_3d(states, title="Inertial orbit"):
-    p = np.asarray(states)[:, :3] / 1000.0  # km
+    p = np.asarray(states)[:, :3] / 1000.0
     fig = go.Figure()
-    # Light translucent Earth.
     u, v = np.mgrid[0:2 * np.pi:24j, 0:np.pi:16j]
     fig.add_surface(
         x=EARTH_R_KM * np.cos(u) * np.sin(v),
@@ -46,7 +33,6 @@ def fig_orbit_3d(states, title="Inertial orbit"):
 
 
 def fig_lvlh_trajectory(trajectories, title="Relative trajectory (LVLH)"):
-    """``trajectories`` = list of (label, states)."""
     fig = go.Figure()
     for label, states in trajectories:
         p = np.asarray(states)[:, :3]
@@ -162,7 +148,6 @@ def fig_collision(chaser_states, debris_states, keep_out_radius, analysis,
 
 
 def fig_lines(times, series, ylabel, title):
-    """Generic multi-line plot. ``series`` = list of (label, y-values)."""
     fig = go.Figure()
     for label, y in series:
         fig.add_scatter(x=times, y=y, mode="lines", name=label)
@@ -171,7 +156,6 @@ def fig_lines(times, series, ylabel, title):
     return fig
 
 
-# Small UI helpers
 def download_csv(df, filename, key):
     st.download_button("⬇️ Download CSV", df.to_csv(index=False).encode("utf-8"),
                        file_name=filename, mime="text/csv", key=key)
@@ -192,7 +176,6 @@ def show_metrics_row(metrics_df):
 
 
 def rel_inputs(prefix, defaults=(0.0, 1000.0, 0.0, 0.0, 0.0, 0.0), with_velocity=True):
-    """Initial relative state inputs; returns (pos, vel)."""
     c = st.columns(3)
     x = c[0].number_input("x radial [m]", value=defaults[0], step=10.0, key=prefix + "x")
     y = c[1].number_input("y along-track [m]", value=defaults[1], step=10.0, key=prefix + "y")
@@ -215,7 +198,6 @@ def run_reset_buttons(prefix):
     return run
 
 
-# LEARNING MODE presets
 def preset_basic_orbit():
     p = "basic_"
     st.subheader("Basic circular orbit")
@@ -499,7 +481,6 @@ def learning_mode():
     LEARNING_PRESETS[choice]()
 
 
-# RESEARCH MODE
 def research_mode():
     st.header("🔬 Research Mode")
     st.caption("Full control over the initial relative state, orbit, controller, and model.")
@@ -584,7 +565,6 @@ def research_mode():
     download_csv(primary["history"], "research_run.csv", p + "dl")
 
 
-# EXTERNAL VALIDATION (GMAT / STK)
 def external_validation_mode():
     p = "ev_"
     st.header("External validation workflow (GMAT / STK)")
@@ -606,7 +586,6 @@ def external_validation_mode():
     st.caption("Tip: two-body or J2-only scenarios match external tools most tightly; drag "
                "models differ between tools, so expect a larger (real) drag mismatch.")
 
-    # Step 1: build & export
     st.subheader("1 · Build & export a scenario")
     c = st.columns(4)
     alt = c[0].number_input("Altitude [km]", value=400.0, step=25.0, key=p + "alt")
@@ -637,7 +616,6 @@ def external_validation_mode():
                    "then export its ephemeris CSV for step 2.")
 
     st.divider()
-    # Step 2: import & compare
     st.subheader("2 · Import external ephemeris & compare")
     if not scen:
         st.warning("Build a scenario first (step 1) so there is something to compare against.")
@@ -697,7 +675,6 @@ def external_validation_mode():
                    "(external interpolated onto the engine's time grid).")
 
 
-# Main
 def main():
     st.title("🛰️ Orbital Rendezvous Research Engine")
     st.caption("CW-based rendezvous guidance with a PD controller, validated against a "

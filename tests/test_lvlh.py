@@ -1,5 +1,3 @@
-"""Tests for the LVLH frame transforms."""
-
 import os
 import sys
 import unittest
@@ -34,8 +32,6 @@ class TestLVLH(unittest.TestCase):
         self.assertTrue(np.allclose(lvlh.relative_velocity(self.target, deputy), full[3:]))
 
     def test_alongtrack_offset_stays_coorbital(self):
-        # A pure along-track offset on the same circular orbit is an equilibrium:
-        # in LVLH it should stay nearly constant over one orbit.
         period = orbit.orbital_period(DEFAULT_RADIUS, MU_EARTH)
         t = np.linspace(0.0, period, 2001)
         rel0 = np.array([0.0, 100.0, 0.0, 0.0, 0.0, 0.0])
@@ -45,7 +41,7 @@ class TestLVLH(unittest.TestCase):
         dep = orbit.propagate(deriv, deputy0, t)
         rel = np.array([lvlh.inertial_to_lvlh(tgt[k], dep[k]) for k in range(t.size)])
         drift = np.max(np.linalg.norm(rel[:, :3] - rel0[:3], axis=1))
-        self.assertLess(drift, 1.0)  # < 1 m over a full orbit
+        self.assertLess(drift, 1.0)
 
 
 if __name__ == "__main__":

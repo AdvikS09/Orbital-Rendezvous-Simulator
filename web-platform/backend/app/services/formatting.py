@@ -1,15 +1,3 @@
-"""Server-side number formatting, used only inside interpretation sentences.
-
-Almost all formatting happens in the frontend. This exists for the handful of
-places where a number is embedded in a *sentence* the backend composes -- for
-example "finishing 1.50 x 10^-7 m from the target". Splitting that sentence
-apart so React could format the middle of it would make the text harder to
-maintain than the duplication is worth.
-
-It mirrors ``web-platform/frontend/src/formatting/number.ts``, and
-``tests/test_formatting_parity.py`` asserts the two agree, so they cannot drift.
-"""
-
 from __future__ import annotations
 
 import math
@@ -20,12 +8,11 @@ SUPERSCRIPTS = {
     "-": "⁻", "+": "⁺",
 }
 
-TIMES = "×"      # multiplication sign
-NBSP = " "       # non-breaking space
-MINUS = "−"      # true minus sign
-PLACEHOLDER = "—"  # em dash
+TIMES = "×"
+NBSP = " "
+MINUS = "−"
+PLACEHOLDER = "—"
 
-#: Magnitudes outside this range switch to scientific notation.
 AUTO_LOWER = 1e-3
 AUTO_UPPER = 1e5
 
@@ -44,7 +31,6 @@ def _missing(value: object) -> bool:
 
 def format_scientific(value: float | None, significant: int = 4,
                       unit: str = "") -> str:
-    """Render in scientific notation with Unicode superscripts."""
     if _missing(value):
         return PLACEHOLDER
     number = float(value)  # type: ignore[arg-type]
@@ -72,7 +58,6 @@ def format_significant(value: float | None, significant: int = 4,
 
 
 def format_number(value: float | None, significant: int = 4, unit: str = "") -> str:
-    """Automatic notation: scientific for very small or very large magnitudes."""
     if _missing(value):
         return PLACEHOLDER
     number = float(value)  # type: ignore[arg-type]
@@ -83,7 +68,6 @@ def format_number(value: float | None, significant: int = 4, unit: str = "") -> 
 
 
 def display_metric(value: float | None, unit: str = "", significant: int = 4) -> str:
-    """Format a metric for embedding in an interpretation sentence."""
     return format_number(value, significant, unit)
 
 

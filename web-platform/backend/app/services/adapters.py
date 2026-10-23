@@ -1,19 +1,3 @@
-"""Convert engine result bundles into the JSON contract the frontend consumes.
-
-The engine (``orbital_core.scenarios``) returns dicts of NumPy arrays and pandas
-DataFrames. This module turns each of the eight result shapes into a
-:class:`SimulationResult`: named numeric arrays, plot metadata, metric lists,
-tables and interpretation text.
-
-Everything here is presentation *mapping*, not physics. No value is recomputed,
-rescaled or rounded on the way through -- arrays are passed to the frontend at
-full precision and formatted there.
-
-The interpretation strings and their branching logic are carried over from
-``pilot/ui/results.py`` so the readings a participant saw in the Streamlit
-version are the readings they see here.
-"""
-
 from __future__ import annotations
 
 import math
@@ -40,18 +24,10 @@ from app.schemas.common import (
 from app.schemas.scenarios import InputEcho, SimulationResult
 from app.services.formatting import format_scientific
 
-# Okabe-Ito palette indices, matching pilot/ui/figures.py PALETTE order.
 BLUE, ORANGE, GREEN, PINK, AMBER, SKY, BLACK = range(7)
 
 
-# Helpers
 def _clean(value: Any) -> Any:
-    """Make a value JSON-safe without changing it.
-
-    JSON has no NaN or Infinity. Those become ``None``, which the frontend
-    renders as an em dash. A non-converging run legitimately produces NaN for
-    convergence time, so this is a real code path, not an edge case.
-    """
     if value is None:
         return None
     if isinstance(value, (np.floating, float)):
@@ -103,12 +79,6 @@ def _table_from_frame(
 
 
 def _unit_from_column(name: str) -> str:
-    """Infer a unit from the engine's column-naming convention.
-
-    The engine names columns with their unit as a suffix (``pos_err_m``,
-    ``delta_v_mps``, ``ax_mps2``), which makes this reliable rather than
-    guesswork.
-    """
     lowered = name.lower()
     if lowered.endswith("_mps2"):
         return "m/s²"
@@ -131,7 +101,6 @@ def _now_iso() -> str:
     return datetime.now(timezone.utc).isoformat(timespec="seconds")
 
 
-# Per-result-kind builders
 def _build_orbit(result: dict, series: dict, plots: list, metrics: list,
                  tables: list, interpretations: list) -> None:
     validation = _row_to_dict(result["validation"])
@@ -195,9 +164,6 @@ def _build_orbit(result: dict, series: dict, plots: list, metrics: list,
         "vz_mps": states[:, 5], "altitude_km": result["altitude_km"],
     })))
 
-    # Rendered through the shared formatter, not an f-string: Python's %g would
-    # put machine notation ("5e-13") into a sentence a participant reads, which
-    # is the presentation defect this migration exists to fix.
     drift = validation.get("max_energy_drift_rel")
     if drift and drift < 1e-8:
         digits = abs(int(math.log10(drift)))
@@ -542,7 +508,6 @@ def _build_gain_sweep(result: dict, series: dict, plots: list, metrics: list,
                  "hidden.")
     interpretations.append(Interpretation(severity=Severity.INFO, text=text))
 
-    # Keep the raw grids available for export and for tabular display.
     series["kp_values"] = [_clean(v) for v in kp_values]
     series["kd_values"] = [_clean(v) for v in kd_values]
 
@@ -579,12 +544,6 @@ def _build_comparison(result: dict, series: dict, plots: list, metrics: list,
     series["cmp_pos_error_m"] = _array(comparison["pos_error"])
     series["cmp_vel_error_mps"] = _array(comparison["vel_error"])
 
-    # Distinct keys on purpose. The engine's summary frame calls these
-    # ``final_pos_error_m`` and ``max_pos_error_m``, but ``_relative_metrics``
-    # already uses ``final_pos_error_m`` for something entirely different -- the
-    # chaser's distance from the *target*, not the gap between the two *models*.
-    # Reusing the key would put two unrelated quantities under one name, which a
-    # parity test caught and which would also have collided as React list keys.
     metrics.insert(0, Metric(
         key="model_gap_max_m", label="Largest gap between the models",
         value=summary.get("max_pos_error_m"), unit="m", fmt=NumberFormat.DISTANCE,
@@ -900,7 +859,6 @@ _BUILDERS = {
 }
 
 
-# Entry point
 def build_result(
     scenario: Any,
     params: dict[str, Any],
@@ -909,7 +867,6 @@ def build_result(
     n_steps: int,
     warnings: list[str],
 ) -> SimulationResult:
-    """Turn one engine result bundle into the API response."""
     builder = _BUILDERS.get(scenario.result_kind)
     if builder is None:
         raise ValueError(f"no adapter for result kind {scenario.result_kind!r}")

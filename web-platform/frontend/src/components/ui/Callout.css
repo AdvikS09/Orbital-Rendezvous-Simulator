@@ -1,12 +1,3 @@
-/*
- * Callout.
- *
- * Status message. Three signals carry the severity, not one: a tinted left
- * edge, a distinct glyph, and a visually-hidden word ('Warning:', 'Error:')
- * read out before the message. Colour alone would fail both a monochrome print
- * and a screen reader.
- */
-
 .callout {
   display: flex;
   align-items: flex-start;
@@ -56,7 +47,6 @@
   margin-top: var(--space-3);
 }
 
-/* --------------------------------------------------------------- severity */
 .callout--info {
   background: var(--status-info-bg);
   border-color: var(--status-info-border);
