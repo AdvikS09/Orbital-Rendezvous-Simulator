@@ -1,17 +1,3 @@
-/**
- * Download controls for a completed run.
- *
- * Tables are generated in the browser from the arrays the API already sent, so
- * a CSV costs no extra round trip. The configuration and notes files come from
- * the server, because they are the canonical record of what was run and should
- * not be reassembled from a copy.
- *
- * Every exported number comes from `rawValue`, never from the display string.
- * The screen shows a figure rounded to the precision that is meaningful; the
- * file carries the full machine value. Exporting what is on screen would bake a
- * rounding decision into someone else's analysis without telling them.
- */
-
 import { useId, useState } from 'react'
 import type { ParamValues, SimulationResult } from '@/api/types'
 import { ApiError, api, downloadResponse } from '@/api/client'
@@ -26,16 +12,8 @@ export interface ExportBarProps {
   headingLevel?: 2 | 3 | 4
 }
 
-/** U+FEFF, written as an escape because a literal one is invisible in source. */
 const BYTE_ORDER_MARK = '\ufeff'
 
-/**
- * Hand a generated string to the browser as a file.
- *
- * CSV is prefixed with a byte-order mark. Without it Excel decodes the file as
- * the local code page and renders unit strings such as m/s² as mojibake; with
- * it, both Excel and pandas (`encoding='utf-8-sig'`) read the file correctly.
- */
 function downloadText(content: string, filename: string, mime: string, bom = false): void {
   const blob = new Blob([bom ? BYTE_ORDER_MARK + content : content], { type: mime })
   const url = URL.createObjectURL(blob)
@@ -48,7 +26,6 @@ function downloadText(content: string, filename: string, mime: string, bom = fal
   URL.revokeObjectURL(url)
 }
 
-/** A filesystem-safe stem shared by every file from one run. */
 function fileStem(scenarioId: string, completedAt: string): string {
   const stamp = completedAt.slice(0, 19).replace(/[:T]/g, '-')
   return `${scenarioId}_${stamp}`.replace(/[^A-Za-z0-9._-]+/g, '-')

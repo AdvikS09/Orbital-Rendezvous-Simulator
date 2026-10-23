@@ -1,19 +1,3 @@
-"""Plotly figure builders: data in, ``go.Figure`` out.
-
-Pure presentation, no physics and no Streamlit. The core builders are carried
-over from the original ``app.py`` (which was already presentation-only) so the
-plots participants see are the ones the research work was reviewed with.
-
-Accessibility notes, applied throughout:
-
-* The categorical palette is Okabe-Ito, which stays distinguishable under the
-  common forms of colour-vision deficiency.
-* Series are distinguished by **dash pattern as well as colour**, so a plot is
-  readable without colour at all.
-* Every axis carries a unit, and no figure relies on colour alone to convey a
-  pass/fail state -- the surrounding text always says it too.
-"""
-
 from __future__ import annotations
 
 import numpy as np
@@ -23,7 +7,6 @@ from orbital_core import orbit
 
 EARTH_R_KM = orbit.R_EARTH / 1000.0
 
-#: Okabe-Ito qualitative palette (colour-vision-deficiency safe).
 PALETTE = ("#0072B2", "#D55E00", "#009E73", "#CC79A7", "#E69F00", "#56B4E9", "#000000")
 DASHES = ("solid", "dash", "dot", "dashdot")
 
@@ -48,7 +31,6 @@ def _scene(fig, title, x, y, z, height=520):
     return fig
 
 
-# Absolute orbits
 def orbit_3d(states, title="Orbit (Earth-centred inertial frame)"):
     positions = np.asarray(states)[:, :3] / 1000.0
     fig = go.Figure()
@@ -68,7 +50,6 @@ def orbit_3d(states, title="Orbit (Earth-centred inertial frame)"):
 
 
 def lvlh_trajectory(trajectories, title="Relative trajectory (target-centred LVLH frame)"):
-    """``trajectories`` is a list of ``(label, states)``."""
     fig = go.Figure()
     for index, (label, states) in enumerate(trajectories):
         positions = np.asarray(states)[:, :3]
@@ -87,7 +68,6 @@ def lvlh_trajectory(trajectories, title="Relative trajectory (target-centred LVL
 
 
 def series(times, entries, ylabel, title, log_y=False, height=340):
-    """Generic multi-line plot. ``entries`` is a list of ``(label, values)``."""
     fig = go.Figure()
     for index, (label, values) in enumerate(entries):
         fig.add_scatter(x=times, y=values, mode="lines", name=label,
@@ -111,7 +91,6 @@ def control_history(times, controls, title="Commanded thrust acceleration"):
                ("cross-track a_z", controls[:, 2]),
                ("magnitude |u|", np.linalg.norm(controls, axis=1))]
     fig = series(times, entries, "acceleration [m/s²]", title)
-    # Emphasise the magnitude: it is the quantity that integrates to delta-v.
     fig.data[3].line.width = 3.5
     fig.data[3].line.color = PALETTE[6]
     return fig
@@ -187,7 +166,6 @@ def proximity_3d(chaser_states, debris_states, keep_out_radius, analysis,
 
 
 def convergence_plot(rows, title="Integration error against step size"):
-    """Log-log error-versus-step plot with an ideal 4th-order reference line."""
     steps = np.array([row["dt_s"] for row in rows], dtype=float)
     errors = np.array([row["max_position_error_m"] for row in rows], dtype=float)
 
@@ -195,7 +173,6 @@ def convergence_plot(rows, title="Integration error against step size"):
     fig.add_scatter(x=steps, y=errors, mode="lines+markers", name="measured error",
                     line=dict(color=PALETTE[0], width=3),
                     marker=dict(size=9, color=PALETTE[0]))
-    # Reference slope of 4, anchored on the finest point.
     reference = errors[-1] * (steps / steps[-1]) ** 4
     fig.add_scatter(x=steps, y=reference, mode="lines",
                     name="ideal 4th-order slope",

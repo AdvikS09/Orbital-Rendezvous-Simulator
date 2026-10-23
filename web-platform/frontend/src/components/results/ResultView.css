@@ -1,11 +1,9 @@
-/* Composition of a complete result. */
-
 .result-view {
   display: flex;
   flex-direction: column;
   gap: var(--space-8);
   min-width: 0;
-  /* The page never scrolls sideways; wide children scroll inside themselves. */
+
   max-width: 100%;
 }
 

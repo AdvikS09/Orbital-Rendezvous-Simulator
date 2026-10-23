@@ -1,27 +1,8 @@
-# Backend dependencies for the Orbital Rendezvous Simulator API.
-#
-# The physics engine's own dependencies (numpy, pandas, SQLAlchemy) come from
-# the repository root requirements.txt, because this API imports orbital_core
-# and pilot rather than duplicating them. Install both:
-#
-#     python -m pip install -r requirements.txt              (repo root)
-#     python -m pip install -r web-platform/backend/requirements.txt
-#
-# Pinned to the versions verified working on Python 3.14.6, the interpreter the
-# published numerical results were produced with.
-#
-# Note on pydantic: 2.10.x has no cp314 wheel and its pydantic-core falls back
-# to a Rust source build, which fails without a toolchain. 2.13.x ships a
-# prebuilt wheel for 3.14. Install with --only-binary=:all: to catch any future
-# recurrence loudly rather than by silently attempting a compile.
-
 fastapi==0.141.1
 uvicorn[standard]==0.49.0
 pydantic==2.13.4
 
-# Multipart form parsing, used by the external-ephemeris upload path.
 python-multipart==0.0.20
 
-# --- tests ---
-httpx==0.28.1          # FastAPI TestClient transport
+httpx==0.28.1
 pytest==9.1.1

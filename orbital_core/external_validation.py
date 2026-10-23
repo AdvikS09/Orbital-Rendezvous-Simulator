@@ -1,20 +1,3 @@
-"""External-tool validation utilities (GMAT / STK, etc.).
-
-This module does **not** drive any external tool. It provides the data plumbing
-to validate the engine's higher-fidelity propagator against an external one:
-
-1. serialise an engine-propagated ephemeris (+ scenario metadata) to CSV / JSON
-   so the same scenario can be reproduced in GMAT or STK,
-2. load an external tool's exported ephemeris CSV back in (flexible column
-   mapping and unit handling), and
-3. compare the two ephemerides -- position / velocity error series and summary
-   metrics (max, final, mean, RMS).
-
-Everything is SI internally (metres, metres/second, seconds, ECI frame). The
-functions operate on plain pandas DataFrames with the standard columns
-``t_s, x_m, y_m, z_m, vx_mps, vy_mps, vz_mps``.
-"""
-
 import json
 
 import numpy as np
@@ -26,15 +9,7 @@ _LENGTH_UNITS = {"m": 1.0, "km": 1000.0}
 _TIME_UNITS = {"s": 1.0, "sec": 1.0, "min": 60.0, "h": 3600.0, "hr": 3600.0}
 
 
-# --------------------------------------------------------------------------
-# Serialisation (engine -> file text for GMAT/STK setup)
-# --------------------------------------------------------------------------
 def to_csv_text(ephemeris, metadata):
-    """Serialise an ephemeris DataFrame to CSV text with metadata header comments.
-
-    Metadata lines are prefixed with ``#`` so they are easy to read and are
-    skipped on re-import (``pandas.read_csv(comment="#")``).
-    """
     lines = [
         "# Orbital Rendezvous Engine -- external-validation scenario export",
         "# Units: position [m], velocity [m/s], time [s]; frame: ECI",
@@ -45,7 +20,6 @@ def to_csv_text(ephemeris, metadata):
 
 
 def to_json_text(ephemeris, metadata):
-    """Serialise a full scenario (metadata + ephemeris) to JSON text."""
     payload = {
         "metadata": metadata,
         "ephemeris": {col: [float(v) for v in ephemeris[col]] for col in ephemeris.columns},
@@ -53,9 +27,6 @@ def to_json_text(ephemeris, metadata):
     return json.dumps(payload, indent=2)
 
 
-# --------------------------------------------------------------------------
-# Loading external ephemeris (GMAT/STK CSV -> standard DataFrame)
-# --------------------------------------------------------------------------
 def _guess_column(columns, candidates):
     lower = {c.lower().strip(): c for c in columns}
     for cand in candidates:
@@ -69,7 +40,6 @@ def _guess_column(columns, candidates):
 
 
 def autodetect_columns(columns):
-    """Best-effort guess of (time, [x,y,z], [vx,vy,vz]) column names."""
     t = _guess_column(columns, ["t_s", "time", "elapsed", "epoch", "t"])
     x = _guess_column(columns, ["x_m", "x (km)", "x_km", "x", "rx", "pos_x"])
     y = _guess_column(columns, ["y_m", "y (km)", "y_km", "y", "ry", "pos_y"])
@@ -82,17 +52,6 @@ def autodetect_columns(columns):
 
 def load_external(source, time_col=None, pos_cols=None, vel_cols=None,
                   length_unit="m", time_unit="s", t0=0.0, comment="#"):
-    """Load an external ephemeris into the standard SI DataFrame.
-
-    Parameters
-    ----------
-    source : path or file-like buffer (CSV).
-    time_col, pos_cols, vel_cols : column names; auto-detected if omitted.
-    length_unit : "m" or "km" (applies to position; velocity uses unit/s).
-    time_unit : "s", "min", or "h".
-    t0 : value subtracted from the time column so the series starts near 0 [in
-         the file's time unit].
-    """
     raw = pd.read_csv(source, comment=comment)
     raw.columns = [c.strip() for c in raw.columns]
 
@@ -120,15 +79,7 @@ def load_external(source, time_col=None, pos_cols=None, vel_cols=None,
     })
 
 
-# --------------------------------------------------------------------------
-# Comparison
-# --------------------------------------------------------------------------
 def compare_ephemerides(internal, external):
-    """Compare two SI ephemerides; returns error series and a summary table.
-
-    The external ephemeris is linearly interpolated onto the internal time grid
-    over the overlapping interval, so the two need not share sample times.
-    """
     internal = internal.reset_index(drop=True)
     t = internal["t_s"].to_numpy(dtype=float)
     ext_t = external["t_s"].to_numpy(dtype=float)

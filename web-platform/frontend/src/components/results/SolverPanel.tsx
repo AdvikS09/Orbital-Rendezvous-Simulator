@@ -1,17 +1,3 @@
-/**
- * How the result was produced.
- *
- * Integrator, step count, step size, propagation span, engine version, units
- * and reference frames. None of it is decoration: a number quoted without the
- * integrator and the step size cannot be reproduced, and a result that cannot
- * be reproduced is an anecdote.
- *
- * The provenance block states plainly what has and has not been validated
- * against an external reference. That sentence comes from the engine and is
- * shown verbatim, because softening it would be the one edit that makes this
- * panel dishonest.
- */
-
 import type { ReactNode } from 'react'
 import { useId } from 'react'
 import type { ProvenanceInfo, SolverInfo } from '@/api/types'
@@ -22,11 +8,8 @@ import './SolverPanel.css'
 export interface SolverPanelProps {
   solver: SolverInfo
   provenance: ProvenanceInfo
-  /** Wall-clock time the engine spent on this run, in milliseconds. */
   runtimeMs?: number | null
-  /** Step count as reported by the run, when it differs from `solver.n_steps`. */
   nSteps?: number | null
-  /** ISO 8601 instant the result completed. */
   completedAt?: string | null
   headingLevel?: 2 | 3 | 4
 }

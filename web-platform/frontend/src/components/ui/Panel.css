@@ -1,11 +1,3 @@
-/*
- * Panel.
- *
- * The single container primitive: one border, one background, no shadow by
- * default. Nesting panels two deep is already too much, so there is no
- * elevation scale to reach for.
- */
-
 .panel {
   background: var(--surface-raised);
   border: 1px solid var(--border-subtle);
@@ -76,7 +68,6 @@
   font-size: var(--text-sm);
 }
 
-/* Panels print as plain boxes; the tinted surface wastes ink. */
 @media print {
   .panel {
     background: transparent;

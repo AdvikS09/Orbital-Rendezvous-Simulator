@@ -1,25 +1,3 @@
-"""Input validation and resource safeguards for the simulation boundary.
-
-On its own, the scenario API accepts
-inputs that produce **silently wrong answers** rather than errors: a negative
-altitude yields an all-``NaN`` trajectory, an over-long horizon is quietly
-truncated to a fifth of what was asked for, and ``NaN`` inputs propagate to
-``NaN`` metrics. For a platform aimed at students who cannot yet tell a wrong
-plot from a right one, that is the most important thing to fix.
-
-This module is the gate. It sits *above* ``src/scenarios.py`` and never modifies
-it, so the validated engine is untouched and its numerical outputs are
-unchanged. Everything here is pure and independently testable -- no Streamlit,
-no database.
-
-Two kinds of finding are produced:
-
-* :class:`ValidationError` -- the run must not proceed.
-* :class:`ValidationWarning` -- the run proceeds, but the participant is told
-  something that affects how the result should be read (for example that CW is
-  being used far outside the separation range where it was characterised).
-"""
-
 from __future__ import annotations
 
 import math
@@ -27,12 +5,7 @@ from dataclasses import dataclass, field
 
 from orbital_core import orbit
 
-# Physical and practical limits
-#: Below ~150 km an object is in the process of re-entering; the exponential
-#: atmosphere in this engine is not calibrated there either.
 MIN_ALTITUDE_KM = 150.0
-#: The engine models Earth-orbit LEO/MEO. Beyond GEO the drag model and the
-#: single-scale-height atmosphere are meaningless.
 MAX_ALTITUDE_KM = 40_000.0
 
 MIN_INCLINATION_DEG = 0.0
@@ -44,10 +17,7 @@ MAX_DT_S = 600.0
 MIN_DURATION_S = 10.0
 MAX_DURATION_ORBITS = 50.0
 
-#: Separation beyond which CW linearisation is well outside anything this
-#: repository has characterised (the separation sweep runs to 50 km).
 CW_CHARACTERISED_SEPARATION_M = 50_000.0
-#: Separation at which the CW result should be treated as illustrative only.
 CW_TRUSTWORTHY_SEPARATION_M = 1_000.0
 MAX_SEPARATION_M = 500_000.0
 MAX_REL_VELOCITY_MPS = 100.0
@@ -65,7 +35,6 @@ MAX_KD = 10.0
 MIN_MAX_ACCEL = 1e-6
 MAX_MAX_ACCEL = 10.0
 
-#: Measured cost per RK4 step, used to predict runtime before running.
 SECONDS_PER_STEP = {
     "cw": 6.0e-5,
     "orbit": 6.5e-5,
@@ -75,13 +44,11 @@ SECONDS_PER_STEP = {
 
 
 class ValidationError(ValueError):
-    """A simulation request that must not run."""
+    pass
 
 
 @dataclass
 class ValidationResult:
-    """Outcome of validating one simulation request."""
-
     ok: bool
     errors: list[str] = field(default_factory=list)
     warnings: list[str] = field(default_factory=list)
@@ -93,14 +60,8 @@ class ValidationResult:
             raise ValidationError("; ".join(self.errors))
 
 
-# Scalar helpers
 def check_number(value, name: str, minimum: float, maximum: float,
                  unit: str = "") -> tuple[float | None, str | None]:
-    """Coerce to float and bounds-check, returning ``(value, error)``.
-
-    Rejects ``NaN`` and infinity explicitly -- the audit showed these otherwise
-    flow all the way through to ``NaN`` metrics with no error anywhere.
-    """
     try:
         number = float(value)
     except (TypeError, ValueError):
@@ -118,7 +79,6 @@ def check_number(value, name: str, minimum: float, maximum: float,
 
 
 def check_vector(values, name: str, limit: float, unit: str) -> tuple[list | None, list[str]]:
-    """Validate a 3-vector component-wise."""
     errors: list[str] = []
     try:
         items = list(values)
@@ -136,18 +96,12 @@ def check_vector(values, name: str, limit: float, unit: str) -> tuple[list | Non
     return (out if not errors else None), errors
 
 
-# The main gate
 def validate_simulation_request(*, altitude_km=None, inclination_deg=None,
                                 duration_s=None, dt_s=None, n_orbits=None,
                                 rel_pos=None, rel_vel=None, kp=None, kd=None,
                                 max_accel=None, mass=None, area=None, cd=None,
                                 model="cw", max_steps=40_000,
                                 max_seconds=20.0) -> ValidationResult:
-    """Validate one simulation request and predict its cost.
-
-    ``max_steps`` and ``max_seconds`` come from configuration so a deployment
-    can tighten them without a code change.
-    """
     errors: list[str] = []
     warnings: list[str] = []
 
@@ -181,8 +135,6 @@ def validate_simulation_request(*, altitude_km=None, inclination_deg=None,
         if error:
             errors.append(error)
 
-    # Duration is bounded in orbits, not seconds, so the limit means the same
-    # thing at every altitude.
     if duration is not None and altitude is not None:
         period = orbit.orbital_period(orbit.R_EARTH + altitude * 1000.0)
         if duration > MAX_DURATION_ORBITS * period:
@@ -258,7 +210,6 @@ def validate_simulation_request(*, altitude_km=None, inclination_deg=None,
         if error:
             errors.append(error)
 
-    # cost prediction
     n_steps = 0
     if duration is not None and dt is not None and dt > 0:
         n_steps = int(round(duration / dt))
@@ -282,7 +233,6 @@ def validate_simulation_request(*, altitude_km=None, inclination_deg=None,
             f"{max_seconds:.0f} s limit for the shared pilot server. Increase the "
             "timestep or shorten the duration.")
 
-    # Under-resolution is a correctness issue, not a performance one.
     if dt is not None and altitude is not None and not errors:
         period = orbit.orbital_period(orbit.R_EARTH + altitude * 1000.0)
         samples_per_orbit = period / dt
@@ -305,21 +255,13 @@ def _safe_norm(vector) -> float:
         return 0.0
 
 
-# Identity-code validation
 MIN_CODE_LENGTH = 3
 MAX_CODE_LENGTH = 40
 
-#: Anything that looks like an email address or a full name is rejected, because
-#: the participant code is supposed to be anonymous.
 _EMAIL_MARKER = "@"
 
 
 def validate_participant_code(code: str) -> tuple[str, str | None]:
-    """Normalise and check an anonymous participant code.
-
-    Returns ``(normalised_code, error)``. Rejects anything resembling personal
-    data so a participant cannot accidentally identify themselves.
-    """
     normalised = (code or "").strip()
     if not normalised:
         return "", "Enter an anonymous participant code."
@@ -337,7 +279,6 @@ def validate_participant_code(code: str) -> tuple[str, str | None]:
 
 
 def validate_pilot_code(code: str) -> tuple[str, str | None]:
-    """Normalise and check an organisation/pilot code."""
     normalised = (code or "").strip()
     if not normalised:
         return "", "Enter the organisation or pilot code you were given."

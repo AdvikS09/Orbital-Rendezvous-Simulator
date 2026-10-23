@@ -1,5 +1,3 @@
-/* Eight fields, one column, nothing decorative. */
-
 .feedback-page {
   display: flex;
   flex-direction: column;
@@ -33,7 +31,6 @@
   gap: var(--space-5);
 }
 
-/* ------------------------------------------------------------ scales */
 .feedback-page__scale {
   display: flex;
   flex-direction: column;
@@ -81,7 +78,6 @@
   margin: 0;
 }
 
-/* --------------------------------------------------------- text areas */
 .feedback-page__text {
   display: flex;
   flex-direction: column;
@@ -118,7 +114,6 @@
   opacity: 0.6;
 }
 
-/* ----------------------------------------------------------- actions */
 .feedback-page__actions {
   display: flex;
   flex-wrap: wrap;

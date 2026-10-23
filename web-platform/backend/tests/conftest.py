@@ -1,10 +1,3 @@
-"""Test fixtures for the API.
-
-Every test runs against a throwaway SQLite database with ``PILOT_ENV=test``, so
-nothing here can touch a real deployment and every row written is flagged as
-demo data.
-"""
-
 from __future__ import annotations
 
 import os
@@ -14,12 +7,8 @@ from pathlib import Path
 
 import pytest
 
-# The backend package and the repository root both need to be importable.
 BACKEND = Path(__file__).resolve().parents[1]
 REPO_ROOT = BACKEND.parents[1]
-# Order matters: the backend directory must precede the repository root,
-# because the root holds app.py (the legacy Streamlit MVP) and this package is
-# also called `app`. Root-first would shadow the package.
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 if str(BACKEND) not in sys.path:
@@ -28,7 +17,6 @@ if str(BACKEND) not in sys.path:
 
 @pytest.fixture
 def api_env(monkeypatch):
-    """Isolated settings and database for one test."""
     from pilot import auth, config, db, ratelimit
 
     handle, path = tempfile.mkstemp(suffix=".db", prefix="api_test_")
@@ -67,7 +55,6 @@ def api_env(monkeypatch):
 
 @pytest.fixture
 def client(api_env):
-    """A TestClient bound to the isolated environment."""
     from fastapi.testclient import TestClient
 
     from app.main import app
@@ -78,7 +65,6 @@ def client(api_env):
 
 @pytest.fixture
 def session_client(client):
-    """A client that already holds an anonymous session token."""
     response = client.post(
         "/api/v1/sessions",
         json={
@@ -96,7 +82,6 @@ def session_client(client):
 
 @pytest.fixture
 def admin_auth(monkeypatch, api_env):
-    """Configure administrator credentials and return them."""
     from pilot import auth, config
 
     username, password = "coordinator", "test-password-1234"

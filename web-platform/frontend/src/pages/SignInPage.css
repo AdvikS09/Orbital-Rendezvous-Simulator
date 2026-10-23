@@ -1,12 +1,3 @@
-/*
- * Anonymous sign-in.
- *
- * A single narrow column: three questions, each with its help text directly
- * beneath the control it explains, and any error directly beneath that. Errors
- * are marked by a red rule down the left edge as well as by colour, so the
- * state does not depend on hue alone.
- */
-
 .sign-in-page {
   max-width: 44rem;
   margin: 0 auto;
@@ -35,7 +26,6 @@
   gap: var(--space-6);
 }
 
-/* --------------------------------------------------------------- controls */
 .sign-in-page__field {
   display: flex;
   flex-direction: column;
@@ -100,7 +90,6 @@
   gap: var(--space-1);
 }
 
-/* ----------------------------------------------------------- radio group */
 .sign-in-page__fieldset {
   margin: 0;
   padding: 0;
@@ -155,7 +144,6 @@
   cursor: pointer;
 }
 
-/* ----------------------------------------------------------------- footer */
 .sign-in-page__actions {
   display: flex;
   flex-wrap: wrap;

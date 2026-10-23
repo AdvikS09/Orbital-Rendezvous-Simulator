@@ -1,17 +1,3 @@
-"""Password-protected administrator dashboard.
-
-Reports pilot activity using the metric definitions in ``pilot/analytics.py``,
-with filters by date, organisation and user type, and CSV export of every table.
-
-Two things it deliberately will not do:
-
-* it cannot show who a participant is, because that information does not exist
-  anywhere in the database; and
-* it excludes development and demonstration records by default, so a demo run
-  can never be mistaken for pilot activity. Including them is possible, but it
-  is an explicit switch and the page says loudly when it is on.
-"""
-
 from __future__ import annotations
 
 import io
@@ -28,7 +14,6 @@ from ..config import get_settings
 from ..db import healthcheck, safe_database_label
 
 
-# Sign-in
 def _sign_in() -> None:
     st.title("Administrator sign-in")
     settings = get_settings()
@@ -56,7 +41,6 @@ def _sign_in() -> None:
             st.error(result.message, icon="🚫")
 
 
-# Filters
 def _filters() -> ReportFilters:
     settings = get_settings()
     st.sidebar.subheader("Report filters")
@@ -109,7 +93,6 @@ def _filters() -> ReportFilters:
                          user_type=user_type, include_demo=include_demo)
 
 
-# Panels
 def _headline(filters: ReportFilters) -> dict:
     metrics = analytics.summary_metrics(filters)
 
@@ -344,7 +327,6 @@ def _system_tab(filters: ReportFilters) -> None:
 
 
 def _bundle_export(tables: dict[str, pd.DataFrame], filters: ReportFilters) -> None:
-    """One ZIP containing every aggregate table plus the metric definitions."""
     buffer = io.BytesIO()
     with zipfile.ZipFile(buffer, "w", zipfile.ZIP_DEFLATED) as archive:
         for name, frame in tables.items():
@@ -395,7 +377,6 @@ def _definitions_text(filters: ReportFilters) -> str:
     ])
 
 
-# Entry point
 def admin_dashboard() -> None:
     if not st.session_state.get("admin_authenticated"):
         _sign_in()

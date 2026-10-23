@@ -1,13 +1,3 @@
-"""Experiment 1 -- closed-loop CW rendezvous with a PD controller.
-
-A chaser starting from a configurable relative state is driven to the target
-(LVLH origin, zero relative velocity) by a critically damped PD controller with
-thrust saturation. Generates the relative-trajectory, position, velocity and
-control-effort plots and saves the full time history plus a metrics table.
-
-Run:  python experiments/run_cw_rendezvous.py
-"""
-
 import os
 import sys
 
@@ -26,17 +16,14 @@ from src import controller, cw, orbit, plotting, validation
 
 
 def main():
-    # Scenario configuration (SI units)
-    radius = orbit.DEFAULT_RADIUS               # 400 km circular LEO
+    radius = orbit.DEFAULT_RADIUS
     n = cw.cw_mean_motion(radius)
     period = orbit.orbital_period(radius)
 
-    # Configurable initial relative state [x, y, z, vx, vy, vz] in the LVLH frame
-    # (radial, along-track, cross-track).
     rel0 = np.array([200.0, -300.0, 80.0, 0.0, 0.0, 0.0])
 
-    omega_n = 6.0 * n          # closed-loop bandwidth (>> orbital rate)
-    max_accel = 0.05           # m/s^2 thrust-acceleration limit
+    omega_n = 6.0 * n
+    max_accel = 0.05
     pd_ctrl = controller.PDController.critically_damped(omega_n, max_accel=max_accel)
 
     times = np.linspace(0.0, period, 4001)
@@ -46,7 +33,6 @@ def main():
     vel_err = validation.velocity_error_series(states)
     metrics = validation.rendezvous_metrics(times, states, controls, pos_tol=1.0)
 
-    # Save data
     history = pd.DataFrame({
         "t_s": times,
         "x_m": states[:, 0], "y_m": states[:, 1], "z_m": states[:, 2],
@@ -63,7 +49,6 @@ def main():
     print(f"omega_n = {omega_n:.4e} rad/s (= {omega_n/n:.1f} n), max_accel = {max_accel} m/s^2\n")
     print(metrics.T.to_string(header=False))
 
-    # Figures
     figs = [
         plotting.plot_lvlh_trajectory(
             [("chaser", states)], os.path.join(FIG, "cw_rendezvous_lvlh_trajectory.png"),

@@ -1,5 +1,3 @@
-"""Tests for the database layer: migrations, health, and secret handling."""
-
 from sqlalchemy import inspect, select
 
 from pilot import db
@@ -16,7 +14,6 @@ def test_migrations_create_every_table(pilot_env):
 
 def test_migrations_are_idempotent(pilot_env):
     engine = db.get_engine(pilot_env)
-    # The fixture already migrated; a second run must be a no-op.
     assert db.run_migrations(engine) == []
     assert db.run_migrations(engine) == []
     with engine.connect() as connection:
@@ -52,7 +49,6 @@ def test_healthcheck_does_not_raise_on_a_bad_url(monkeypatch):
         health = db.healthcheck()
         assert health["ok"] is False
         assert health["error"]
-        # The failure message must not leak the password.
         assert "hunter2" not in str(health)
     finally:
         db.reset_engine()

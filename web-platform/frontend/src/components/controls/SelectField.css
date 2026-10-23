@@ -1,9 +1,3 @@
-/*
- * Native select. The chevron is drawn on top of the control and marked
- * non-interactive, with right padding on the select itself so the chosen text
- * can never run under the glyph.
- */
-
 .select-field {
   display: flex;
   flex-direction: column;
@@ -49,8 +43,6 @@
   cursor: not-allowed;
 }
 
-/* The dropdown list itself is drawn by the platform and does not inherit the
-   page colours in every browser, so it is set explicitly. */
 .select-field__select option {
   background: var(--surface-raised);
   color: var(--text-primary);

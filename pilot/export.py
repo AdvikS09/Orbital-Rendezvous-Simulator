@@ -1,22 +1,3 @@
-"""Downloadable results and reproducible scenario configurations.
-
-Two kinds of download:
-
-* **Results** -- the numerical time history or summary table as CSV.
-* **Scenario configuration** -- a JSON file that fully determines the run, so
-  the same result can be reproduced later, by a colleague, or in a script
-  without this app.
-
-Reproducibility is only a real claim if the file carries everything that
-affects the answer. The exported configuration therefore records the engine
-version, the scenario id, every parameter, the integration step, and the
-library versions the run was made with. Because the engine is deterministic
-fixed-step RK4 with no RNG, that set is sufficient.
-
-Nothing participant-identifying is written into any export: no participant
-code, no pilot code, no organisation, no session token.
-"""
-
 from __future__ import annotations
 
 import json
@@ -45,7 +26,6 @@ def _library_versions() -> dict:
 
 def scenario_config(scenario: Scenario, params: dict,
                     app_version: str = "1.0.0") -> dict:
-    """A complete, re-runnable description of one simulation."""
     return {
         "format": "orbital-pilot-scenario",
         "format_version": CONFIG_FORMAT_VERSION,
@@ -98,7 +78,6 @@ def _jsonable(value):
 
 
 def _python_snippet(scenario: Scenario, params: dict) -> str:
-    """A runnable snippet reproducing the run without this app."""
     pretty = json.dumps({k: _jsonable(v) for k, v in params.items()}, indent=4)
     return (
         "from pilot.content.scenarios_catalog import get_scenario\n\n"
@@ -112,13 +91,7 @@ def config_json(scenario: Scenario, params: dict, app_version: str = "1.0.0") ->
     return json.dumps(scenario_config(scenario, params, app_version), indent=2)
 
 
-# Result tables
 def result_tables(result_kind: str, result) -> dict[str, pd.DataFrame]:
-    """Extract the downloadable tables from a scenario result bundle.
-
-    Returns ``{filename_stem: DataFrame}``. Unknown shapes give an empty dict
-    rather than raising, so a new scenario cannot break the download button.
-    """
     tables: dict[str, pd.DataFrame] = {}
     if result is None:
         return tables
@@ -172,7 +145,6 @@ def result_tables(result_kind: str, result) -> dict[str, pd.DataFrame]:
         elif result_kind == "external_export":
             tables["ephemeris"] = result["ephemeris"]
     except (KeyError, TypeError, IndexError):
-        # A malformed bundle should degrade to "no downloads", not an error page.
         return {}
     return tables
 
@@ -184,7 +156,6 @@ def tables_to_csv(tables: dict[str, pd.DataFrame]) -> dict[str, bytes]:
 
 def results_readme(scenario: Scenario, params: dict, warnings: list[str],
                    app_version: str = "1.0.0") -> str:
-    """A plain-text header shipped with downloads, so a stray CSV stays honest."""
     lines = [
         f"{scenario.title}",
         "=" * len(scenario.title),

@@ -1,5 +1,3 @@
-"""Scenario catalogue and simulation endpoints."""
-
 from __future__ import annotations
 
 from typing import Annotated, Any
@@ -116,10 +114,6 @@ def run_simulation(
     result, error = simulation.run(scenario, payload.params, context)
 
     if error is not None:
-        # Returned as an explicit JSONResponse rather than by setting a status
-        # code on the injected Response: `response_model=SimulationResult`
-        # applies to anything returned normally, and would reject the error
-        # payload as malformed. A JSONResponse bypasses that validation.
         if error.error_class == "RateLimited":
             code = status.HTTP_429_TOO_MANY_REQUESTS
         elif error.rejected:

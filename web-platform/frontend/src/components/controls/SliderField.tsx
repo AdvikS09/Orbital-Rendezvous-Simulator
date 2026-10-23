@@ -1,20 +1,3 @@
-/**
- * A range slider with a synchronised, editable numeric entry.
- *
- * The layout exists to solve one specific problem. Sliders that print their
- * value on or beside the handle become unreadable the moment the value is long,
- * which for this application it usually is: a keep-out radius of
- * 1.234 x 10^3 m is not a two-character label. So the value gets its own
- * right-aligned cell on the row above the track, where it has the full width of
- * the control and can never collide with the handle, the label or the end
- * labels.
- *
- * The entry box is editable because a slider alone cannot express a precise
- * figure. Typing is authoritative: a value outside the slider range is passed
- * to the server unchanged and merely noted, because the widget range is a
- * convenience, not a validation rule.
- */
-
 import { useEffect, useId, useState } from 'react'
 import type { ParamSpec } from '@/api/types'
 import { Icon } from '@/components/ui'
@@ -55,8 +38,6 @@ export function SliderField({
   const minimum = param.minimum ?? param.hard_minimum
   const maximum = param.maximum ?? param.hard_maximum
 
-  // Without both ends there is no track to draw. A plain numeric field is the
-  // honest fallback rather than an invented range.
   if (minimum === null || maximum === null || !(maximum > minimum)) {
     return (
       <NumberField
@@ -117,7 +98,6 @@ export function SliderField({
           {param.unit ? <span className="visually-hidden"> in {param.unit}</span> : null}
         </label>
 
-        {/* The value cell: its own column, right-aligned, above the track. */}
         <div className="slider-field__value">
           <label className="visually-hidden" htmlFor={entryId}>
             {param.label} exact value

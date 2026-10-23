@@ -1,12 +1,3 @@
-/**
- * Step 4: how the participant wants to use the simulator.
- *
- * The three descriptions and the audience notes are carried across verbatim
- * from `pilot.ui.flow.track_selection`. The suggestion attached to the user
- * type is a nudge and nothing more: every track stays selectable, and the
- * suggestion is stated in words as well as marked visually.
- */
-
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 
@@ -70,13 +61,9 @@ export function TrackPage() {
     if (isSignedIn) {
       try {
         await api.selectTrack(track)
-      } catch {
-        // Recording the track is analytics only. A participant must never be
-        // held up by it, so the failure is swallowed and the flow continues.
-      }
+      } catch {}
     }
 
-    // The pre-assessment is offered once, before the guided activities begin.
     navigate(trackDestination(track, false))
   }
 

@@ -42,9 +42,6 @@ from orbital_core import (  # noqa: F401
 __version__ = _core.__version__
 __doc_original__ = _core.__doc__
 
-# Register the submodules under their old dotted names so that
-# ``import src.orbit`` and ``from src.cw import propagate_cw`` resolve to the
-# very same module objects rather than re-importing anything.
 for _name in (
     "orbit",
     "perturbations",

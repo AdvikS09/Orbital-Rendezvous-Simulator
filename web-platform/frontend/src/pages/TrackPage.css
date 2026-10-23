@@ -1,12 +1,3 @@
-/*
- * Track selection.
- *
- * Three stacked cards rather than a grid: the descriptions differ in length and
- * a row of equal-height columns would either truncate or leave dead space. The
- * suggested track is marked by a left accent rule and a text label, never by
- * colour alone, and no track is ever disabled.
- */
-
 .track-page {
   max-width: 52rem;
   margin: 0 auto;

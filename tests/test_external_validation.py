@@ -1,5 +1,3 @@
-"""Tests for the external-tool validation workflow"""
-
 import io
 import json
 import os
@@ -16,7 +14,6 @@ from src import scenarios as sc
 
 
 def make_ephemeris(n=50):
-    """Synthetic ephemeris that is linear in time (so interpolation is exact)."""
     t = np.linspace(0.0, 1000.0, n)
     return pd.DataFrame({
         "t_s": t,
@@ -31,7 +28,7 @@ class TestExternalValidation(unittest.TestCase):
 
     def test_csv_roundtrip_zero_error(self):
         csv = ext.to_csv_text(self.eph, {"frame": "ECI", "initial_state_m_mps": [7e6, 0, 0, 0, 1, 0]})
-        loaded = ext.load_external(io.StringIO(csv))  # autodetect, SI units
+        loaded = ext.load_external(io.StringIO(csv))
         cmp = ext.compare_ephemerides(self.eph, loaded)
         self.assertLess(cmp["summary"].iloc[0]["max_position_error_m"], 1e-6)
 

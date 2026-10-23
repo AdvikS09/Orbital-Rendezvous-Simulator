@@ -1,19 +1,3 @@
-"""Per-session safeguards against accidental resource exhaustion.
-
-The threat model here is *accident*, not attack: a class of thirty students
-holding down a Run button, or someone leaving a wide parameter sweep looping.
-The engine is pure-Python and a single high-fidelity run can occupy a Streamlit
-worker for seconds, so an unbounded run
-rate will make the app unusable for everyone else on the instance.
-
-Deliberately in-process rather than in the database: the check runs on every Run
-click and must not add a database round-trip, and losing the counters on restart
-is harmless. Note the consequence -- with multiple app processes each keeps its
-own counters, so the effective limit scales with the process count. That is
-documented rather than solved, because a hosted Streamlit pilot runs a single
-process.
-"""
-
 from __future__ import annotations
 
 import threading
@@ -32,15 +16,6 @@ class RateLimitDecision:
 
 
 class SessionRateLimiter:
-    """Sliding-window run limiter, keyed by session token.
-
-    Two independent limits:
-
-    * a short window (default 20 runs/minute) that absorbs a stuck button; and
-    * a session total (default 300 runs) that bounds one participant's whole
-      visit.
-    """
-
     def __init__(self, max_per_minute: int = 20, max_per_session: int = 300,
                  window_seconds: float = 60.0):
         self.max_per_minute = max_per_minute
@@ -51,7 +26,6 @@ class SessionRateLimiter:
         self._lock = threading.Lock()
 
     def check(self, session_token: str, now: float | None = None) -> RateLimitDecision:
-        """Test whether a run may start, without consuming an allowance."""
         now = time.monotonic() if now is None else now
         with self._lock:
             recent = self._recent[session_token]
@@ -81,7 +55,6 @@ class SessionRateLimiter:
                 runs_remaining=self.max_per_session - total)
 
     def consume(self, session_token: str, now: float | None = None) -> RateLimitDecision:
-        """Check and, if allowed, record one run against the allowance."""
         now = time.monotonic() if now is None else now
         decision = self.check(session_token, now)
         if not decision.allowed:
@@ -114,7 +87,6 @@ _limiter_lock = threading.Lock()
 
 def get_limiter(max_per_minute: int | None = None,
                 max_per_session: int | None = None) -> SessionRateLimiter:
-    """Process-wide limiter, configured from settings on first use."""
     global _limiter
     with _limiter_lock:
         if _limiter is None:
@@ -127,7 +99,6 @@ def get_limiter(max_per_minute: int | None = None,
 
 
 def reset_limiter() -> None:
-    """Drop the process-wide limiter. Used by tests."""
     global _limiter
     with _limiter_lock:
         _limiter = None

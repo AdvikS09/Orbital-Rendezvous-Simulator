@@ -1,17 +1,3 @@
-"""Experiment 2 -- PD gain-tuning study.
-
-Sweeps a grid of proportional (Kp) and derivative (Kd) gains, running the same
-CW rendezvous for each combination, and reports final position error, final
-velocity error, convergence time, maximum control acceleration and approximate
-delta-v. Saves the sweep table and a heatmap comparison of the metrics over the
-Kp x Kd grid.
-
-Gains are applied without thrust saturation so that each combination's control
-effort reflects the gains directly.
-
-Run:  python experiments/run_gain_sweep.py
-"""
-
 import os
 import sys
 
@@ -33,11 +19,9 @@ def main():
     n = cw.cw_mean_motion(radius)
     period = orbit.orbital_period(radius)
 
-    rel0 = np.array([200.0, -300.0, 80.0, 0.0, 0.0, 0.0])  # same scenario as exp. 1
+    rel0 = np.array([200.0, -300.0, 80.0, 0.0, 0.0, 0.0])
     times = np.linspace(0.0, period, 4001)
 
-    # Gain grids bracketing the critically damped point (omega_n = 6 n):
-    #   kp ~ omega_n^2 ~ 4.6e-5,  kd ~ 2 omega_n ~ 1.36e-2.
     kp_values = [1.0e-5, 4.6e-5, 1.0e-4, 2.0e-4]
     kd_values = [5.0e-3, 1.0e-2, 1.36e-2, 3.0e-2]
 
@@ -51,7 +35,6 @@ def main():
           f"n = {n:.4e} rad/s\n")
     print(df.round(6).to_string(index=False))
 
-    # Best by convergence time among runs that actually converged.
     converged = df.dropna(subset=["convergence_time_s"])
     if not converged.empty:
         best = converged.loc[converged["convergence_time_s"].idxmin()]

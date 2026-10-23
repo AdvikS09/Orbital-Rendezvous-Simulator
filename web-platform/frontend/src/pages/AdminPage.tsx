@@ -1,26 +1,3 @@
-/**
- * Administrator dashboard.
- *
- * A port of `pilot/ui/admin.py`. The panels, metric definitions, table titles
- * and caveats are carried across word for word, because they are the statements
- * the pilot report is held to; only the emoji are gone.
- *
- * Three properties of the Streamlit original are preserved deliberately.
- *
- * 1. **It cannot show who a participant is.** That information does not exist
- *    anywhere in the database, so no amount of interface would surface it.
- * 2. **Development and demonstration records are excluded by default**, so a
- *    demo run can never be mistaken for pilot activity. Including them is
- *    possible, but it is an explicit switch and the page says loudly when it
- *    is on.
- * 3. **Nothing secret is rendered.** The administrator's password lives in
- *    React state for as long as the tab is open and is sent as HTTP Basic on
- *    each request. It is never written to localStorage or sessionStorage —
- *    unlike the anonymous participant token, these are credentials, and
- *    storage survives the tab — and it never reaches the DOM after sign-in,
- *    because the form that held it is unmounted.
- */
-
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { FormEvent } from 'react'
 
@@ -51,9 +28,6 @@ import {
 import type { TabItem } from '@/components/ui'
 import './AdminPage.css'
 
-// --------------------------------------------------------------------------
-// Wording carried across from the Python application
-// --------------------------------------------------------------------------
 const PAGE_TITLE = 'Pilot administration'
 
 const PAGE_CAPTION =
@@ -67,12 +41,6 @@ const SIGN_IN_NOTE =
   'are sent to the server on each request and are never written to browser ' +
   'storage.'
 
-/**
- * The server's own 503 text, with the hash-generation hint the Streamlit page
- * carried. FastAPI's default handler returns `{"detail": ...}`, a shape the
- * shared API client cannot map onto its structured error body, so the two
- * documented administrator statuses are mirrored here rather than invented.
- */
 const NO_CREDENTIALS_CONFIGURED =
   'No administrator credentials are configured on this deployment. Set ' +
   'PILOT_ADMIN_USERNAME and PILOT_ADMIN_PASSWORD_HASH in the environment and ' +
@@ -126,9 +94,6 @@ const USER_TYPES: readonly UserType[] = [
   'other',
 ]
 
-// --------------------------------------------------------------------------
-// Filters
-// --------------------------------------------------------------------------
 type PeriodPreset = 'last_7' | 'last_30' | 'last_90' | 'all' | 'custom'
 
 const PERIOD_OPTIONS: readonly { value: PeriodPreset; label: string }[] = [
@@ -145,7 +110,6 @@ const PRESET_DAYS: Record<'last_7' | 'last_30' | 'last_90', number> = {
   last_90: 90,
 }
 
-/** Local calendar date as YYYY-MM-DD. Not `toISOString`, which is UTC. */
 function isoDate(value: Date): string {
   const year = value.getFullYear()
   const month = `${value.getMonth() + 1}`.padStart(2, '0')
@@ -163,9 +127,6 @@ function daysAgo(days: number): string {
   return isoDate(when)
 }
 
-// --------------------------------------------------------------------------
-// Row helpers
-// --------------------------------------------------------------------------
 interface Credentials {
   username: string
   password: string
@@ -184,7 +145,6 @@ function textFrom(row: ReportRow, key: string): string | null {
   return null
 }
 
-/** Arithmetic mean of a numeric column, or null when the column is empty. */
 function meanOf(rows: readonly ReportRow[], key: string): number | null {
   let total = 0
   let count = 0
@@ -213,7 +173,6 @@ function countWhere(
   return count
 }
 
-/** The server's message for the two documented administrator failures. */
 function authMessage(cause: unknown): string {
   if (cause instanceof ApiError) {
     if (cause.status === 503) return NO_CREDENTIALS_CONFIGURED
@@ -223,14 +182,9 @@ function authMessage(cause: unknown): string {
   return 'The request could not be completed.'
 }
 
-// --------------------------------------------------------------------------
-// Sign-in
-// --------------------------------------------------------------------------
 interface AdminSignInProps {
-  /** Filters in effect, so the credential check also fetches the first report. */
   query: ReportQuery
   onSignedIn: (credentials: Credentials, report: AdminReport) => void
-  /** Why a session ended on its own, e.g. the password was rotated server-side. */
   notice?: string | null
 }
 
@@ -247,8 +201,6 @@ function AdminSignIn({ query, onSignedIn, notice }: AdminSignInProps) {
     const credentials: Credentials = { username, password }
     try {
       const report = await api.adminReport(credentials, query)
-      // Clear the field before the parent swaps this component out, so the
-      // password does not sit in a controlled input during the transition.
       setPassword('')
       onSignedIn(credentials, report)
     } catch (cause) {
@@ -324,9 +276,6 @@ function AdminSignIn({ query, onSignedIn, notice }: AdminSignInProps) {
   )
 }
 
-// --------------------------------------------------------------------------
-// Filter controls
-// --------------------------------------------------------------------------
 interface FilterSelectProps {
   id: string
   label: string
@@ -357,9 +306,6 @@ function FilterSelect({ id, label, value, options, onChange }: FilterSelectProps
   )
 }
 
-// --------------------------------------------------------------------------
-// Page
-// --------------------------------------------------------------------------
 const TAB_ITEMS_BASE: readonly Omit<TabItem, 'count'>[] = [
   { value: 'usage', label: 'Usage', icon: 'chart' },
   { value: 'learning', label: 'Learning impact', icon: 'book' },
@@ -376,7 +322,6 @@ const QUALITATIVE_FIELDS: readonly { key: string; label: string }[] = [
 ]
 
 export function AdminPage() {
-  // Credentials live here and nowhere else. Never persisted.
   const [auth, setAuth] = useState<Credentials | null>(null)
   const [signedOutReason, setSignedOutReason] = useState<string | null>(null)
 
@@ -390,7 +335,6 @@ export function AdminPage() {
 
   const [tab, setTab] = useState('usage')
 
-  // ------------------------------------------------------------- filters
   const [preset, setPreset] = useState<PeriodPreset>('last_30')
   const [customStart, setCustomStart] = useState(() => daysAgo(30))
   const [customEnd, setCustomEnd] = useState(() => today())
@@ -417,11 +361,6 @@ export function AdminPage() {
 
   const queryKey = JSON.stringify(query)
 
-  /**
-   * The query whose report is already loaded. Sign-in fetches the first report
-   * as its credential check, and this stops the effect below fetching the same
-   * thing again the moment the dashboard mounts.
-   */
   const loadedKey = useRef<string | null>(null)
 
   const signOut = useCallback((reason: string | null = null) => {
@@ -444,7 +383,6 @@ export function AdminPage() {
     [queryKey],
   )
 
-  // --------------------------------------------------------------- data
   useEffect(() => {
     if (auth === null) return undefined
     if (loadedKey.current === queryKey) return undefined
@@ -462,8 +400,6 @@ export function AdminPage() {
       })
       .catch((cause: unknown) => {
         if (cancelled) return
-        // Credentials that stopped working mid-session: drop them rather than
-        // keep retrying with something the server has rejected.
         if (cause instanceof ApiError && (cause.status === 401 || cause.status === 503)) {
           signOut(authMessage(cause))
           return
@@ -488,8 +424,6 @@ export function AdminPage() {
         if (!cancelled) setOrganisations(rows)
       })
       .catch(() => {
-        // A failed organisation list only costs the filter its options; the
-        // report itself is unaffected, so this is not worth an alert.
         if (!cancelled) setOrganisations([])
       })
     return () => {
@@ -497,7 +431,6 @@ export function AdminPage() {
     }
   }, [auth, includeDemo])
 
-  // ------------------------------------------------------------ options
   const organisationOptions = useMemo(() => {
     const options: { value: string; label: string }[] = [
       { value: '', label: 'All organisations' },
@@ -508,8 +441,6 @@ export function AdminPage() {
       const code = row['code']
       if (typeof id !== 'number' || typeof name !== 'string') continue
       options.push({
-        // The machine representation, not a display string: this is the value
-        // sent back to the API as `organisation_id`, never something read.
         value: rawValue(id),
         label: typeof code === 'string' ? `${name} (${code})` : name,
       })
@@ -532,7 +463,6 @@ export function AdminPage() {
   const userTypeLabel =
     userTypeOptions.find((option) => option.value === userType)?.label ?? 'All user types'
 
-  /** Comment lines written above the data in every CSV this page produces. */
   const csvComments = useMemo(
     () => [
       `period: ${start || 'all time'} to ${end || 'today'}`,
@@ -543,7 +473,6 @@ export function AdminPage() {
     [start, end, organisationLabel, userTypeLabel, includeDemo],
   )
 
-  // ------------------------------------------------------------ actions
   async function exportEverything() {
     if (auth === null) return
     setExporting(true)
@@ -567,7 +496,6 @@ export function AdminPage() {
     )
   }
 
-  // ------------------------------------------------------------- render
   if (auth === null) {
     return (
       <AdminSignIn query={query} onSignedIn={handleSignedIn} notice={signedOutReason} />
@@ -705,7 +633,6 @@ export function AdminPage() {
       </header>
 
       <div className="admin-page__body">
-        {/* ------------------------------------------------------ filters */}
         <aside className="admin-page__sidebar" aria-labelledby="admin-filters-heading">
           <h2 className="admin-page__sidebar-heading" id="admin-filters-heading">
             Report filters
@@ -795,7 +722,6 @@ export function AdminPage() {
           </p>
         </aside>
 
-        {/* ------------------------------------------------------ content */}
         <div className="admin-page__content">
           {includeDemo ? (
             <Callout severity="warning" title="Demo records are included">
@@ -847,7 +773,6 @@ export function AdminPage() {
                 idPrefix="admin"
               />
 
-              {/* ------------------------------------------------- usage */}
               <TabPanel value="usage" selected={tab} idPrefix="admin">
                 <div className="admin-page__stack">
                   <ReportTable
@@ -903,12 +828,10 @@ export function AdminPage() {
                 </div>
               </TabPanel>
 
-              {/* ---------------------------------------------- learning */}
               <TabPanel value="learning" selected={tab} idPrefix="admin">
                 <LearningPanel rows={assessmentRows} csvComments={csvComments} />
               </TabPanel>
 
-              {/* ---------------------------------------------- feedback */}
               <TabPanel value="feedback" selected={tab} idPrefix="admin">
                 <div className="admin-page__stack">
                   <FeedbackRatings ratings={ratings} />
@@ -947,7 +870,6 @@ export function AdminPage() {
                 </div>
               </TabPanel>
 
-              {/* ------------------------------------------------ export */}
               <TabPanel value="export" selected={tab} idPrefix="admin">
                 <Panel title="Export everything" headingLevel={3} icon="download">
                   <p className="admin-page__prose">{EXPORT_CAPTION}</p>
@@ -973,7 +895,6 @@ export function AdminPage() {
                 </Panel>
               </TabPanel>
 
-              {/* ------------------------------------------------ system */}
               <TabPanel value="system" selected={tab} idPrefix="admin">
                 <div className="admin-page__stack">
                   <Panel title="Deployment" headingLevel={3} icon="settings">
@@ -1041,9 +962,6 @@ export function AdminPage() {
   )
 }
 
-// --------------------------------------------------------------------------
-// Learning impact
-// --------------------------------------------------------------------------
 function LearningPanel({
   rows,
   csvComments,
@@ -1143,9 +1061,6 @@ function LearningPanel({
   )
 }
 
-// --------------------------------------------------------------------------
-// Feedback
-// --------------------------------------------------------------------------
 function FeedbackRatings({ ratings }: { ratings: Record<string, unknown> | undefined }) {
   const responses = numberFrom(ratings, 'responses') ?? 0
 

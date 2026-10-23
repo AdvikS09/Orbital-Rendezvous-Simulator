@@ -1,12 +1,3 @@
-/**
- * Application shell: persistent sidebar navigation, main content region and
- * the standing status footer.
- *
- * On desktop the sidebar is always visible. Below 900px it collapses behind a
- * toggle and renders as an overlay drawer, so panels stack in a sensible order
- * rather than being squeezed.
- */
-
 import { useCallback, useEffect, useState } from 'react'
 import { NavLink, useLocation } from 'react-router-dom'
 
@@ -34,10 +25,6 @@ const SECONDARY_NAV: NavItem[] = [
   { to: '/admin', label: 'Administration', icon: 'lock' },
 ]
 
-/**
- * The single honest description of what this software is.
- * Mirrors ``STATUS_STATEMENT`` in pilot/ui/common.py so the two cannot drift.
- */
 export const STATUS_STATEMENT =
   'This is open-source research and educational software. It is not ' +
   'NASA-approved, NASA-validated, flight-certified, or operational mission ' +
@@ -55,7 +42,6 @@ export function Layout({ children }: { children: React.ReactNode }) {
   const session = useSession()
   const location = useLocation()
 
-  // Close the mobile drawer whenever the route changes.
   useEffect(() => {
     setDrawerOpen(false)
   }, [location.pathname])

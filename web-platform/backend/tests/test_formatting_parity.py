@@ -1,16 +1,3 @@
-"""The Python and TypeScript formatters must agree.
-
-Two implementations exist for one reason: a handful of interpretation sentences
-are composed on the server with a number embedded mid-sentence, and splitting
-those apart so React could format the middle would be worse than the small
-duplication. This file makes the duplication safe by pinning both to the same
-expected strings.
-
-The TypeScript side is tested by ``web-platform/frontend/tests/formatting.test.ts``
-against exactly the same table below. If one implementation drifts, one of the
-two suites fails.
-"""
-
 from __future__ import annotations
 
 import pytest
@@ -26,7 +13,6 @@ from app.services.formatting import (
     to_superscript,
 )
 
-#: (value, significant figures, expected string). Mirrored in the TS suite.
 SHARED_CASES = [
     (2e-12, 2, f"2.0{NBSP}{TIMES}{NBSP}10⁻¹²"),
     (1.1060555202205516e-13, 3, f"1.11{NBSP}{TIMES}{NBSP}10⁻¹³"),
@@ -42,7 +28,6 @@ def test_scientific_matches_the_shared_table(value, significant, expected):
 
 
 def test_the_defect_this_migration_fixes():
-    """The Streamlit interface printed `2e-12`. That must never recur."""
     output = format_scientific(2e-12, 2)
     assert "e-" not in output
     assert "E-" not in output
@@ -61,7 +46,6 @@ def test_unicode_minus_not_hyphen():
 
 
 def test_auto_notation_thresholds():
-    # Below 1e-3 and at or above 1e5 switch to scientific.
     assert TIMES in format_number(1.5e-7)
     assert TIMES in format_number(6378137.0)
     assert TIMES not in format_number(2.3257791301763304)

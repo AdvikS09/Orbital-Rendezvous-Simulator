@@ -1,5 +1,3 @@
-"""Tests for the 3D Clohessy-Wiltshire dynamics and state-transition matrix."""
-
 import os
 import sys
 import unittest
@@ -39,13 +37,11 @@ class TestCW(unittest.TestCase):
         self.assertTrue(np.allclose(states[-1], x0, atol=1e-6))
 
     def test_cross_track_is_harmonic_at_orbital_period(self):
-        # z'' = -n^2 z is an oscillator of period 2*pi/n; after one period the
-        # cross-track state returns to its start and stays decoupled from x, y.
         x0 = np.array([0.0, 0.0, 50.0, 0.0, 0.0, 0.0])
         t = np.linspace(0.0, self.period, 4001)
         states, _ = cw.propagate_cw(x0, t, self.n)
         self.assertAlmostEqual(states[-1, 2], 50.0, places=2)
-        self.assertTrue(np.allclose(states[:, 0], 0.0, atol=1e-6))  # no in-plane coupling
+        self.assertTrue(np.allclose(states[:, 0], 0.0, atol=1e-6))
         self.assertTrue(np.allclose(states[:, 1], 0.0, atol=1e-6))
 
 

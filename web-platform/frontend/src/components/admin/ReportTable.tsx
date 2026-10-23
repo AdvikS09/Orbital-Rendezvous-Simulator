@@ -1,28 +1,3 @@
-/**
- * A generic table for an aggregate report row set.
- *
- * The administrator API returns each report table as a plain list of objects
- * whose shape is decided by the SQL that produced it, not by a schema the
- * frontend knows. Rather than hand-write a component per table — seven in the
- * usage tab alone — this derives its columns from the rows.
- *
- * Two decisions worth stating.
- *
- * 1. A column is numeric only when every value in it that is present is a
- *    number. One stray string demotes the whole column to text, which is the
- *    safe direction: right-aligning a column of words looks broken, whereas
- *    left-aligning a column of numbers merely looks plain.
- * 2. The unit and precision come from the column *name*. `mean_duration_ms` is
- *    milliseconds, `return_rate` is a fraction to be shown as a percentage,
- *    and a column of whole numbers is shown without a decimal part. The
- *    alternative — printing whatever the database returned — is how `2e-12`
- *    reaches a reader, and it does not happen here.
- *
- * The CSV written by the download button carries machine values from
- * `rawValue`, never the display strings, so a rounded figure on screen can
- * never end up in someone's spreadsheet.
- */
-
 import { useId, useMemo } from 'react'
 import type { ReactNode } from 'react'
 
@@ -33,7 +8,6 @@ import { quoteField } from '@/components/results/csv'
 import { rawValue } from '@/formatting/number'
 import './ReportTable.css'
 
-/** Rows rendered on screen. Everything beyond this is in the CSV. */
 export const REPORT_ROW_CAP = 200
 
 export type ReportRow = Record<string, unknown>
@@ -47,10 +21,6 @@ export interface ReportColumn {
   numeric: boolean
 }
 
-/**
- * Column names whose plain de-underscoring reads badly, or which carry a scale
- * the reader needs (a 1–5 rating means nothing without its range).
- */
 const LABEL_OVERRIDES: Record<string, string> = {
   clarity_rating: 'Clarity (1–5)',
   error_class: 'Error class',
@@ -75,10 +45,6 @@ const LABEL_OVERRIDES: Record<string, string> = {
   would_recommend: 'Would recommend (0–10)',
 }
 
-/**
- * Unit and presentation implied by a column-name suffix. Longest and most
- * specific first: `_ms` must be tested before `_m`.
- */
 const UNIT_SUFFIXES: readonly {
   suffix: string
   unit: string
@@ -102,7 +68,6 @@ function humanise(key: string): string {
   return spaced.charAt(0).toUpperCase() + spaced.slice(1)
 }
 
-/** Every key present anywhere in the row set, in first-seen order. */
 function collectKeys(rows: readonly ReportRow[]): string[] {
   const keys: string[] = []
   const seen = new Set<string>()
@@ -153,13 +118,11 @@ function describeColumn(key: string, rows: readonly ReportRow[]): ReportColumn {
     }
   }
 
-  // Counts are whole numbers and are shown as such; a mean is not.
   return allIntegers
     ? { key, label, unit: '', fmt: 'integer', precision: 0, numeric: true }
     : { key, label, unit: '', fmt: 'significant', precision: 4, numeric: true }
 }
 
-/** Derive the column set for a list of report rows. */
 export function deriveColumns(
   rows: readonly ReportRow[],
   only?: readonly string[],
@@ -170,7 +133,6 @@ export function deriveColumns(
   return keys.map((key) => describeColumn(key, rows))
 }
 
-/** One CSV cell. Numbers keep full machine precision and plain ASCII. */
 function csvCell(value: unknown): string {
   if (value === null || value === undefined) return ''
   if (typeof value === 'number') return rawValue(value)
@@ -179,12 +141,6 @@ function csvCell(value: unknown): string {
   return JSON.stringify(value) ?? ''
 }
 
-/**
- * Render report rows as an RFC 4180 document.
- *
- * Exported because the feedback tab downloads its full row set without ever
- * putting it on screen as a table.
- */
 export function reportRowsToCsv(
   rows: readonly ReportRow[],
   columns: readonly ReportColumn[],
@@ -208,12 +164,6 @@ export function reportRowsToCsv(
   return [...header, columnHeader, ...body].join(CRLF) + CRLF
 }
 
-/**
- * Hand a generated CSV to the browser.
- *
- * Exported alongside `reportRowsToCsv` so a caller that builds its own row set
- * does not have to repeat the object-URL dance.
- */
 export function downloadCsv(filename: string, text: string): void {
   const blob = new Blob([text], { type: 'text/csv;charset=utf-8' })
   const url = URL.createObjectURL(blob)
@@ -247,23 +197,14 @@ function Cell({ value, column }: { value: unknown; column: ReportColumn }) {
 }
 
 export interface ReportTableProps {
-  /** Visible heading. Also names the CSV download button. */
   title: string
-  /** The row set, exactly as the API returned it. */
   rows: readonly ReportRow[]
-  /** Shown in place of the table when there are no rows. */
   emptyMessage: string
-  /** Stem of the downloaded file, e.g. `usage_by_date` gives usage_by_date.csv. */
   downloadName: string
-  /** Restrict and order the columns. Unknown keys are ignored. */
   columns?: readonly string[]
-  /** Explanatory line under the heading. */
   caption?: ReactNode
-  /** Explanatory line under the table. */
   footnote?: ReactNode
-  /** Comment lines written above the data in the CSV, e.g. the active filters. */
   csvComments?: readonly string[]
-  /** Rows rendered before the display is capped. */
   maxRows?: number
   headingLevel?: 2 | 3 | 4
 }

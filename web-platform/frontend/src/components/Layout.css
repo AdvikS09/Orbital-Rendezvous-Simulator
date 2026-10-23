@@ -5,13 +5,10 @@
   min-height: 100vh;
 }
 
-/* ------------------------------------------------------------------ topbar */
-/* Hidden on desktop; the sidebar carries the identity there. */
 .layout__topbar {
   display: none;
 }
 
-/* ----------------------------------------------------------------- sidebar */
 .layout__sidebar {
   position: sticky;
   top: 0;
@@ -83,7 +80,7 @@
   background: var(--accent-muted);
   color: var(--accent);
   font-weight: 550;
-  /* A second, non-colour cue so the active item is not signalled by hue alone. */
+
   box-shadow: inset 2px 0 0 var(--accent);
 }
 
@@ -118,11 +115,10 @@
   color: var(--text-muted);
 }
 
-/* -------------------------------------------------------------------- main */
 .layout__main {
   display: flex;
   flex-direction: column;
-  min-width: 0; /* lets wide tables and plots scroll inside, not push the page */
+  min-width: 0;
 }
 
 .layout__main:focus {
@@ -164,7 +160,6 @@
   display: none;
 }
 
-/* -------------------------------------------------------------- responsive */
 @media (max-width: 900px) {
   .layout {
     grid-template-columns: minmax(0, 1fr);

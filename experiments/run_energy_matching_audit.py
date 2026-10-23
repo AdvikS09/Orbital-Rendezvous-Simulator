@@ -1,25 +1,3 @@
-"""Mathematical audit of the radial bounded-motion condition.
-
-The energy-matching experiment sets the radial offset's initial LVLH velocity to
-ydot0 = -2 n x0. This script tests exactly what that condition does to the
-*nonlinear* osculating semi-major axes.
-
-Analytical prediction (circular target, radius r, ratio eps = x0/r):
-  The chaser sits at radius r+x0 with velocity purely along-track (radial rate
-  zero), magnitude v_c = v_t + (ydot0 + n x0). Vis-viva then gives:
-    zero-velocity  (ydot0 = 0)      : a_c - r ~= +4 x0        (FIRST order in x0)
-    bounded-motion (ydot0 = -2 n x0): a_c - r ~= - x0^2 / r   (SECOND order in x0)
-  So ydot0 = -2 n x0 is the CW (linearised) bounded-motion condition; it matches
-  the nonlinear semi-major axes only to first order, with an O(x0^2/r) residual.
-
-This script confirms the prediction by computing the actual osculating elements.
-
-Output (project root):
-  ENERGY_MATCHING_SMA.csv
-
-Run:  python experiments/run_energy_matching_audit.py
-"""
-
 import os
 import sys
 

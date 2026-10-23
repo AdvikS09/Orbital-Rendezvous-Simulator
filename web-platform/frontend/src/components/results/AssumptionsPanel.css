@@ -1,5 +1,3 @@
-/* Assumptions and limitations, always visible, never collapsed. */
-
 .assumptions-panel {
   display: flex;
   flex-direction: column;

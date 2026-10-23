@@ -1,14 +1,3 @@
-/**
- * The guided activities, as a list.
- *
- * Route: `/activities`.
- *
- * Each activity carries a review status from the content module, and it says
- * DRAFT. That is surfaced here rather than buried in a repository file, because
- * the people most likely to put these in front of a class are the people least
- * likely to read `KNOWN_GAPS.md` first.
- */
-
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { ApiError, api } from '@/api/client'

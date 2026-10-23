@@ -1,11 +1,3 @@
-"""Shared Streamlit helpers: session state, layout, disclaimers, widgets.
-
-The single source of truth for the statements this platform makes about itself
-lives here (:data:`STATUS_STATEMENT`, :data:`PRIVACY_SUMMARY`). Anything shown
-to a participant about validation status or data handling should come from this
-module, so those claims cannot drift apart between pages.
-"""
-
 from __future__ import annotations
 
 import streamlit as st
@@ -16,7 +8,6 @@ from ..config import get_settings
 
 CONSENT_VERSION = "1.0"
 
-#: The one honest description of what this software is. Referenced everywhere.
 STATUS_STATEMENT = (
     "This is open-source research and educational software. It is **not** "
     "NASA-approved, NASA-validated, flight-certified, or operational mission "
@@ -51,9 +42,7 @@ STAGES = ("landing", "consent", "entry", "track", "assessment_pre",
           "workspace", "assessment_post", "feedback", "confirmation")
 
 
-# Session state
 def init_state() -> None:
-    """Seed the session-state keys the flow relies on."""
     defaults = {
         "stage": "landing",
         "consent_given": False,
@@ -77,7 +66,6 @@ def init_state() -> None:
 
 
 def goto(stage: str) -> None:
-    """Move to a flow stage and rerun."""
     if stage not in STAGES:
         raise ValueError(f"unknown stage {stage!r}")
     st.session_state.stage = stage
@@ -89,7 +77,6 @@ def context():
 
 
 def require_context() -> bool:
-    """Send an un-registered visitor back to the start."""
     if context() is None:
         st.warning("Your session has ended. Please start again.")
         if st.button("Back to the start"):
@@ -98,7 +85,6 @@ def require_context() -> bool:
     return True
 
 
-# Layout
 def page_header(title: str, subtitle: str = "") -> None:
     st.title(title)
     if subtitle:
@@ -106,7 +92,6 @@ def page_header(title: str, subtitle: str = "") -> None:
 
 
 def progress_bar(current_stage: str) -> None:
-    """Show where the participant is in the flow."""
     steps = [("entry", "Sign in"), ("track", "Choose a track"),
              ("workspace", "Simulate"), ("feedback", "Feedback"),
              ("confirmation", "Done")]
@@ -125,7 +110,6 @@ def progress_bar(current_stage: str) -> None:
 
 
 def status_footer() -> None:
-    """The disclaimer that must be reachable from every page."""
     settings = get_settings()
     st.divider()
     with st.expander("About this software, its limits, and your data"):
@@ -141,7 +125,6 @@ def status_footer() -> None:
 
 
 def show_assumptions_and_limits(scenario) -> None:
-    """Assumptions and limitations shown next to every result."""
     left, right = st.columns(2)
     with left:
         st.markdown("**Assumptions behind this result**")
@@ -164,7 +147,6 @@ def show_errors(errors: list[str]) -> None:
 
 
 def metric_row(entries: list[tuple[str, str, str]]) -> None:
-    """``entries`` is a list of ``(label, value, help)``."""
     if not entries:
         return
     columns = st.columns(len(entries))
@@ -177,7 +159,7 @@ def format_number(value, unit: str = "", places: int = 4) -> str:
         number = float(value)
     except (TypeError, ValueError):
         return str(value)
-    if number != number:  # NaN
+    if number != number:
         return "—"
     if number == 0:
         text = "0"
@@ -192,15 +174,8 @@ def user_type_label(user_type: str) -> str:
     return USER_TYPE_LABELS.get(user_type, "Other")
 
 
-# Parameter widgets
 def render_params(scenario, values: dict, key_prefix: str,
                   show_advanced: bool) -> dict:
-    """Render a scenario's parameters and return the current values.
-
-    Advanced parameters stay hidden by default so an inexperienced participant
-    is not confronted with gain matrices, but they remain one checkbox away for
-    someone who wants them.
-    """
     updated = dict(values)
     basic = [param for param in scenario.params if not param.advanced]
     advanced = [param for param in scenario.params if param.advanced]
@@ -213,7 +188,6 @@ def render_params(scenario, values: dict, key_prefix: str,
 
 
 def _render_group(params, values: dict, key_prefix: str) -> None:
-    # Checkboxes tile compactly; everything else gets a two-column grid.
     checkboxes = [param for param in params if param.kind == "checkbox"]
     others = [param for param in params if param.kind != "checkbox"]
 
@@ -248,9 +222,6 @@ def _widget(param, current, key_prefix: str):
                          float(current), float(param.step or 1.0), key=key,
                          help=helptext)
 
-    # Number input. min/max are deliberately NOT passed to Streamlit: the
-    # validator owns the bounds and produces a proper explanation, whereas a
-    # widget clamp silently changes what the participant asked for.
     return st.number_input(label, value=float(current), step=float(param.step or 1.0),
                            key=key, help=helptext, format="%g")
 

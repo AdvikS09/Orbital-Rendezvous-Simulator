@@ -1,5 +1,3 @@
-/* Explanatory prose: looser leading than the interface, capped measure. */
-
 .prose {
   display: flex;
   flex-direction: column;

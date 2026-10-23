@@ -1,18 +1,3 @@
-/**
- * A guided activity, one step at a time.
- *
- * Route: `/activities/:activityId`.
- *
- * The structure is predict, run, observe. The prediction is required: the Run
- * button stays disabled until one is chosen, and the caption says so. That is
- * not friction for its own sake — committing to an answer before seeing the
- * result is what separates an experiment from an animation, and a learner who
- * has not committed will read whatever came back as the thing they expected.
- *
- * Predictions are held in this component and never sent anywhere. Nothing is
- * recorded about which one was chosen, which is what makes it safe to be wrong.
- */
-
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { ApiError, api } from '@/api/client'
@@ -48,7 +33,6 @@ export function ActivityPage() {
   const [scenarioError, setScenarioError] = useState<string | null>(null)
   const [params, setParams] = useState<ParamValues>({})
 
-  /** Keyed by step id. Held here only; never sent to the server. */
   const [predictions, setPredictions] = useState<Record<string, string>>({})
 
   const [result, setResult] = useState<SimulationResult | null>(null)
@@ -58,7 +42,6 @@ export function ActivityPage() {
   const [finished, setFinished] = useState(false)
   const [finishWarning, setFinishWarning] = useState<string | null>(null)
 
-  // ------------------------------------------------------------- load
   useEffect(() => {
     const controller = new AbortController()
     setActivity(null)
@@ -79,8 +62,6 @@ export function ActivityPage() {
 
   const step = activity?.steps[index]
 
-  // The parameters for a step are the scenario defaults with the activity's
-  // starting values laid over them, so a step only has to state what it changes.
   useEffect(() => {
     if (!step) return
     const controller = new AbortController()
@@ -111,7 +92,6 @@ export function ActivityPage() {
 
   const fieldErrors = useMemo(() => runError?.fieldErrors ?? {}, [runError])
 
-  // ParamPanel reports one changed parameter by name; it holds no state itself.
   const handleParamChange = useCallback(
     (name: string, value: number | string | boolean) => {
       setParams((current) => ({ ...current, [name]: value }))
@@ -163,8 +143,6 @@ export function ActivityPage() {
       await api.completeActivity(activity.id)
       setFinishWarning(null)
     } catch (cause) {
-      // Completion is an analytics record, not the point of the activity. If it
-      // cannot be stored the learner has still finished, so say so and move on.
       setFinishWarning(
         messageFor(
           cause,
@@ -176,7 +154,6 @@ export function ActivityPage() {
     window.scrollTo({ top: 0 })
   }, [activity])
 
-  // ----------------------------------------------------------- render
   if (loadError !== null) {
     return (
       <div className="activity-page activity-page--message">
@@ -247,7 +224,6 @@ export function ActivityPage() {
 
       <Prose text={step.brief} className="activity-page__brief" />
 
-      {/* --------------------------------------------------- prediction */}
       <Panel
         title="Predict first"
         subtitle={step.predict_prompt}
@@ -280,7 +256,6 @@ export function ActivityPage() {
         </p>
       </Panel>
 
-      {/* --------------------------------------------------- parameters */}
       <Disclosure title="Parameters for this step" icon="settings">
         <p className="activity-page__caption">
           Pre-set for the activity. Change them if you want to experiment.
@@ -304,7 +279,6 @@ export function ActivityPage() {
         )}
       </Disclosure>
 
-      {/* ---------------------------------------------------------- run */}
       <div className="activity-page__run">
         <Button
           variant="primary"
@@ -323,7 +297,6 @@ export function ActivityPage() {
         ) : null}
       </div>
 
-      {/* ------------------------------------------------------ results */}
       <section className="activity-page__results" aria-label="Results">
         {running ? (
           <p className="activity-page__loading">
@@ -377,7 +350,6 @@ export function ActivityPage() {
         ) : null}
       </section>
 
-      {/* --------------------------------------------------- navigation */}
       <nav className="activity-page__nav" aria-label="Activity steps">
         <Button
           icon="chevronLeft"

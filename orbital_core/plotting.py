@@ -1,17 +1,8 @@
-"""Headless matplotlib plotting helpers for the rendezvous engine.
-
-The Agg backend is selected on import so experiments render and save figures
-without any display. Every helper saves a PNG to ``path`` and returns it.
-
-Relative states are LVLH 6-vectors ``[x, y, z, vx, vy, vz]`` (x=radial,
-y=along-track, z=cross-track).
-"""
-
 import os
 
 import matplotlib
 
-matplotlib.use("Agg")  # headless backend; must precede pyplot import
+matplotlib.use("Agg")
 
 import matplotlib.pyplot as plt  # noqa: E402
 import numpy as np  # noqa: E402
@@ -28,7 +19,6 @@ def _save(fig, path):
 
 
 def plot_lvlh_trajectory(trajectories, path, title="Relative trajectory (LVLH)"):
-    """3D LVLH relative trajectory. ``trajectories`` = list of (label, states)."""
     fig = plt.figure(figsize=(7.5, 6.5))
     ax = fig.add_subplot(111, projection="3d")
     for label, states in trajectories:
@@ -45,7 +35,6 @@ def plot_lvlh_trajectory(trajectories, path, title="Relative trajectory (LVLH)")
 
 
 def plot_position_components(t, states, path, title="Relative position vs time"):
-    """x / y / z relative position components vs time."""
     states = np.asarray(states)
     fig, ax = plt.subplots(figsize=(7.5, 4.5))
     for j, name in enumerate(("x radial", "y along-track", "z cross-track")):
@@ -59,7 +48,6 @@ def plot_position_components(t, states, path, title="Relative position vs time")
 
 
 def plot_velocity_components(t, states, path, title="Relative velocity vs time"):
-    """vx / vy / vz relative velocity components vs time."""
     states = np.asarray(states)
     fig, ax = plt.subplots(figsize=(7.5, 4.5))
     for j, name in zip((3, 4, 5), ("vx radial", "vy along-track", "vz cross-track")):
@@ -73,7 +61,6 @@ def plot_velocity_components(t, states, path, title="Relative velocity vs time")
 
 
 def plot_control_acceleration(t, controls, path, title="Control acceleration vs time"):
-    """Control acceleration components and magnitude vs time."""
     controls = np.asarray(controls)
     mag = np.linalg.norm(controls, axis=1)
     fig, ax = plt.subplots(figsize=(7.5, 4.5))
@@ -90,7 +77,6 @@ def plot_control_acceleration(t, controls, path, title="Control acceleration vs 
 
 def plot_error_growth(t, pos_error, vel_error, path,
                       title="CW vs high-fidelity error over time"):
-    """Position and velocity error between two models vs time (twin axes)."""
     fig, ax1 = plt.subplots(figsize=(7.5, 4.5))
     l1, = ax1.plot(t, pos_error, lw=1.4, color="tab:red", label="position error")
     ax1.set_xlabel("time [s]")
@@ -109,7 +95,6 @@ def plot_error_growth(t, pos_error, vel_error, path,
 
 
 def plot_error_curves(t, series, path, ylabel="error", title="", logy=False):
-    """Plot multiple error curves vs time. ``series`` = list of (label, values)."""
     fig, ax = plt.subplots(figsize=(7.5, 4.5))
     for label, values in series:
         ax.plot(np.asarray(t), np.asarray(values), lw=1.3, label=label)
@@ -125,11 +110,6 @@ def plot_error_curves(t, series, path, ylabel="error", title="", logy=False):
 
 def plot_gain_comparison(df, path, metrics=("convergence_time_s", "delta_v_mps"),
                          title="PD gain sweep"):
-    """Heatmaps of sweep metrics over the Kp x Kd grid.
-
-    ``df`` is the output of :func:`src.validation.gain_sweep` (columns kp, kd,
-    plus the metric columns).
-    """
     fig, axes = plt.subplots(1, len(metrics), figsize=(6.5 * len(metrics), 5.0))
     if len(metrics) == 1:
         axes = [axes]

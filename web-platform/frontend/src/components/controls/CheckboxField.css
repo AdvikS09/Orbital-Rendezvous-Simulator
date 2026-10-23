@@ -1,9 +1,3 @@
-/*
- * Checkbox. The control keeps the platform appearance, tinted with the accent
- * token, because a hand-drawn checkbox rarely matches the platform's own
- * keyboard and high-contrast behaviour.
- */
-
 .checkbox-field {
   display: flex;
   flex-direction: column;
@@ -47,7 +41,7 @@
 
 .checkbox-field__help {
   margin: 0;
-  /* Aligned with the label, clear of the box. */
+
   padding-left: calc(15px + var(--space-2));
   color: var(--text-muted);
   font-size: var(--text-xs);

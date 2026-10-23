@@ -1,16 +1,3 @@
-/**
- * HTTP client for the simulation API.
- *
- * The base URL is a **relative** `/api/v1`, deliberately. In development Vite
- * proxies that to the FastAPI server; in production FastAPI serves both the API
- * and this bundle from the same origin. Either way no host is ever hard-coded,
- * so the same build works on localhost and on a custom domain.
- *
- * The anonymous session token lives in sessionStorage and is attached to every
- * request as `X-Session-Token`. It is opaque and carries no identity: it maps
- * to a row that holds only a one-way hash of the participant's chosen code.
- */
-
 import type {
   Acknowledgement,
   Activity,
@@ -35,7 +22,6 @@ export const API_BASE = '/api/v1'
 
 const SESSION_KEY = 'orbital.session_token'
 
-/** A failed request, carrying the server's structured explanation. */
 export class ApiError extends Error {
   readonly status: number
   readonly body: ApiErrorBody | null
@@ -47,7 +33,6 @@ export class ApiError extends Error {
     this.body = body
   }
 
-  /** Per-field messages, for marking the offending controls. */
   get fieldErrors(): Record<string, string> {
     const out: Record<string, string> = {}
     for (const detail of this.body?.detail ?? []) {
@@ -56,14 +41,12 @@ export class ApiError extends Error {
     return out
   }
 
-  /** Messages with no field attribution, for the summary banner. */
   get generalErrors(): string[] {
     const details = this.body?.detail ?? []
     const unattributed = details.filter((d) => !d.field).map((d) => d.message)
     return unattributed.length > 0 ? unattributed : [this.message]
   }
 
-  /** True when the request was blocked before the engine ran. */
   get rejected(): boolean {
     return this.body?.rejected ?? false
   }
@@ -73,12 +56,10 @@ export class ApiError extends Error {
   }
 }
 
-// ------------------------------------------------------------------ session
 export function getSessionToken(): string | null {
   try {
     return window.sessionStorage.getItem(SESSION_KEY)
   } catch {
-    // Private browsing can deny storage. Analytics is optional, so carry on.
     return null
   }
 }
@@ -87,19 +68,14 @@ export function setSessionToken(token: string | null): void {
   try {
     if (token === null) window.sessionStorage.removeItem(SESSION_KEY)
     else window.sessionStorage.setItem(SESSION_KEY, token)
-  } catch {
-    /* ignore: the simulator works without a session */
-  }
+  } catch {}
 }
 
-// ------------------------------------------------------------------ request
 interface RequestOptions {
   method?: 'GET' | 'POST'
   body?: unknown
   signal?: AbortSignal
-  /** Basic-auth credentials, used only by the administrator views. */
   auth?: { username: string; password: string }
-  /** Return the raw Response instead of parsed JSON (for file downloads). */
   raw?: boolean
 }
 
@@ -112,7 +88,6 @@ async function request<T>(path: string, options: RequestOptions = {}): Promise<T
   if (options.body !== undefined) headers['Content-Type'] = 'application/json'
 
   if (options.auth) {
-    // btoa handles the ASCII credentials this form accepts.
     headers['Authorization'] = `Basic ${btoa(
       `${options.auth.username}:${options.auth.password}`,
     )}`
@@ -164,8 +139,6 @@ async function request<T>(path: string, options: RequestOptions = {}): Promise<T
     )
   }
 
-  // A simulation that was rejected comes back 4xx and is handled above; this
-  // guards the case where the server chose 200 with an error body.
   if (
     parsed &&
     typeof parsed === 'object' &&
@@ -177,11 +150,9 @@ async function request<T>(path: string, options: RequestOptions = {}): Promise<T
   return parsed as T
 }
 
-// ------------------------------------------------------------------- system
 export const api = {
   health: (signal?: AbortSignal) => request<HealthResponse>('/health', { signal }),
 
-  // ---------------------------------------------------------- scenarios
   listScenarios: (track?: Track, signal?: AbortSignal) =>
     request<ScenarioSummary[]>(
       track ? `/scenarios?track=${encodeURIComponent(track)}` : '/scenarios',
@@ -213,7 +184,6 @@ export const api = {
       signal,
     }),
 
-  // ------------------------------------------------------------ session
   startSession: (payload: SessionRequest) =>
     request<SessionResponse>('/sessions', { method: 'POST', body: payload }),
 
@@ -223,11 +193,9 @@ export const api = {
       body: { track },
     }),
 
-  // ----------------------------------------------------------- feedback
   submitFeedback: (payload: FeedbackRequest) =>
     request<Acknowledgement>('/feedback', { method: 'POST', body: payload }),
 
-  // --------------------------------------------------------- assessment
   getAssessment: (instrumentId = 'orbital_basics', signal?: AbortSignal) =>
     request<AssessmentInstrument>(
       `/assessments/${encodeURIComponent(instrumentId)}`,
@@ -240,7 +208,6 @@ export const api = {
       { method: 'POST', body: payload },
     ),
 
-  // --------------------------------------------------------- activities
   listActivities: (signal?: AbortSignal) =>
     request<Activity[]>('/activities', { signal }),
 
@@ -252,7 +219,6 @@ export const api = {
       method: 'POST',
     }),
 
-  // ------------------------------------------------------------ exports
   exportConfig: (id: string, params: ParamValues) =>
     request<Response>(`/exports/${encodeURIComponent(id)}/config`, {
       method: 'POST',
@@ -267,7 +233,6 @@ export const api = {
       raw: true,
     }),
 
-  // -------------------------------------------------------------- admin
   adminReport: (
     auth: { username: string; password: string },
     query: Record<string, string | number | boolean | undefined> = {},
@@ -282,13 +247,6 @@ export const api = {
     return request<AdminReport>(`/admin/report${suffix}`, { auth })
   },
 
-  /**
-   * Registered organisations, for the administrator's organisation filter.
-   *
-   * The report tables identify an organisation by name and code, but the report
-   * query filters by numeric id, so the id has to come from somewhere; this is
-   * that somewhere.
-   */
   adminOrganisations: (
     auth: { username: string; password: string },
     includeDemo = false,
@@ -313,7 +271,6 @@ export const api = {
   },
 }
 
-/** Trigger a browser download from a fetched Response. */
 export async function downloadResponse(
   response: Response,
   fallbackName: string,

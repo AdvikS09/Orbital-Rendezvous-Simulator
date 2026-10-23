@@ -1,25 +1,3 @@
-"""Numerical parity: the API must return exactly what the engine computes.
-
-This is the test that decides whether the migration is safe. For every scenario
-it runs the engine directly, runs the same inputs through the HTTP endpoint, and
-compares the numbers.
-
-**Tolerance.** ``RTOL = 1e-9`` with ``atol = 0``, taken from
-``tests/test_regression_baseline.py:31`` — the repository's only existing
-numerical tolerance. It is not invented for this migration.
-
-In principle the comparison should be exact: the API calls the same function
-objects in the same process, so the only transformation is Python float ->
-JSON -> Python float, which is lossless for IEEE-754 doubles under
-``repr``-based serialisation. The 1e-9 tolerance is therefore slack, kept only
-so a future change of JSON encoder cannot fail the suite for a reason that has
-nothing to do with physics. Any *real* difference would be orders of magnitude
-larger.
-
-``None`` in a JSON payload maps to ``NaN`` from the engine: JSON has no NaN, and
-a non-converging rendezvous legitimately produces one for convergence time.
-"""
-
 from __future__ import annotations
 
 import math
@@ -31,7 +9,6 @@ import pytest
 from pilot.content.scenarios_catalog import SCENARIOS, default_params, get_scenario
 from pilot.runner import run_scenario
 
-#: The repository's regression tolerance. See the module docstring.
 RTOL = 1e-9
 ATOL = 0.0
 
@@ -39,7 +16,6 @@ SCENARIO_IDS = [scenario.id for scenario in SCENARIOS]
 
 
 def _close(actual: Any, expected: Any) -> bool:
-    """Compare one value, treating None and NaN as the same absence."""
     expected_missing = expected is None or (
         isinstance(expected, float) and (math.isnan(expected) or math.isinf(expected))
     )
@@ -56,13 +32,11 @@ def _close(actual: Any, expected: Any) -> bool:
 
 
 def _max_relative_difference(actual: list, expected: np.ndarray) -> tuple[float, float]:
-    """Return ``(max_abs_diff, max_rel_diff)`` over a pair of arrays."""
     a = np.array([np.nan if v is None else float(v) for v in actual], dtype=float)
     e = np.asarray(expected, dtype=float).ravel()
     assert a.shape == e.shape, f"length differs: {a.shape} vs {e.shape}"
 
     both_finite = np.isfinite(a) & np.isfinite(e)
-    # Missing values must be missing in both.
     assert np.array_equal(np.isfinite(a), np.isfinite(e)), (
         "finite/non-finite pattern differs between API and engine"
     )
@@ -78,7 +52,6 @@ def _max_relative_difference(actual: list, expected: np.ndarray) -> tuple[float,
 
 
 def _engine_result(scenario_id: str, params: dict | None = None):
-    """Run the engine directly, with no HTTP layer involved."""
     scenario = get_scenario(scenario_id)
     resolved = {**default_params(scenario), **(params or {})}
     outcome = run_scenario(scenario, resolved, None)
@@ -92,10 +65,8 @@ def _api_result(client, scenario_id: str, params: dict) -> dict:
     return response.json()
 
 
-# Every scenario, at its documented defaults
 @pytest.mark.parametrize("scenario_id", SCENARIO_IDS)
 def test_scalar_metric_parity(client, scenario_id):
-    """Every scalar the API reports equals the engine's value."""
     scenario, params, outcome = _engine_result(scenario_id)
     payload = _api_result(client, scenario_id, params)
 
@@ -103,8 +74,6 @@ def test_scalar_metric_parity(client, scenario_id):
     assert payload["result_kind"] == scenario.result_kind
     assert payload["metrics"], f"{scenario_id} reported no metrics"
 
-    # Rebuild the expected metrics from the same adapter the API used, then
-    # confirm the serialised payload preserved them.
     from app.services.adapters import build_result
 
     expected = build_result(
@@ -124,12 +93,6 @@ def test_scalar_metric_parity(client, scenario_id):
 
 @pytest.mark.parametrize("scenario_id", SCENARIO_IDS)
 def test_metric_keys_are_unique(client, scenario_id):
-    """Two different quantities must never share a key.
-
-    The comparison scenarios previously emitted ``final_pos_error_m`` twice:
-    once as the chaser's distance from the target and once as the gap between
-    the two models. Same name, unrelated meanings.
-    """
     scenario, params, _ = _engine_result(scenario_id)
     payload = _api_result(client, scenario_id, params)
     keys = [metric["key"] for metric in payload["metrics"]]
@@ -148,7 +111,6 @@ def test_metric_keys_are_unique(client, scenario_id):
 
 @pytest.mark.parametrize("scenario_id", SCENARIO_IDS)
 def test_series_array_parity(client, scenario_id):
-    """Every numeric array matches element-for-element."""
     scenario, params, outcome = _engine_result(scenario_id)
     payload = _api_result(client, scenario_id, params)
 
@@ -178,13 +140,11 @@ def test_series_array_parity(client, scenario_id):
             f"{scenario_id}.{key}: max relative difference {max_rel:.3e} "
             f"exceeds {RTOL:.0e}"
         )
-    # Recorded for docs/ENGINE_PARITY_REPORT.md.
     print(f"PARITY {scenario_id}: max_abs={worst_abs:.3e} max_rel={worst_rel:.3e}")
 
 
 @pytest.mark.parametrize("scenario_id", SCENARIO_IDS)
 def test_table_parity(client, scenario_id):
-    """Downloadable tables carry the engine's values, not rounded ones."""
     scenario, params, outcome = _engine_result(scenario_id)
     payload = _api_result(client, scenario_id, params)
 
@@ -210,10 +170,8 @@ def test_table_parity(client, scenario_id):
             )
 
 
-# Units, defaults and derived quantities
 @pytest.mark.parametrize("scenario_id", SCENARIO_IDS)
 def test_defaults_and_units_match_the_catalogue(client, scenario_id):
-    """The API must not silently re-default or relabel a parameter."""
     scenario = get_scenario(scenario_id)
     response = client.get(f"/api/v1/scenarios/{scenario_id}")
     assert response.status_code == 200, response.text
@@ -255,9 +213,7 @@ def test_result_echoes_inputs_with_units(client, scenario_id):
         assert _close(echoed[name]["value"], params[name])
 
 
-# Conservation metrics, specifically
 def test_conservation_metrics_match_the_regression_baseline(client):
-    """The two-body validation numbers the research publishes still hold."""
     params = {"altitude_km": 400.0, "inclination_deg": 51.6, "n_orbits": 2.0}
     payload = _api_result(client, "two_body_orbit", params)
     metrics = {m["key"]: m["value"] for m in payload["metrics"]}
@@ -267,14 +223,12 @@ def test_conservation_metrics_match_the_regression_baseline(client):
     expected_period = orbit.orbital_period(orbit.R_EARTH + 400_000.0)
     assert _close(metrics["period_s"], expected_period)
 
-    # Independent of the baseline: the integrator must stay excellent.
     assert metrics["max_energy_drift_rel"] < 1e-11
     assert metrics["period_rel_err"] < 1e-9
     assert metrics["max_ang_mom_drift_rel"] < 1e-11
 
 
 def test_cw_vs_reference_reproduces_the_published_j2_figures(client):
-    """2.78 m two-body, 5.81 m with J2 - the headline published result."""
     base = {
         "rel_x": 0.0, "rel_y": 1000.0, "rel_z": 0.0,
         "rel_vx": 0.0, "rel_vy": 0.0, "rel_vz": 0.0,
@@ -293,12 +247,10 @@ def test_cw_vs_reference_reproduces_the_published_j2_figures(client):
 
     assert gap(plain) == pytest.approx(2.78, abs=0.02)
     assert gap(with_j2) == pytest.approx(5.81, abs=0.02)
-    # And the relationship, not just the numbers.
     assert 1.8 < gap(with_j2) / gap(plain) < 2.5
 
 
 def test_pd_rendezvous_reproduces_the_published_metrics(client):
-    """Convergence about 1595 s, delta-v 2.33 m/s, peak 0.017 m/s^2."""
     payload = _api_result(client, "pd_rendezvous", {
         "rel_x": 200.0, "rel_y": -300.0, "rel_z": 80.0,
         "rel_vx": 0.0, "rel_vy": 0.0, "rel_vz": 0.0,
@@ -321,7 +273,6 @@ def test_integrator_convergence_reports_fourth_order(client):
     assert 3.6 <= metrics["mean_observed_order"] <= 4.4
 
 
-# Solver metadata travels with the result
 @pytest.mark.parametrize("scenario_id", SCENARIO_IDS)
 def test_solver_information_is_reported(client, scenario_id):
     scenario, params, _ = _engine_result(scenario_id)
@@ -342,7 +293,6 @@ def test_solver_information_is_reported(client, scenario_id):
 
 @pytest.mark.parametrize("scenario_id", SCENARIO_IDS)
 def test_assumptions_and_limitations_travel_with_every_result(client, scenario_id):
-    """A number without its qualifications is how a wrong belief forms."""
     scenario, params, _ = _engine_result(scenario_id)
     payload = _api_result(client, scenario_id, params)
 
@@ -351,10 +301,8 @@ def test_assumptions_and_limitations_travel_with_every_result(client, scenario_i
     assert payload["reading_guide"] == (scenario.reading_guide or "")
 
 
-# Determinism
 @pytest.mark.parametrize("scenario_id", ["pd_rendezvous", "cw_vs_reference"])
 def test_identical_requests_give_identical_numbers(client, scenario_id):
-    """The reproducibility claim in every exported configuration."""
     scenario = get_scenario(scenario_id)
     params = default_params(scenario)
     first = _api_result(client, scenario_id, params)
@@ -365,16 +313,8 @@ def test_identical_requests_give_identical_numbers(client, scenario_id):
     ]
 
 
-# Presentation: no machine notation may reach a participant
 @pytest.mark.parametrize("scenario_id", SCENARIO_IDS)
 def test_no_interpretation_contains_machine_notation(client, scenario_id):
-    """The defect this migration exists to fix.
-
-    The Streamlit interface rendered numbers with Python's %g, so an energy
-    drift appeared on screen as `2e-12`. Metric values are formatted by the
-    frontend, but interpretation *sentences* are composed here, and an
-    f-string would put machine notation straight back into the interface.
-    """
     import re
 
     scenario, params, _ = _engine_result(scenario_id)
@@ -390,20 +330,16 @@ def test_no_interpretation_contains_machine_notation(client, scenario_id):
 
 @pytest.mark.parametrize("scenario_id", SCENARIO_IDS)
 def test_no_user_facing_text_contains_an_emoji(client, scenario_id):
-    """Emoji were removed from the interface; nothing may reintroduce them."""
     import re
 
     scenario, params, _ = _engine_result(scenario_id)
     payload = _api_result(client, scenario_id, params)
 
-    # Ranges are built from code points rather than written as literal glyphs,
-    # so this file -- the emoji detector -- does not itself contain an emoji and
-    # trip a repository-wide scan.
     ranges = [
-        (0x1F000, 0x1FAFF),   # emoticons, symbols, pictographs, transport, flags
-        (0x2600, 0x27BF),     # miscellaneous symbols and dingbats
-        (0x2B00, 0x2BFF),     # arrows and geometric shapes
-        (0xFE0F, 0xFE0F),     # variation selector 16
+        (0x1F000, 0x1FAFF),
+        (0x2600, 0x27BF),
+        (0x2B00, 0x2BFF),
+        (0xFE0F, 0xFE0F),
     ]
     pictographic = re.compile(
         "[" + "".join(f"{chr(low)}-{chr(high)}" for low, high in ranges) + "]"

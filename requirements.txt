@@ -1,31 +1,10 @@
-# Direct dependencies of the Orbital Rendezvous Simulator pilot platform.
-#
-# These are the packages this project actually chooses. Their transitive
-# dependencies are pinned in requirements-lock.txt -- install that file instead
-# for a byte-for-byte reproducible environment:
-#
-#     python -m pip install -r requirements-lock.txt
-#
-# Versions are pinned to the set the published numerical results were produced
-# with (Python 3.14.6). See README.md.
-
-# --- simulation engine (src/) ---------------------------------------------
 numpy==2.4.6
 pandas==3.0.3
-matplotlib==3.11.0          # headless figure export for experiments/
+matplotlib==3.11.0
 
-# --- web interface --------------------------------------------------------
 streamlit==1.58.0
 plotly==6.8.0
 
-# --- analytics database ---------------------------------------------------
 SQLAlchemy==2.0.52
-# PostgreSQL driver. Required for any hosted pilot; the local SQLite fallback
-# needs no driver. Uncomment for a Postgres deployment, or install it in the
-# deployment environment.
-# psycopg[binary]==3.2.3
 
-# --- tests ----------------------------------------------------------------
-# Needed to run the suite, not to run the app. The engine's own tests also run
-# under the standard library's unittest with nothing extra installed.
 pytest==9.1.1

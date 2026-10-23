@@ -33,7 +33,6 @@ from pilot.models import (  # noqa: E402
     sessions,
 )
 
-#: ``(table, date column)`` in deletion order -- children before parents.
 TARGETS = (
     (events, events.c.occurred_date),
     (assessments, assessments.c.completed_date),

@@ -18,12 +18,7 @@ export interface TabsProps {
   items: readonly TabItem[]
   value: string
   onChange: (value: string) => void
-  /** Accessible name for the tab list, e.g. 'Result views'. */
   label: string
-  /**
-   * Prefix for the generated tab and panel ids. Pass the same value to every
-   * TabPanel in the group so aria-controls and aria-labelledby line up.
-   */
   idPrefix?: string
   className?: string
 }
@@ -36,12 +31,6 @@ export function tabPanelId(prefix: string, value: string): string {
   return `${prefix}-panel-${value}`
 }
 
-/**
- * ARIA tab list with automatic activation: arrow keys move focus and select in
- * one step. That is the right pattern here because switching a tab only swaps
- * already-fetched results into view, so there is no cost to selecting as the
- * user arrows past.
- */
 export function Tabs({ items, value, onChange, label, idPrefix, className }: TabsProps) {
   const generatedPrefix = useId()
   const prefix = idPrefix ?? generatedPrefix
@@ -62,7 +51,6 @@ export function Tabs({ items, value, onChange, label, idPrefix, className }: Tab
     [items, onChange, value],
   )
 
-  /** Move to the next enabled tab in `direction`, wrapping at the ends. */
   const move = useCallback(
     (start: number, direction: 1 | -1) => {
       const count = items.length
@@ -79,7 +67,6 @@ export function Tabs({ items, value, onChange, label, idPrefix, className }: Tab
     [items, selectAt],
   )
 
-  /** Move to the first or last enabled tab. */
   const moveToEdge = useCallback(
     (edge: 'first' | 'last') => {
       const count = items.length
@@ -132,7 +119,6 @@ export function Tabs({ items, value, onChange, label, idPrefix, className }: Tab
             id={tabId(prefix, item.value)}
             aria-selected={selected}
             aria-controls={tabPanelId(prefix, item.value)}
-            /* Roving tabindex: the group is one tab stop, arrows move within it. */
             tabIndex={selected ? 0 : -1}
             disabled={item.disabled === true}
             className="tabs__tab"
@@ -155,22 +141,14 @@ export function Tabs({ items, value, onChange, label, idPrefix, className }: Tab
 }
 
 export interface TabPanelProps {
-  /** Must match the `value` of the tab that controls this panel. */
   value: string
-  /** The currently selected tab value. */
   selected: string
-  /** The same prefix passed to the Tabs this panel belongs to. */
   idPrefix: string
-  /**
-   * Keep the panel mounted while hidden. Useful for a plot that is expensive
-   * to rebuild; the default unmounts, so hidden panels cost nothing.
-   */
   keepMounted?: boolean
   className?: string
   children: ReactNode
 }
 
-/** The region a tab controls. Hidden panels are removed from the tab order. */
 export function TabPanel({
   value,
   selected,
@@ -190,8 +168,6 @@ export function TabPanel({
       id={tabPanelId(idPrefix, value)}
       aria-labelledby={tabId(idPrefix, value)}
       hidden={!isSelected}
-      /* Focusable so a keyboard user can reach panel content that has no
-         interactive elements of its own, such as a table of results. */
       tabIndex={isSelected ? 0 : -1}
       className={classes}
     >

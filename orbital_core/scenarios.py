@@ -1,19 +1,3 @@
-"""Frontend-agnostic scenario API (the backend boundary for any UI).
-
-This is a thin *orchestration* layer: it composes the simulation engine
-(``orbit``, ``perturbations``, ``lvlh``, ``cw``, ``controller``, ``validation``)
-into a small set of "run a scenario -> plain data" functions. Every function
-returns only built-in / scientific-Python data types -- dicts of NumPy arrays and
-pandas DataFrames -- with **no plotting, no Streamlit, and no file I/O**.
-
-It keeps all physics inside ``orbital_core/`` and gives every frontend a single
-function per scenario to call. Two frontends use it today -- the legacy
-Streamlit application and the FastAPI backend under ``web-platform/`` -- and
-both call these same functions rather than duplicating any physics. Each
-frontend only renders the returned data, so this module stays reusable and
-frontend-independent.
-"""
-
 import numpy as np
 import pandas as pd
 
@@ -21,20 +5,14 @@ from . import collision, cw, external_validation, orbit, validation
 from .controller import PDController
 from .perturbations import ForceModel
 
-# Reasonable bounds so UI inputs cannot create runaway/empty simulations.
 MAX_STEPS = 200_000
 
 
-# --------------------------------------------------------------------------
-# Small helpers
-# --------------------------------------------------------------------------
 def radius_from_altitude(altitude_km):
-    """Circular-orbit radius [m] from an altitude in km."""
     return orbit.R_EARTH + float(altitude_km) * 1000.0
 
 
 def _time_grid(duration_s, dt_s):
-    """Uniform time grid [0, duration] with step dt (clamped to MAX_STEPS)."""
     duration_s = float(duration_s)
     dt_s = float(dt_s)
     n_steps = int(round(duration_s / dt_s))
@@ -47,7 +25,6 @@ def _rel_state(rel_pos, rel_vel):
 
 
 def _relative_result(times, states, controls, model, mean_motion, period_s, target=None):
-    """Standardised relative-motion result bundle (used by every relative scenario)."""
     pos_err = validation.position_error_series(states, target)
     vel_err = validation.velocity_error_series(states, target)
     ctrl_mag = validation.control_acceleration_series(controls)
@@ -74,17 +51,9 @@ def _relative_result(times, states, controls, model, mean_motion, period_s, targ
     }
 
 
-# --------------------------------------------------------------------------
-# Absolute-orbit scenarios (basic circular / J2 / drag)
-# --------------------------------------------------------------------------
 def run_orbit(altitude_km=400.0, inclination_deg=51.6, n_orbits=2.0,
               use_j2=False, use_drag=False, steps_per_orbit=2000,
               cd=2.2, area=1.0, mass=100.0):
-    """Propagate one circular orbit under a selectable force model.
-
-    Returns the inertial trajectory, altitude history, energy drift and an
-    orbit-validation table.
-    """
     radius = radius_from_altitude(altitude_km)
     mu = orbit.MU_EARTH
     period = orbit.orbital_period(radius, mu)
@@ -100,7 +69,7 @@ def run_orbit(altitude_km=400.0, inclination_deg=51.6, n_orbits=2.0,
     return {
         "label": fm.label,
         "times": times,
-        "states": states,                 # ECI, N x 6
+        "states": states,
         "period_s": period,
         "radius_m": radius,
         "altitude_km": altitude_series,
@@ -112,11 +81,6 @@ def run_orbit(altitude_km=400.0, inclination_deg=51.6, n_orbits=2.0,
 def compare_orbit_perturbation(altitude_km=400.0, inclination_deg=51.6, n_orbits=5.0,
                                use_j2=False, use_drag=True, steps_per_orbit=1000,
                                cd=2.2, area=1.0, mass=100.0):
-    """Two-body baseline vs a perturbed orbit, with their position separation.
-
-    Used by the J2-effect and drag-effect learning presets to show how far the
-    perturbed trajectory diverges from the ideal two-body orbit over time.
-    """
     base = run_orbit(altitude_km, inclination_deg, n_orbits, False, False, steps_per_orbit)
     pert = run_orbit(altitude_km, inclination_deg, n_orbits, use_j2, use_drag,
                      steps_per_orbit, cd=cd, area=area, mass=mass)
@@ -129,11 +93,7 @@ def compare_orbit_perturbation(altitude_km=400.0, inclination_deg=51.6, n_orbits
     }
 
 
-# --------------------------------------------------------------------------
-# Relative-motion scenarios (CW, PD rendezvous, gain sweep, comparison)
-# --------------------------------------------------------------------------
 def run_cw_relative(rel_pos, rel_vel, altitude_km=400.0, duration_s=None, dt_s=10.0):
-    """Uncontrolled (natural) CW relative motion from an initial relative state."""
     radius = radius_from_altitude(altitude_km)
     n = cw.cw_mean_motion(radius, orbit.MU_EARTH)
     period = orbit.orbital_period(radius)
@@ -144,11 +104,6 @@ def run_cw_relative(rel_pos, rel_vel, altitude_km=400.0, duration_s=None, dt_s=1
 
 def run_cw_rendezvous(rel_pos, rel_vel, altitude_km=400.0, duration_s=None, dt_s=5.0,
                       kp=None, kd=None, max_accel=0.05, omega_n_factor=6.0):
-    """PD-controlled CW rendezvous to the LVLH origin.
-
-    If ``kp``/``kd`` are omitted a critically damped controller at
-    ``omega_n_factor * n`` is used.
-    """
     radius = radius_from_altitude(altitude_km)
     n = cw.cw_mean_motion(radius, orbit.MU_EARTH)
     period = orbit.orbital_period(radius)
@@ -163,7 +118,6 @@ def run_cw_rendezvous(rel_pos, rel_vel, altitude_km=400.0, duration_s=None, dt_s
 
 def run_gain_sweep(rel_pos, rel_vel, altitude_km=400.0, duration_s=None, dt_s=5.0,
                    kp_values=None, kd_values=None, max_accel=None):
-    """Sweep Kp x Kd over a CW rendezvous; returns the metrics table."""
     radius = radius_from_altitude(altitude_km)
     n = cw.cw_mean_motion(radius, orbit.MU_EARTH)
     period = orbit.orbital_period(radius)
@@ -190,15 +144,6 @@ def run_relative_scenario(rel_pos, rel_vel, altitude_km=400.0, inclination_deg=5
                           controlled=True, kp=None, kd=None, max_accel=0.05,
                           omega_n_factor=6.0, use_j2=True, use_drag=True,
                           cd=2.2, area=1.0, mass=100.0):
-    """Unified relative-motion runner for the CW-vs-high-fidelity study and
-    Research Mode.
-
-    ``model`` selects ``"cw"``, ``"high_fidelity"``, or ``"comparison"``. When
-    ``controlled`` is True the same PD controller drives both models. The result
-    contains a ``"cw"`` and/or ``"high_fidelity"`` bundle (each shaped like
-    :func:`_relative_result`), a ``"comparison"`` divergence block when both are
-    present, and a ``"primary"`` bundle for metrics/CSV.
-    """
     radius = radius_from_altitude(altitude_km)
     mu = orbit.MU_EARTH
     n = cw.cw_mean_motion(radius, mu)
@@ -246,18 +191,9 @@ def run_relative_scenario(rel_pos, rel_vel, altitude_km=400.0, inclination_deg=5
     return result
 
 
-# --------------------------------------------------------------------------
-# External-tool validation (GMAT / STK)
-# --------------------------------------------------------------------------
 def build_validation_scenario(altitude_km=400.0, inclination_deg=51.6, duration_s=None,
                               dt_s=10.0, use_j2=True, use_drag=False,
                               cd=2.2, area=1.0, mass=100.0):
-    """Propagate one absolute orbit with the higher-fidelity model and package it
-    for export to an external tool (GMAT/STK).
-
-    Returns the scenario metadata, the ephemeris DataFrame, the raw states/times,
-    and ready-to-download CSV / JSON serialisations.
-    """
     radius = radius_from_altitude(altitude_km)
     mu = orbit.MU_EARTH
     period = orbit.orbital_period(radius, mu)
@@ -298,29 +234,17 @@ def build_validation_scenario(altitude_km=400.0, inclination_deg=51.6, duration_
 
 
 def load_external_ephemeris(source, **kwargs):
-    """Thin pass-through to :func:`src.external_validation.load_external`."""
     return external_validation.load_external(source, **kwargs)
 
 
 def compare_external_ephemeris(internal_ephemeris, external_ephemeris):
-    """Compare an engine ephemeris against an external one (GMAT/STK)."""
     return external_validation.compare_ephemerides(internal_ephemeris, external_ephemeris)
 
 
-# --------------------------------------------------------------------------
-# Collision / keep-out detection (extension -- detection only, not avoidance)
-# --------------------------------------------------------------------------
 def run_collision_scenario(rel_pos, rel_vel, altitude_km=400.0, duration_s=None, dt_s=5.0,
                            controlled=True, kp=None, kd=None, max_accel=0.05,
                            omega_n_factor=6.0, keep_out_radius=25.0, collision_radius=5.0,
                            debris_rel_pos=None, debris_rel_vel=None):
-    """Run a chaser CW trajectory (optionally PD-controlled) and detect keep-out /
-    debris collision risk.
-
-    The optional debris object drifts on its own uncontrolled CW trajectory.
-    Returns the chaser result bundle, the debris states (or None), and the
-    collision analysis (distances, minima, and risk flags).
-    """
     radius = radius_from_altitude(altitude_km)
     n = cw.cw_mean_motion(radius, orbit.MU_EARTH)
     period = orbit.orbital_period(radius)

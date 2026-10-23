@@ -19,13 +19,6 @@ import {
   toSuperscript,
 } from '../src/formatting/number'
 
-/**
- * The behaviour these tests pin down was a specific defect in the Streamlit
- * version: energy drift rendered as `2e-12` rather than as scientific
- * notation. Anything that reintroduces machine notation into the interface
- * should fail here.
- */
-
 describe('superscripts', () => {
   it('converts digits and a negative sign', () => {
     expect(toSuperscript(-12)).toBe('⁻¹²')
@@ -44,7 +37,6 @@ describe('scientific notation', () => {
   })
 
   it('renders the real energy-drift value from the engine readably', () => {
-    // tests/baseline_engine_outputs.json: max_energy_drift_rel
     const output = formatScientific(1.1060555202205516e-13, 3)
     expect(output).toBe(`1.11${NBSP}${TIMES}${NBSP}10⁻¹³`)
   })
@@ -165,8 +157,6 @@ describe('distances', () => {
   })
 
   it('keeps sub-millimetre results visible in scientific notation', () => {
-    // A converged rendezvous ends ~1.5e-7 m from the target. Rendering that as
-    // "0.000 km" would hide the entire result.
     const output = formatDistance(1.495996307381497e-7)
     expect(output).toBe(`1.50${NBSP}${TIMES}${NBSP}10⁻⁷${NBSP}m`)
   })

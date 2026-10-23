@@ -1,18 +1,3 @@
-"""Orbital Rendezvous Simulator — pilot platform entry point.
-
-Run with::
-
-    streamlit run pilot_app.py
-
-A thin router. It owns no physics and no analytics logic: it wires session
-state to the flow stages in ``pilot/ui/`` and makes sure the database schema
-exists before anything tries to write to it.
-
-The administrator area is reached with ``?view=admin`` and is password
-protected. It is deliberately not a Streamlit ``pages/`` entry, because that
-would advertise it in the navigation to every participant.
-"""
-
 from __future__ import annotations
 
 import logging
@@ -21,7 +6,6 @@ import sys
 
 import streamlit as st
 
-# Make the project importable when Streamlit is launched from another directory.
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from pilot.config import get_settings  # noqa: E402
@@ -55,7 +39,6 @@ st.set_page_config(
 
 @st.cache_resource(show_spinner=False)
 def _prepare_database() -> dict:
-    """Migrate on first use. Cached so it runs once per process, not per rerun."""
     settings = get_settings()
     try:
         run_migrations(get_engine(settings))
@@ -76,7 +59,6 @@ _STAGES = {
     "confirmation": flow.confirmation,
 }
 
-#: Stages a participant can only reach once they have signed in.
 _REQUIRE_SESSION = ("assessment_pre", "assessment_post", "feedback", "confirmation")
 
 
@@ -122,7 +104,6 @@ def main() -> None:
         stage = "landing"
         st.session_state.stage = stage
 
-    # A participant who has not signed in cannot land on a mid-flow stage.
     if stage in _REQUIRE_SESSION and not st.session_state.get("consent_given"):
         st.session_state.stage = stage = "landing"
 
@@ -131,9 +112,6 @@ def main() -> None:
 
     _STAGES[stage]()
 
-    # Rendered last on purpose. Streamlit writes into the sidebar container
-    # whenever it is called, but session state (the completed-run count) is only
-    # correct once the stage has run -- drawing it first showed a stale count.
     _sidebar(health)
     status_footer()
 

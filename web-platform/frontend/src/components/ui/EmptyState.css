@@ -1,11 +1,3 @@
-/*
- * EmptyState.
- *
- * Shown before a run has been submitted, or when a filter matches nothing.
- * It says what is absent and what to do about it. It does not apologise, and
- * it does not fill the space with an illustration.
- */
-
 .empty-state {
   display: flex;
   flex-direction: column;

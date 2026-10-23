@@ -1,15 +1,3 @@
-/**
- * A native `<select>` with label and help text.
- *
- * Native rather than a custom listbox: it is keyboard and screen-reader correct
- * on every platform for free, and it behaves properly on a phone. The option
- * sets here are short and closed, so there is nothing a custom widget would add.
- *
- * Numeric options are formatted through the shared formatter, because an option
- * list is display like any other. `<option>` cannot hold markup, so the text
- * form is used rather than the component.
- */
-
 import { useId } from 'react'
 import type { ParamSpec } from '@/api/types'
 import { Icon } from '@/components/ui'
@@ -17,7 +5,6 @@ import { formatValueText } from '@/components/NumberValue'
 import { rawValue } from '@/formatting/number'
 import './SelectField.css'
 
-/** A stable string key for an option, used as the DOM value. */
 function optionKey(option: string | number): string {
   return typeof option === 'number' ? rawValue(option) : option
 }
@@ -74,12 +61,6 @@ export function SelectField({
           aria-describedby={describedBy || undefined}
           onChange={(event) => handleChange(event.target.value)}
         >
-          {/*
-            Only present when the current value is not one of the options, which
-            happens when a saved run is loaded against a changed scenario. It is
-            never selectable, so the mismatch is visible rather than silently
-            rewritten.
-          */}
           {known ? null : (
             <option value="" disabled>
               Select an option

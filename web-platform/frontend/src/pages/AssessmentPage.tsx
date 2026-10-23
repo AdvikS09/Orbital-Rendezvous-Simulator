@@ -1,17 +1,3 @@
-/**
- * The anonymous pre- and post-assessment.
- *
- * Route: `/assessment/:phase`, where phase is `pre` or `post`.
- *
- * The same ten items are used at both ends, which is the most sensitive way to
- * detect change in a small cohort and also its own confound: some of any gain
- * comes from having seen the questions before. The caveat that says so is shown
- * beside the score rather than kept in a methods appendix.
- *
- * Both phases are skippable in one click. An assessment nobody can decline is a
- * test, and this is a pilot measurement.
- */
-
 import type { FormEvent } from 'react'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
@@ -23,13 +9,6 @@ import { Button, Callout, Disclosure, Panel, Spinner } from '@/components/ui'
 import { ROUTES } from './participantFlow'
 import './AssessmentPage.css'
 
-/**
- * The pre-assessment score, kept for the closing page.
- *
- * The server knows it too, but only returns it once the post-assessment has
- * been submitted. Holding it here lets the second sitting open with the figure
- * the participant is trying to beat.
- */
 const PRE_SCORE_KEY = 'orbital.assessment_pre_score'
 
 function readPreScore(): number | null {
@@ -46,9 +25,7 @@ function readPreScore(): number | null {
 function writePreScore(score: number): void {
   try {
     window.sessionStorage.setItem(PRE_SCORE_KEY, rawValue(score))
-  } catch {
-    /* private browsing denies storage; the score is a convenience only */
-  }
+  } catch {}
 }
 
 const DEFAULT_CONFIDENCE = 3
@@ -128,7 +105,6 @@ export function AssessmentPage() {
     navigate(isPre ? ROUTES.scenarios : ROUTES.feedback)
   }, [isPre, navigate])
 
-  // ----------------------------------------------------------- render
   if (loadError !== null) {
     return (
       <div className="assessment-page assessment-page--message">
@@ -151,7 +127,6 @@ export function AssessmentPage() {
     )
   }
 
-  // --------------------------------------------------------- submitted
   if (result !== null) {
     if (isPre) {
       return (
@@ -265,7 +240,6 @@ export function AssessmentPage() {
     )
   }
 
-  // ------------------------------------------------------------- form
   const confidenceLabel =
     instrument.confidence_labels[confidence - 1] ??
     formatNumber(confidence, { notation: 'fixed', decimals: 0 })

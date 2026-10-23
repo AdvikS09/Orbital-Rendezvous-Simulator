@@ -1,5 +1,3 @@
-"""Anonymous sessions, feedback, assessments and educational content."""
-
 from __future__ import annotations
 
 from typing import Annotated
@@ -39,9 +37,6 @@ from app.schemas.pilot import (  # noqa: E402
 
 router = APIRouter(tags=["pilot"])
 
-#: Shown beside a single participant's before-and-after scores. The same
-#: instrument is used twice, so part of any gain is test familiarity; saying so
-#: is the difference between a measurement and a marketing number.
 IMPACT_CAVEAT = (
     "One person's before-and-after is not evidence of much on its own - you have "
     "seen the questions twice, which helps by itself. Pooled across a whole group "
@@ -61,7 +56,6 @@ def _require_context(context):
     return context
 
 
-# Sessions
 @router.post(
     "/sessions",
     response_model=SessionResponse,
@@ -148,7 +142,6 @@ def select_track(
     return Acknowledgement(recorded=True, message=f"Track set to {payload.track}.")
 
 
-# Feedback
 @router.post("/feedback", response_model=Acknowledgement, summary="Submit feedback")
 def submit_feedback(
     payload: Annotated[FeedbackRequest, Body()],
@@ -176,7 +169,6 @@ def submit_feedback(
     )
 
 
-# Assessments
 def _to_item(item, reveal: bool) -> AssessmentItem:
     return AssessmentItem(
         id=item.id,
@@ -270,7 +262,6 @@ def submit_assessment(
     )
 
 
-# Guided activities
 def _to_activity(activity) -> ActivityModel:
     return ActivityModel(
         id=activity.id,

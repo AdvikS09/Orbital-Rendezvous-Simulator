@@ -7,25 +7,16 @@ import './Disclosure.css'
 
 export interface DisclosureProps {
   title: ReactNode
-  /** Open on first render. The element is uncontrolled thereafter. */
   defaultOpen?: boolean
-  /** Item count shown as a badge beside the title. */
   count?: number
-  /** Small glyph before the title. Supporting only. */
   icon?: IconName
-  /** Remove the panel padding, for tables that should meet the border. */
   flush?: boolean
-  /** Called with the new open state whenever the user toggles the section. */
   onToggle?: (open: boolean) => void
   id?: string
   className?: string
   children: ReactNode
 }
 
-/**
- * Expand/collapse section for secondary detail: derivations, assumptions,
- * raw solver output. Anything a reader needs on first pass belongs in a Panel.
- */
 export function Disclosure({
   title,
   defaultOpen = false,

@@ -1,10 +1,3 @@
-"""Shared pytest fixtures.
-
-The platform tests must never touch a real deployment database, so a fixture
-points every one of them at a temporary SQLite file and resets the module-level
-caches (engine, rate limiter, authenticator, settings) around each test.
-"""
-
 import os
 import tempfile
 
@@ -13,12 +6,6 @@ import pytest
 
 @pytest.fixture
 def pilot_env(monkeypatch):
-    """Isolated platform environment backed by a temporary SQLite database.
-
-    Yields the resolved ``Settings``. ``PILOT_ENV`` is set to ``test``, so every
-    row written carries ``is_demo = 1`` -- which is itself part of what the
-    tests check.
-    """
     from pilot import auth, config, db, ratelimit
 
     handle, path = tempfile.mkstemp(suffix=".db", prefix="pilot_test_")
@@ -48,13 +35,11 @@ def pilot_env(monkeypatch):
     try:
         os.unlink(path)
     except OSError:
-        # Windows may still hold the file; a stale temp file is harmless.
         pass
 
 
 @pytest.fixture
 def participant(pilot_env):
-    """A registered anonymous participant with an open session."""
     from pilot import analytics
 
     return analytics.start_session(

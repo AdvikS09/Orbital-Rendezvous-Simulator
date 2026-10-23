@@ -1,17 +1,3 @@
-"""Run a scenario and shape the response.
-
-Delegates to ``pilot.runner.run_scenario``, which is the same validate ->
-rate-limit -> run -> record path the Streamlit application uses. Reusing it
-means the API inherits, for free and without duplication:
-
-* the input validation that rejects the silent-wrong-answer cases,
-* the per-session run quotas,
-* the predicted-cost check, and
-* the analytics events, with the same definitions.
-
-Nothing here computes physics. It calls the engine and adapts the result.
-"""
-
 from __future__ import annotations
 
 from typing import Any
@@ -27,8 +13,6 @@ from app.schemas.scenarios import SimulationResult  # noqa: E402
 from app.services.adapters import build_result  # noqa: E402
 from app.services.catalogue import coerce_params  # noqa: E402
 
-#: Map a validation message back to the field it concerns, so the frontend can
-#: mark the offending control rather than showing a bare list of errors.
 _FIELD_HINTS: tuple[tuple[str, str], ...] = (
     ("Altitude", "altitude_km"),
     ("Inclination", "inclination_deg"),
@@ -58,12 +42,6 @@ def _attribute(message: str) -> FieldError:
 
 
 def preflight(scenario: Scenario, params: dict[str, Any]) -> dict[str, Any]:
-    """Validate and cost a request without running it.
-
-    Lets the frontend show "estimated 4,000 steps (~0.3 s)" and disable Run for
-    an impossible request, instead of discovering the problem after a
-    round-trip.
-    """
     resolved = coerce_params(scenario, params)
     outcome = validate_params(scenario, resolved)
     return {
@@ -81,12 +59,6 @@ def run(
     params: dict[str, Any],
     context: ParticipantContext | None = None,
 ) -> tuple[SimulationResult | None, ErrorResponse | None]:
-    """Execute one simulation.
-
-    Returns ``(result, None)`` on success and ``(None, error)`` on failure.
-    Never raises and never leaks a traceback: a participant sees an explanation,
-    and the exception class is what reaches the logs and analytics.
-    """
     resolved = coerce_params(scenario, params)
     outcome: RunOutcome = run_scenario(scenario, resolved, context)
 

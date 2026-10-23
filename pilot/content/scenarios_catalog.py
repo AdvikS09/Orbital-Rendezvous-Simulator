@@ -1,23 +1,3 @@
-"""The catalogue of simulation scenarios the platform exposes.
-
-Every entry maps to functionality that **actually exists and is tested** in
-``orbital_core/``. Nothing here is aspirational. Three capabilities a user might expect
-are deliberately absent, and are recorded in ``KNOWN_GAPS.md`` rather than
-faked:
-
-* **GMAT/STK benchmark results** -- the repository contains the *workflow* to
-  run such a comparison (export a scenario, import an external ephemeris,
-  compute errors) but no benchmark has ever been run. The scenario below is
-  therefore presented as a workflow you can carry out, not as a result.
-* **Numerical-integrator comparison** -- the engine has one integrator (RK4).
-  What exists is a step-size *convergence* study, which is what is exposed.
-* **Chaos / resonance / stability tools** -- none exist in this engine.
-
-Each scenario declares its parameters so the UI can build controls
-automatically, and carries the assumptions and limitations that must be shown
-alongside its results.
-"""
-
 from __future__ import annotations
 
 from dataclasses import dataclass, field
@@ -27,14 +7,11 @@ from orbital_core import orbit
 from orbital_core import scenarios as sc
 
 
-# Parameter description
 @dataclass(frozen=True)
 class Param:
-    """One user-editable input, rendered generically by the UI."""
-
     name: str
     label: str
-    kind: str                      # number | slider | checkbox | select
+    kind: str
     default: object
     minimum: float | None = None
     maximum: float | None = None
@@ -42,32 +19,29 @@ class Param:
     unit: str = ""
     help: str = ""
     options: tuple = ()
-    advanced: bool = False         # hidden behind "Advanced controls" by default
+    advanced: bool = False
 
 
 @dataclass(frozen=True)
 class Scenario:
-    """A runnable, documented scenario."""
-
     id: str
     title: str
     category: str
     feature_category: str
-    model: str                     # cost model key for the validator
+    model: str
     summary: str
     explanation: str
     assumptions: tuple[str, ...]
     limitations: tuple[str, ...]
     params: tuple[Param, ...]
     runner: Callable
-    result_kind: str               # how the UI should render the result bundle
+    result_kind: str
     levels: tuple[str, ...] = ("guided", "professional", "free")
     reading_guide: str = ""
     references: tuple[str, ...] = ()
     extra: dict = field(default_factory=dict)
 
 
-# Shared parameter fragments
 ALTITUDE = Param("altitude_km", "Target altitude", "slider", 400.0,
                  200.0, 1200.0, 25.0, "km",
                  "Height above Earth's surface of the target's circular orbit. "
@@ -141,7 +115,6 @@ MASS = Param("mass", "Mass", "number", 100.0, 0.1, 100_000.0, 10.0, "kg",
              "Spacecraft mass. Drag scales with Cd*A/m.", advanced=True)
 
 
-# Shared assumption / limitation text
 ENGINE_ASSUMPTIONS = (
     "Fixed-step 4th-order Runge-Kutta integration (no adaptive stepping).",
     "SI units throughout; states are [x, y, z, vx, vy, vz].",
@@ -178,7 +151,6 @@ CONTROLLER_LIMITATIONS = (
 )
 
 
-# Runners -- thin adapters from a flat parameter dict onto src/scenarios.py
 def _rel_vectors(p: dict) -> tuple[list, list]:
     return ([p.get("rel_x", 0.0), p.get("rel_y", 0.0), p.get("rel_z", 0.0)],
             [p.get("rel_vx", 0.0), p.get("rel_vy", 0.0), p.get("rel_vz", 0.0)])
@@ -240,7 +212,6 @@ def _run_research(p: dict) -> dict:
         controlled=p.get("controlled", True), max_accel=p.get("max_accel", 0.05),
         use_j2=p.get("use_j2", True), use_drag=p.get("use_drag", True),
         cd=p.get("cd", 2.2), area=p.get("area", 1.0), mass=p.get("mass", 100.0))
-    # Explicit gains override the critically damped default only when both are given.
     if p.get("use_explicit_gains"):
         kwargs["kp"] = p.get("kp")
         kwargs["kd"] = p.get("kd")
@@ -264,13 +235,6 @@ def _run_collision(p: dict) -> dict:
 
 
 def _run_convergence(p: dict) -> dict:
-    """Step-size convergence of the RK4 integrator against the exact CW solution.
-
-    This is a *convergence* study of the one integrator the engine has, not a
-    comparison between different integrators -- the engine has only RK4.
-    Implemented here rather than in ``orbital_core/`` because it is a study over the
-    existing API, adding no new physics.
-    """
     import numpy as np
 
     radius = sc.radius_from_altitude(p["altitude_km"])
@@ -303,7 +267,6 @@ def _run_external_export(p: dict) -> dict:
         use_j2=p.get("use_j2", True), use_drag=p.get("use_drag", False))
 
 
-# Catalogue
 CATEGORY_LABELS = {
     "orbit_propagation": "Orbital propagation",
     "relative_motion": "Relative motion and rendezvous",
@@ -743,7 +706,6 @@ SCENARIOS_BY_ID = {scenario.id: scenario for scenario in SCENARIOS}
 
 
 def scenarios_for(track: str) -> list[Scenario]:
-    """Scenarios offered on a given track."""
     return [scenario for scenario in SCENARIOS if track in scenario.levels]
 
 

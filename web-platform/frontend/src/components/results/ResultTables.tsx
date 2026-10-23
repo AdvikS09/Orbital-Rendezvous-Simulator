@@ -1,33 +1,17 @@
-/**
- * Tabular output.
- *
- * Nothing here is virtualised. A trajectory can be tens of thousands of rows
- * and no one reads row 8,431 on screen; they download the file and open it in
- * something built for the job. So the display is capped, the cap is stated
- * plainly, and the note points at the download that contains everything.
- *
- * Wide tables scroll inside their own container. The page itself never scrolls
- * sideways, because a horizontally scrolling page hides content from anyone
- * who does not think to look for it.
- */
-
 import { useId } from 'react'
 import type { ColumnSpec, TableSpec } from '@/api/types'
 import { Icon } from '@/components/ui/Icon'
 import { NumberValue } from '@/components/NumberValue'
 import './ResultTables.css'
 
-/** Rows shown on screen. Everything beyond this is in the download. */
 export const DEFAULT_ROW_CAP = 200
 
 export interface ResultTablesProps {
   tables: TableSpec[]
-  /** Maximum rows rendered per table. */
   maxRows?: number
   headingLevel?: 2 | 3 | 4
 }
 
-/** Narrow an arbitrary cell to something that can be rendered safely. */
 function cellValue(value: unknown): number | string | null {
   if (value === null || value === undefined) return null
   if (typeof value === 'number' || typeof value === 'string') return value
@@ -38,8 +22,6 @@ function cellValue(value: unknown): number | string | null {
 function Cell({ value, column }: { value: unknown; column: ColumnSpec }) {
   const resolved = cellValue(value)
 
-  // Numeric columns, and any stray number in a text column, go through the
-  // formatter. A raw JavaScript number must never reach the DOM.
   if (column.numeric || typeof resolved === 'number') {
     return (
       <NumberValue value={resolved} fmt={column.fmt} precision={column.precision} unit="" />

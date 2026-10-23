@@ -1,10 +1,3 @@
-"""API behaviour: validation, errors, sessions, feedback, assessments, admin.
-
-Parity (does the API return the right numbers?) lives in
-``test_engine_parity.py``. This file covers everything else: does it reject the
-right things, protect what it should, and record what it claims to record.
-"""
-
 from __future__ import annotations
 
 import base64
@@ -23,15 +16,7 @@ def _auth_header(username: str, password: str) -> dict[str, str]:
     return {"Authorization": f"Basic {token}"}
 
 
-# Packaging: the backend package must not be shadowed
 def test_app_resolves_to_the_backend_package_not_the_legacy_module():
-    """The repository root holds app.py, the legacy Streamlit MVP.
-
-    This package is also called `app`. If the root ever precedes the backend
-    directory on sys.path, `import app` silently resolves to that single module
-    and every `from app.services import ...` fails. bootstrap.py appends rather
-    than inserts to prevent it; this locks the behaviour down.
-    """
     import app
 
     assert hasattr(app, "__path__"), (
@@ -41,7 +26,6 @@ def test_app_resolves_to_the_backend_package_not_the_legacy_module():
     from app.services import catalogue, simulation  # noqa: F401
 
 
-# Health
 def test_health_reports_engine_and_database(client):
     response = client.get("/api/v1/health")
     assert response.status_code == 200
@@ -73,7 +57,6 @@ def test_health_never_exposes_the_database_password(monkeypatch, client):
         config.get_settings(refresh=True)
 
 
-# Catalogue
 def test_list_scenarios(client):
     body = client.get("/api/v1/scenarios").json()
     assert len(body) == len(SCENARIOS)
@@ -100,7 +83,6 @@ def test_unknown_scenario_is_404(client):
 
 @pytest.mark.parametrize("scenario_id", SCENARIO_IDS)
 def test_scenario_detail_carries_its_full_content(client, scenario_id):
-    """Explanations, assumptions and limitations must survive the migration."""
     body = client.get(f"/api/v1/scenarios/{scenario_id}").json()
     assert len(body["summary"]) > 40
     assert len(body["explanation"]) > 250
@@ -110,7 +92,6 @@ def test_scenario_detail_carries_its_full_content(client, scenario_id):
     assert body["params"]
 
 
-# Input validation - the silent-wrong-answer cases
 @pytest.mark.parametrize(
     "params,expect",
     [
@@ -121,7 +102,6 @@ def test_scenario_detail_carries_its_full_content(client, scenario_id):
     ],
 )
 def test_invalid_inputs_are_rejected_before_the_engine_runs(client, params, expect):
-    """Each of these previously produced a wrong answer, not an error."""
     response = client.post("/api/v1/simulations/research_workbench", json={"params": params})
     assert response.status_code == 422, response.text
     body = response.json()
@@ -142,7 +122,6 @@ def test_validation_errors_are_attributed_to_fields(client):
 
 
 def test_nan_input_is_rejected(client):
-    """JSON has no NaN, so a client sends the string; it must not become 0."""
     response = client.post(
         "/api/v1/simulations/cw_natural_motion",
         json={"params": {"rel_x": "not-a-number"}},
@@ -165,7 +144,6 @@ def test_zero_offset_with_zero_velocity_is_rejected(client):
 
 
 def test_warnings_are_returned_with_a_successful_run(client):
-    """A large separation runs, but must carry the CW-validity warning."""
     response = client.post(
         "/api/v1/simulations/cw_natural_motion",
         json={"params": {"rel_x": 0.0, "rel_y": 80_000.0, "rel_z": 0.0}},
@@ -193,7 +171,6 @@ def test_preflight_reports_failure_without_running(client):
     assert body["errors"]
 
 
-# Sessions and analytics
 def test_session_requires_consent(client):
     response = client.post(
         "/api/v1/sessions",
@@ -300,12 +277,10 @@ def test_raw_parameters_are_not_logged(session_client, api_env):
 
 
 def test_simulation_works_without_a_session(client):
-    """Analytics is optional; the simulator must not require it."""
     response = client.post("/api/v1/simulations/two_body_orbit", json={"params": {}})
     assert response.status_code == 200
 
 
-# Rate limiting
 def test_rate_limit_returns_429(session_client, monkeypatch):
     from pilot import ratelimit
     from pilot.ratelimit import SessionRateLimiter
@@ -327,7 +302,6 @@ def test_rate_limit_returns_429(session_client, monkeypatch):
     ratelimit.reset_limiter()
 
 
-# Feedback and assessments
 def test_feedback_requires_a_session(client):
     assert client.post("/api/v1/feedback", json={"usefulness_rating": 4}).status_code == 401
 
@@ -408,7 +382,6 @@ def test_activities_are_served_with_their_steps(client):
             assert len(step["predict_options"]) >= 2
 
 
-# Exports
 def test_config_export_is_reproducible_and_clean(client):
     import json
 
@@ -437,7 +410,6 @@ def test_notes_export_carries_assumptions_and_warnings(client):
     assert "NASA" in response.text
 
 
-# Administrator area
 def test_admin_refuses_when_no_credentials_are_configured(client):
     response = client.get("/api/v1/admin/report")
     assert response.status_code == 503
@@ -457,7 +429,6 @@ def test_admin_rejects_a_wrong_password(client, admin_auth):
 
 
 def test_admin_report_separates_demo_data(session_client, admin_auth):
-    """PILOT_ENV=test means every row is demo data and must be excluded."""
     username, password = admin_auth
     session_client.post("/api/v1/simulations/two_body_orbit", json={"params": {}})
 
@@ -519,13 +490,7 @@ def test_admin_report_never_contains_a_secret(client, admin_auth):
     assert "pbkdf2_sha256$" not in body
 
 
-# Structured errors from raised HTTPExceptions
 def test_http_exceptions_carry_an_error_class(client):
-    """A 404 must be as machine-readable as any other failure.
-
-    Without the StarletteHTTPException handler these came back as FastAPI's
-    bare {"detail": ...}, which the frontend's ApiError cannot interpret.
-    """
     body = client.get("/api/v1/scenarios/nope").json()
     assert body["status"] == "error"
     assert body["error_class"] == "NotFound"
@@ -534,7 +499,6 @@ def test_http_exceptions_carry_an_error_class(client):
 
 
 def test_session_field_errors_survive_as_field_attribution(client):
-    """The per-field messages must reach the client, not be flattened."""
     response = client.post(
         "/api/v1/sessions",
         json={
@@ -551,7 +515,6 @@ def test_session_field_errors_survive_as_field_attribution(client):
 
 
 def test_unauthorized_admin_keeps_the_www_authenticate_header(client, admin_auth):
-    """Dropping the header would stop a browser offering its credential prompt."""
     response = client.get("/api/v1/admin/report")
     assert response.status_code == 401
     assert "WWW-Authenticate" in response.headers

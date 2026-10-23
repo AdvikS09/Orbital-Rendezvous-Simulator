@@ -1,17 +1,3 @@
-"""Energy-matched vs zero-velocity radial offset.
-
-A pure radial offset with zero LVLH relative velocity is not energy-matched: to
-first order it places the chaser on an orbit of slightly different period, so it
-drifts along-track. The bounded-motion (drift-free) condition for a radial offset
-x0 in the Clohessy-Wiltshire model is ydot0 = -2 n x0, which makes the two orbits
-share a semi-major axis and therefore a period and specific energy. This
-experiment isolates how much of the poor radial behaviour reported in the main
-separation sweep is due to that energy/period mismatch, by comparing the two
-initial conditions under an otherwise identical closed-loop PD rendezvous.
-
-Run:  python experiments/run_radial_energy_matching.py
-"""
-
 import os
 import sys
 
@@ -21,7 +7,7 @@ import pandas as pd
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if ROOT not in sys.path:
     sys.path.insert(0, ROOT)
-PROJ = os.path.dirname(ROOT)  # "Orbital Mechanics Research"
+PROJ = os.path.dirname(ROOT)
 DAT = os.path.join(ROOT, "outputs", "data")
 os.makedirs(DAT, exist_ok=True)
 
@@ -41,14 +27,11 @@ def main():
     pos_tol = 1.0
     fm = perturbations.ForceModel.two_body()
 
-    # Compact separation set spanning close range, the radial 1 m onset (~5.4 km),
-    # and the regime where the zero-velocity reference stops converging (~8-14 km).
     separations = np.array([500.0, 1000.0, 2000.0, 4000.0, 6000.0, 8000.0, 12000.0])
 
     def ic(kind, x0):
         if kind == "zero_velocity":
             return np.array([x0, 0.0, 0.0, 0.0, 0.0, 0.0])
-        # energy-matched / bounded: ydot0 = -2 n x0 removes the CW secular drift
         return np.array([x0, 0.0, 0.0, 0.0, -2.0 * n * x0, 0.0])
 
     rows = []
@@ -86,7 +69,6 @@ def main():
                  os.path.join(DAT, "radial_energy_matching.csv")):
         df.to_csv(path, index=False)
 
-    # Console summary: closed-loop comparison of the two ICs.
     cl = df[df["mode"] == "closed_loop"]
     with pd.option_context("display.float_format", lambda v: f"{v:.4g}"):
         for kind in ("zero_velocity", "energy_matched"):
@@ -96,7 +78,6 @@ def main():
             print(f"\n=== closed-loop, two-body, radial, {kind} ===")
             print(sub.to_string(index=False))
 
-    # Open-loop free-drift peak divergence (the mechanism): zero-vel drifts, matched stays bounded.
     ol = df[df["mode"] == "open_loop"]
     print("\n=== open-loop free-drift peak CW-to-reference difference [m] ===")
     piv = ol.pivot(index="sep_m", columns="ic", values="max_traj_diff_m")

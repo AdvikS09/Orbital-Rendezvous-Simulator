@@ -1,14 +1,3 @@
-/**
- * TypeScript mirror of the Pydantic models in
- * `web-platform/backend/app/schemas/`.
- *
- * Kept by hand rather than generated, because the set is small and the
- * hand-written version carries the same explanatory comments as the Python
- * side. `tests/contract.test.ts` checks these against the live OpenAPI schema,
- * so drift is caught rather than discovered.
- */
-
-// --------------------------------------------------------------- formatting
 export type NumberFormatName =
   | 'auto'
   | 'fixed'
@@ -40,7 +29,6 @@ export interface Interpretation {
   title: string | null
 }
 
-// -------------------------------------------------------------------- plots
 export type PlotKind =
   | 'line'
   | 'scatter3d'
@@ -97,7 +85,6 @@ export interface PlotSpec {
   height: number
 }
 
-// ------------------------------------------------------------------- tables
 export interface ColumnSpec {
   key: string
   label: string
@@ -116,7 +103,6 @@ export interface TableSpec {
   downloadable: boolean
 }
 
-// --------------------------------------------------------------- provenance
 export interface SolverInfo {
   integrator: string
   deterministic: boolean
@@ -137,7 +123,6 @@ export interface ProvenanceInfo {
   licence: string
 }
 
-// ---------------------------------------------------------------- scenarios
 export type ParamKind = 'number' | 'slider' | 'checkbox' | 'select'
 export type Track = 'guided' | 'professional' | 'free'
 export type UserType = 'student' | 'teacher' | 'engineer_researcher' | 'other'
@@ -156,7 +141,6 @@ export interface ParamSpec {
   advanced: boolean
   fmt: NumberFormatName
   precision: number | null
-  /** Bound enforced by the engine's validator; tighter than the widget range. */
   hard_minimum: number | null
   hard_maximum: number | null
 }
@@ -186,7 +170,6 @@ export interface ScenarioDetail extends Omit<ScenarioSummary, 'param_count'> {
   estimated_seconds: number | null
 }
 
-// -------------------------------------------------------------- simulations
 export type ParamValues = Record<string, number | string | boolean>
 
 export interface SimulationRequest {
@@ -211,7 +194,6 @@ export interface SimulationResult {
   inputs: InputEcho[]
   derived: Metric[]
   metrics: Metric[]
-  /** Raw numeric arrays. The frontend plots these; it never recomputes them. */
   series: Record<string, (number | null)[]>
   plots: PlotSpec[]
   tables: TableSpec[]
@@ -252,7 +234,6 @@ export interface PreflightResult {
   params: ParamValues
 }
 
-// ------------------------------------------------------------------- health
 export interface HealthResponse {
   status: 'ok' | 'degraded'
   engine_version: string
@@ -266,7 +247,6 @@ export interface HealthResponse {
   warnings: string[]
 }
 
-// ------------------------------------------------------------------ session
 export interface SessionRequest {
   pilot_code: string
   participant_code: string
@@ -293,7 +273,6 @@ export interface Acknowledgement {
   message: string
 }
 
-// --------------------------------------------------------------- assessment
 export interface AssessmentItem {
   id: string
   question: string
@@ -335,7 +314,6 @@ export interface AssessmentResult {
   caveat: string
 }
 
-// --------------------------------------------------------------- activities
 export interface ActivityStep {
   id: string
   title: string
@@ -360,7 +338,6 @@ export interface Activity {
   steps: ActivityStep[]
 }
 
-// ----------------------------------------------------------------- feedback
 export interface FeedbackRequest {
   usefulness_rating?: number | null
   usability_rating?: number | null
@@ -372,7 +349,6 @@ export interface FeedbackRequest {
   feature_request?: string | null
 }
 
-// -------------------------------------------------------------------- admin
 export interface SummaryMetrics {
   organisations: number
   unique_users: number

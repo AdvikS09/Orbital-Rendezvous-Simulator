@@ -1,42 +1,18 @@
-/**
- * Turn a `PlotSpec` plus the raw arrays in `SimulationResult.series` into
- * Plotly traces and a layout.
- *
- * This module computes nothing physical. It selects arrays by key, converts
- * metres to kilometres where the backend has already declared the axis to be
- * in kilometres, and generates the vertices of two decorative spheres (Earth
- * and the keep-out volume). Every number that carries meaning arrives from the
- * Python engine and is plotted as received.
- *
- * The functions are pure: same spec and same arrays, same output. That is what
- * makes them testable without a browser or a Plotly bundle.
- */
-
 import type { AxisSpec, PlotSpec, SeriesSpec } from '@/api/types'
 import type { PlotData, PlotLayout } from 'plotly.js-dist-min'
 import { DASH_MAP, SERIES_COLORS, chartPalette, plotlyLayout, seriesColor } from './theme'
 
-/** The `series` payload: named arrays of numbers, with null for gaps. */
 export type SeriesData = Record<string, (number | null)[]>
 
 export interface BuildOptions {
-  /**
-   * Palette override. Defaults to Okabe-Ito exactly as the backend's
-   * `color_index` intends; `PlotlyChart` passes the theme-resolved variant so
-   * the black entry stays visible on the dark surface.
-   */
   colors?: readonly string[]
 }
 
-/** Equatorial radius of Earth in kilometres, for the reference sphere only. */
 const EARTH_RADIUS_KM = 6378.137
 
-/** Metres to kilometres. PRESENTATION ONLY - see the `orbit3d` branch below. */
 const M_TO_KM = 1 / 1000
 
 const EMPTY: readonly (number | null)[] = []
-
-// ---------------------------------------------------------------- selection
 
 function column(series: SeriesData, key: string | null | undefined): readonly (number | null)[] {
   if (key === null || key === undefined || key === '') {
@@ -45,11 +21,6 @@ function column(series: SeriesData, key: string | null | undefined): readonly (n
   return series[key] ?? EMPTY
 }
 
-/**
- * The x values for one trace: the series' own `x_key` wins, then the plot's
- * shared `x_key`, and if neither is present the sample index is used so the
- * trace still renders in order.
- */
 function xColumn(
   plot: PlotSpec,
   spec: SeriesSpec,
@@ -67,7 +38,6 @@ function xColumn(
   return Array.from({ length: fallbackLength }, (_unused, index) => index)
 }
 
-/** Rescale, preserving nulls as genuine gaps rather than turning them into zeros. */
 function scaled(values: readonly (number | null)[], factor: number): (number | null)[] {
   if (factor === 1) {
     return values.slice()
@@ -92,9 +62,6 @@ function finiteExtent(values: readonly (number | null)[]): [number, number] | nu
   return low <= high ? [low, high] : null
 }
 
-// ------------------------------------------------------------------- labels
-
-/** `"altitude [km]"`, or just `"altitude"` when the quantity is dimensionless. */
 export function axisLabel(axis: AxisSpec | null | undefined): string {
   if (!axis) {
     return ''
@@ -102,15 +69,6 @@ export function axisLabel(axis: AxisSpec | null | undefined): string {
   return axis.unit ? axis.title + ' [' + axis.unit + ']' : axis.title
 }
 
-/**
- * Hover value template.
- *
- * Hover text is rendered inside Plotly from a d3 format string, so it cannot be
- * routed through `@/formatting/number` the way every number in the DOM is. The
- * exact values are always available in the result tables and the CSV export,
- * both of which do use the shared formatter; the hover label is a reading aid
- * carrying six significant figures, which is finer than the trace can resolve.
- */
 function valueTemplate(unit: string): string {
   const suffix = unit ? ' ' + unit : ''
   return '%{y:.6~g}' + suffix + '<extra></extra>'
@@ -122,8 +80,6 @@ function spatialTemplate(label: string, unit: string): string {
     '%{x:.4~g}, %{y:.4~g}, %{z:.4~g}' + suffix + '<extra>' + label + '</extra>'
   )
 }
-
-// ------------------------------------------------------------------- traces
 
 function cartesianTrace(
   plot: PlotSpec,
@@ -172,13 +128,6 @@ function spatialTrace(
   }
 }
 
-/**
- * A sphere centred on the origin.
- *
- * This is presentation geometry - the vertices of a smooth surface - and never
- * enters a calculation. It exists so that "a 300 m keep-out sphere" and "Earth
- * to scale" are visible as volumes rather than described in a caption.
- */
 function sphereSurface(options: {
   radius: number
   colour: string
@@ -232,7 +181,6 @@ function sphereSurface(options: {
   }
 }
 
-/** The green diamond marking the target at the LVLH origin. */
 function targetMarker(palette: readonly string[]): PlotData {
   return {
     type: 'scatter3d',
@@ -246,8 +194,6 @@ function targetMarker(palette: readonly string[]): PlotData {
     showlegend: true,
   }
 }
-
-// ---------------------------------------------------------- reference lines
 
 function numberField(record: Record<string, unknown>, key: string): number | null {
   const value = record[key]
@@ -263,12 +209,6 @@ function arrayField(record: Record<string, unknown>, key: string): number[] | nu
   return numbers.length === value.length ? numbers : null
 }
 
-/**
- * The comparison line a result should be read against, when the backend sends
- * one. Four shapes are understood: an explicit pair of arrays, a pair of series
- * keys, a constant `y` (horizontal), or a constant `x` (vertical). A constant
- * needs the opposite extent, which is taken from the data already plotted.
- */
 function referenceLineTrace(
   plot: PlotSpec,
   series: SeriesData,
@@ -284,8 +224,6 @@ function referenceLineTrace(
     type: 'scatter',
     mode: 'lines',
     name: typeof rawLabel === 'string' ? rawLabel : 'reference',
-    /* Okabe-Ito black, resolved through the palette so it stays visible when
-       the dark theme is active. */
     line: { color: seriesColor(6, palette), width: 1.5, dash: 'dash' },
     hoverinfo: 'skip',
     showlegend: true,
@@ -335,15 +273,6 @@ function referenceLineTrace(
   return null
 }
 
-// -------------------------------------------------------------------- entry
-
-/**
- * Build the Plotly data array for one plot.
- *
- * An unknown or empty series key yields an empty trace rather than an
- * exception: a missing array is a backend problem, and a chart with one trace
- * missing is more use to the person looking at it than a blank panel.
- */
 export function buildTraces(
   plot: PlotSpec,
   series: SeriesData,
@@ -385,8 +314,6 @@ export function buildTraces(
   }
 
   if (plot.kind === 'scatter3d') {
-    /* LVLH coordinates are metres and the axes are declared in metres, so
-       these traces are plotted exactly as received. */
     const traces: PlotData[] = plot.series.map((spec) =>
       spatialTrace(spec, series, palette, 1, spec.unit),
     )
@@ -407,12 +334,6 @@ export function buildTraces(
   }
 
   if (plot.kind === 'orbit3d') {
-    /*
-     * PRESENTATION ONLY: the engine works in metres and sends metres. Orbit
-     * plots declare their axes in kilometres because an axis reading 6.9e6 is
-     * unreadable, so positions are divided by 1000 here, at the last possible
-     * moment, purely for display. No computed quantity is altered.
-     */
     const traces: PlotData[] = plot.series.map((spec) =>
       spatialTrace(spec, series, palette, M_TO_KM, 'km'),
     )
@@ -431,8 +352,6 @@ export function buildTraces(
     return traces
   }
 
-  /* line, dual_axis and log_log all draw 2D scatter traces; they differ only
-     in the axes the layout gives them. */
   const traces: PlotData[] = plot.series.map((spec) => cartesianTrace(plot, spec, series, palette))
   const reference = referenceLineTrace(plot, series, palette)
   if (reference) {
@@ -441,19 +360,10 @@ export function buildTraces(
   return traces
 }
 
-// ------------------------------------------------------------------- layout
-
 function is3d(kind: PlotSpec['kind']): boolean {
   return kind === 'scatter3d' || kind === 'orbit3d'
 }
 
-/**
- * The layout for one plot, on top of the shared themed base.
- *
- * This lives beside `buildTraces` because the two are the same decision made
- * twice: a log-log plot needs log axes under its traces, and a dual-axis plot
- * needs a second y axis for the traces that were assigned to it.
- */
 export function buildLayout(plot: PlotSpec, dark: boolean, reducedMotion = false): PlotLayout {
   const base = plotlyLayout(dark)
   const palette = chartPalette(dark)
@@ -464,8 +374,6 @@ export function buildLayout(plot: PlotSpec, dark: boolean, reducedMotion = false
     ...base,
     height: plot.height,
     showlegend: plot.series.length > 1 || plot.show_target_marker,
-    /* Plotly animates between states on update. Reduced motion means no
-       animation at all; without it the transition is still short. */
     transition: { duration: reducedMotion ? 0 : 220, easing: 'cubic-in-out' },
   }
 
@@ -483,8 +391,6 @@ export function buildLayout(plot: PlotSpec, dark: boolean, reducedMotion = false
     layout['hovermode'] = 'closest'
     layout['margin'] = { l: 4, r: 4, t: 28, b: 4 }
     layout['scene'] = {
-      /* Equal scaling on all three axes: Earth stays a sphere, the keep-out
-         volume stays a sphere, and distances stay comparable by eye. */
       aspectmode: 'data',
       bgcolor: 'rgba(0,0,0,0)',
       xaxis: { ...axis3d, title: { text: axisLabel(plot.x) } },

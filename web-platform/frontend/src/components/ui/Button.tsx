@@ -16,13 +16,9 @@ export type ButtonSize = 'sm' | 'md'
 interface ButtonOwnProps {
   variant?: ButtonVariant
   size?: ButtonSize
-  /** Leading glyph. Purely supporting: the label still carries the meaning. */
   icon?: IconName
-  /** Place the icon after the label instead of before it. */
   iconPosition?: 'start' | 'end'
-  /** Replaces the icon with a spinner, disables the control, sets aria-busy. */
   loading?: boolean
-  /** Announced while loading. Defaults to 'Working'. */
   loadingLabel?: string
   fullWidth?: boolean
   children?: ReactNode
@@ -30,10 +26,6 @@ interface ButtonOwnProps {
 
 type ButtonElementProps = Omit<ButtonHTMLAttributes<HTMLButtonElement>, 'children'>
 
-/**
- * A button with no visible label must carry an explicit accessible name.
- * The union makes that a compile error rather than an audit finding.
- */
 export type ButtonProps = ButtonOwnProps &
   ButtonElementProps &
   ({ children: ReactNode } | { children?: undefined; 'aria-label': string })
@@ -71,8 +63,6 @@ const ButtonImpl = forwardRef<HTMLButtonElement, ButtonImplProps>(function Butto
     .filter(Boolean)
     .join(' ')
 
-  // While loading the spinner occupies the icon slot, so the control keeps its
-  // width and the layout around it does not shift.
   const glyph = loading ? (
     <Spinner size="sm" inherit label={loadingLabel} />
   ) : icon ? (

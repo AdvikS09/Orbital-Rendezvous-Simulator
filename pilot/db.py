@@ -1,19 +1,3 @@
-"""Database engine, connection handling and versioned migrations.
-
-Works against SQLite (zero-setup local development) and PostgreSQL (hosted
-pilots) through the same SQLAlchemy Core API, so nothing above this module has
-to care which one is in use.
-
-Migrations
-----------
-A deliberately small runner rather than Alembic: each migration is a numbered
-entry in :data:`MIGRATIONS` with a callable that receives a live connection.
-Applied versions are recorded in ``schema_migrations``, so
-:func:`run_migrations` is idempotent and safe to call on every application
-start. Adding a column later means appending a new numbered entry -- never
-editing an existing one.
-"""
-
 from __future__ import annotations
 
 import logging
@@ -34,14 +18,11 @@ _engine_url: str | None = None
 _lock = threading.Lock()
 
 
-# Engine
 def _create_engine(settings: Settings) -> Engine:
     url = make_url(settings.database_url)
     kwargs: dict = {"future": True, "pool_pre_ping": True}
 
     if url.get_backend_name() == "sqlite":
-        # Streamlit serves each session on its own thread; SQLite objects are
-        # otherwise pinned to their creating thread.
         kwargs["connect_args"] = {"check_same_thread": False, "timeout": 30}
     else:
         kwargs["pool_size"] = 5
@@ -54,7 +35,6 @@ def _create_engine(settings: Settings) -> Engine:
         @event.listens_for(engine, "connect")
         def _sqlite_pragmas(dbapi_connection, _record):  # pragma: no cover - trivial
             cursor = dbapi_connection.cursor()
-            # WAL keeps concurrent readers working while a write is in flight.
             cursor.execute("PRAGMA journal_mode=WAL")
             cursor.execute("PRAGMA foreign_keys=ON")
             cursor.execute("PRAGMA busy_timeout=30000")
@@ -64,7 +44,6 @@ def _create_engine(settings: Settings) -> Engine:
 
 
 def get_engine(settings: Settings | None = None, refresh: bool = False) -> Engine:
-    """Return the process-wide engine, creating it on first use."""
     global _engine, _engine_url
     settings = settings or get_settings()
     with _lock:
@@ -79,7 +58,6 @@ def get_engine(settings: Settings | None = None, refresh: bool = False) -> Engin
 
 
 def reset_engine() -> None:
-    """Dispose the cached engine. Used by tests and by config changes."""
     global _engine, _engine_url
     with _lock:
         if _engine is not None:
@@ -89,11 +67,6 @@ def reset_engine() -> None:
 
 
 def safe_database_label(settings: Settings | None = None) -> str:
-    """A description of the database with any password removed.
-
-    Never log ``settings.database_url`` directly -- a Postgres URL contains the
-    password.
-    """
     settings = settings or get_settings()
     try:
         url = make_url(settings.database_url)
@@ -107,13 +80,10 @@ def safe_database_label(settings: Settings | None = None) -> str:
     return f"{backend} ({host}/{database})"
 
 
-# Migrations
 def _migration_001_initial(connection) -> None:
-    """Create the full initial schema."""
     metadata.create_all(connection, checkfirst=True)
 
 
-#: ``(version, name, callable)``. Append only; never edit an applied entry.
 MIGRATIONS: list[tuple[int, str, callable]] = [
     (1, "initial_schema", _migration_001_initial),
 ]
@@ -130,10 +100,6 @@ def applied_versions(connection) -> set[int]:
 
 
 def run_migrations(engine: Engine | None = None) -> list[int]:
-    """Apply any outstanding migrations. Idempotent.
-
-    Returns the versions applied by this call (empty when already up to date).
-    """
     engine = engine or get_engine()
     applied: list[int] = []
     with engine.begin() as connection:
@@ -151,7 +117,6 @@ def run_migrations(engine: Engine | None = None) -> list[int]:
 
 
 def schema_version(engine: Engine | None = None) -> int:
-    """Highest applied migration version, or 0 if the schema is empty."""
     engine = engine or get_engine()
     try:
         with engine.connect() as connection:
@@ -162,11 +127,6 @@ def schema_version(engine: Engine | None = None) -> int:
 
 
 def healthcheck(engine: Engine | None = None) -> dict:
-    """Report whether the database is reachable and migrated.
-
-    Returns a plain dict rather than raising, so callers (the app, the admin
-    area, ``scripts/init_db.py``) can render the problem instead of crashing.
-    """
     settings = get_settings()
     try:
         engine = engine or get_engine(settings)
@@ -191,11 +151,6 @@ def healthcheck(engine: Engine | None = None) -> dict:
 
 
 def utcnow() -> datetime:
-    """Naive UTC timestamp.
-
-    Stored naive because SQLite has no timezone-aware type; everything written
-    here is UTC by construction, and nothing reads local time.
-    """
     return datetime.now(timezone.utc).replace(tzinfo=None)
 
 

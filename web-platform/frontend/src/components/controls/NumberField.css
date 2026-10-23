@@ -1,11 +1,3 @@
-/*
- * Numeric input.
- *
- * The unit is a flex sibling of the input, not an overlay: the text can never
- * run underneath it, however long the number gets. The input shell carries the
- * border and the focus ring so the two read as one control.
- */
-
 .number-field {
   display: flex;
   flex-direction: column;
@@ -36,7 +28,6 @@
   border-color: var(--border-strong);
 }
 
-/* The ring belongs to the shell, so it encloses the unit as well. */
 .number-field__shell:focus-within {
   border-color: var(--border-focus);
   outline: 2px solid var(--border-focus);
@@ -54,7 +45,6 @@
   padding: var(--space-2) var(--space-3);
 }
 
-/* The shell already shows focus; a second ring inside it is noise. */
 .number-field__input:focus,
 .number-field__input:focus-visible {
   outline: none;

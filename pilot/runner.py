@@ -1,20 +1,3 @@
-"""The one path every simulation takes: validate, guard, run, record.
-
-Keeping this in a single place means the guarantees hold everywhere:
-
-1. inputs are validated before the engine is touched (no ``NaN`` trajectories,
-   no silently truncated horizons);
-2. the shared server is protected by a rate limit and a predicted-cost check;
-3. exactly one ``simulation_started`` and one ``simulation_completed`` or
-   ``simulation_failed`` event is recorded per attempt; and
-4. analytics failures can never break a participant's run.
-
-This module deliberately contains **no physics**. It calls the scenario
-runners in ``pilot/content/scenarios_catalog.py``, which call
-``src/scenarios.py``, which is the validated engine boundary and is not
-modified by any of this.
-"""
-
 from __future__ import annotations
 
 import logging
@@ -30,7 +13,6 @@ from .validation import ValidationResult, validate_simulation_request
 
 logger = logging.getLogger("pilot.runner")
 
-#: Parameter names the validator understands, mapped from catalogue names.
 _VALIDATED_KEYS = (
     "altitude_km", "inclination_deg", "duration_s", "dt_s", "n_orbits",
     "kp", "kd", "max_accel", "mass", "area", "cd",
@@ -39,8 +21,6 @@ _VALIDATED_KEYS = (
 
 @dataclass
 class RunOutcome:
-    """Result of one attempted simulation."""
-
     ok: bool
     scenario_id: str
     result: object = None
@@ -49,15 +29,10 @@ class RunOutcome:
     duration_ms: int = 0
     n_steps: int = 0
     error_class: str | None = None
-    rejected: bool = False          # blocked before running (validation or rate limit)
+    rejected: bool = False
 
 
 def _bucket(value: float | None, edges: tuple) -> str | None:
-    """Coarsen a number into a labelled band.
-
-    Analytics stores bands, never the value the participant typed, so a
-    parameter sweep cannot be reconstructed from the event log.
-    """
     if value is None:
         return None
     try:
@@ -81,7 +56,6 @@ _STEP_BANDS = ((500, "<500"), (2_000, "500-2k"), (10_000, "2k-10k"),
 
 
 def _safe_detail(scenario: Scenario, params: dict, validation: ValidationResult) -> dict:
-    """Build the non-identifying detail payload for an event."""
     separation = None
     if any(key in params for key in ("rel_x", "rel_y", "rel_z")):
         separation = math.sqrt(sum(
@@ -101,14 +75,12 @@ def _safe_detail(scenario: Scenario, params: dict, validation: ValidationResult)
                                  "two-body + J2" if j2 else
                                  "two-body + drag" if drag else "two-body")
     if get_settings().log_raw_parameters:
-        # Opt-in only, and clearly separated from the derived fields above.
         detail["raw_parameters"] = {k: v for k, v in params.items()}
     return {k: v for k, v in detail.items() if v is not None}
 
 
 def validate_params(scenario: Scenario, params: dict,
                     settings: Settings | None = None) -> ValidationResult:
-    """Validate a parameter dict for a scenario, without running anything."""
     settings = settings or get_settings()
     kwargs = {key: params[key] for key in _VALIDATED_KEYS if key in params}
 
@@ -119,19 +91,16 @@ def validate_params(scenario: Scenario, params: dict,
         kwargs["rel_vel"] = [params.get("rel_vx", 0.0), params.get("rel_vy", 0.0),
                              params.get("rel_vz", 0.0)]
 
-    # Gains only constrain the run when the user actually set them.
     if not params.get("use_explicit_gains", True):
         kwargs.pop("kp", None)
         kwargs.pop("kd", None)
 
-    # The gain sweep runs 16 rendezvous, so its predicted cost is 16x a single run.
     max_steps = settings.max_simulation_steps
     max_seconds = settings.max_estimated_seconds
     if scenario.id == "gain_tuning":
         max_steps = max(1, max_steps // 16)
         max_seconds = max_seconds / 16.0
     elif scenario.id == "integrator_convergence":
-        # Fixed internal grid totalling ~7900 steps; user cannot inflate it.
         max_steps = max(max_steps, 10_000)
 
     return validate_simulation_request(
@@ -141,14 +110,8 @@ def validate_params(scenario: Scenario, params: dict,
 def run_scenario(scenario: Scenario, params: dict,
                  context: ParticipantContext | None = None,
                  settings: Settings | None = None) -> RunOutcome:
-    """Validate, guard, execute and record one simulation.
-
-    Never raises: an engine exception becomes ``ok=False`` with an
-    ``error_class``, so the UI can show a useful message instead of a traceback.
-    """
     settings = settings or get_settings()
 
-    # 1. validate
     validation = validate_params(scenario, params, settings)
     if not validation.ok:
         if context is not None:
@@ -164,7 +127,6 @@ def run_scenario(scenario: Scenario, params: dict,
                           warnings=validation.warnings, n_steps=validation.n_steps,
                           error_class="ValidationError", rejected=True)
 
-    # 2. rate limit
     if context is not None:
         decision = get_limiter().consume(context.session_token)
         if not decision.allowed:
@@ -182,7 +144,6 @@ def run_scenario(scenario: Scenario, params: dict,
 
     detail = _safe_detail(scenario, params, validation)
 
-    # 3. run
     if context is not None:
         record_event(context, EventType.SIMULATION_STARTED,
                      scenario_category=scenario.category, scenario_id=scenario.id,
@@ -211,7 +172,6 @@ def run_scenario(scenario: Scenario, params: dict,
 
     elapsed_ms = int((time.perf_counter() - started) * 1000)
 
-    # 4. record success
     if context is not None:
         record_event(context, EventType.SIMULATION_COMPLETED,
                      scenario_category=scenario.category, scenario_id=scenario.id,

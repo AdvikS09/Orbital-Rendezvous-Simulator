@@ -1,18 +1,3 @@
-/**
- * The headline numbers of a result.
- *
- * Metrics arrive already classified by the engine: `highlight` marks the two or
- * three figures that answer the question the run was asking, and the rest are
- * supporting detail. Those two groups are presented differently, because a grid
- * of twenty equally weighted tiles has no hierarchy and therefore says nothing
- * about which number matters.
- *
- * The `help` text of every metric is reachable: an info button beside the
- * label, wired with `aria-describedby` to a tooltip that is announced whether
- * or not it is visible. A `title` attribute would be invisible to keyboard
- * users and unreliable on touch, so it is not used.
- */
-
 import { useId } from 'react'
 import type { Metric } from '@/api/types'
 import { Icon } from '@/components/ui/Icon'
@@ -21,11 +6,8 @@ import './MetricGrid.css'
 
 export interface MetricGridProps {
   metrics: Metric[]
-  /** Optional heading above the group. */
   title?: string
-  /** Heading level, so the group sits correctly in the document outline. */
   headingLevel?: 2 | 3 | 4
-  /** Accessible label used when no visible title is given. */
   ariaLabel?: string
 }
 
@@ -34,13 +16,6 @@ interface HelpTipProps {
   text: string
 }
 
-/**
- * An info affordance whose text is always in the accessibility tree.
- *
- * The tooltip is hidden with opacity rather than `display: none` or
- * `visibility: hidden`, either of which would remove it from the tree and
- * break the `aria-describedby` reference it exists to serve.
- */
 function HelpTip({ label, text }: HelpTipProps) {
   const tooltipId = useId()
   return (
@@ -100,8 +75,6 @@ export function MetricGrid({
   const highlighted = metrics.filter((metric) => metric.highlight)
   const supporting = metrics.filter((metric) => !metric.highlight)
 
-  // With nothing marked as headline, promoting everything to a card would be a
-  // claim about importance the engine never made; the compact list is honest.
   const cards = highlighted
   const rest = highlighted.length === 0 ? metrics : supporting
 

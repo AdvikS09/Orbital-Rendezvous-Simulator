@@ -1,18 +1,3 @@
-/**
- * Step 3: anonymous sign-in.
- *
- * The two codes are validated client-side with exactly the rules in
- * `pilot/validation.py` (`validate_pilot_code`, `validate_participant_code`),
- * including its messages, so a participant is told what is wrong before a
- * request is sent. The server applies the same rules again — this is a
- * courtesy, not a substitute for it — and any error it returns is mapped back
- * onto the field it belongs to.
- *
- * Nothing is sent until Continue is pressed, and the participant code itself is
- * never stored anywhere: the server keeps only a one-way hash of it, and this
- * page keeps only the opaque session token the server returns.
- */
-
 import { useState } from 'react'
 import type { FormEvent } from 'react'
 import { useNavigate } from 'react-router-dom'
@@ -30,34 +15,20 @@ import {
 } from './participantFlow'
 import './SignInPage.css'
 
-// --------------------------------------------------------------------------
-// Validation: a mirror of pilot/validation.py
-// --------------------------------------------------------------------------
-
-/** `pilot.validation.MIN_CODE_LENGTH`. */
 export const MIN_CODE_LENGTH = 3
-/** `pilot.validation.MAX_CODE_LENGTH`. */
 export const MAX_CODE_LENGTH = 40
 
-/** `pilot.validation._EMAIL_MARKER`. */
 const EMAIL_MARKER = '@'
 
-/**
- * Letters, digits, hyphen and underscore. Unicode-aware, because Python's
- * `str.isalnum` is: a code in a non-Latin script is accepted by the server and
- * must be accepted here too.
- */
 const CODE_PATTERN = /^[\p{L}\p{N}_-]+$/u
 
 const COUNT = { notation: 'fixed', decimals: 0 } as const
 
 export interface CodeCheck {
-  /** The normalised (trimmed, upper-cased) code, empty when invalid. */
   code: string
   error: string | null
 }
 
-/** Mirror of `validate_participant_code`. */
 export function validateParticipantCode(input: string): CodeCheck {
   const normalised = input.trim()
   if (!normalised) {
@@ -98,7 +69,6 @@ export function validateParticipantCode(input: string): CodeCheck {
   return { code: normalised.toUpperCase(), error: null }
 }
 
-/** Mirror of `validate_pilot_code`. */
 export function validatePilotCode(input: string): CodeCheck {
   const normalised = input.trim()
   if (!normalised) {
@@ -118,9 +88,6 @@ export function validatePilotCode(input: string): CodeCheck {
   return { code: normalised.toUpperCase(), error: null }
 }
 
-// --------------------------------------------------------------------------
-// Verbatim text
-// --------------------------------------------------------------------------
 const PILOT_HELP =
   'The code your teacher or pilot coordinator gave you. If you are here on ' +
   'your own, enter SELF.'
@@ -145,12 +112,6 @@ const UNREGISTERED_TAIL =
 
 const RETURN_VISIT = 'Welcome back. Your earlier work is recognised.'
 
-/**
- * Shown when the server rejects the sign-in without saying which field is at
- * fault. That happens when the rejection comes back as a bare FastAPI
- * `HTTPException`, whose body carries no `error_class` for the client to parse
- * — most often an unregistered pilot code on a deployment that requires one.
- */
 const UNATTRIBUTED_REJECTION =
   'The server did not accept those codes. Check the pilot code with your ' +
   'coordinator, and make sure your participant code contains only letters, ' +
@@ -163,9 +124,6 @@ interface FieldErrors {
 
 const NO_FIELD_ERRORS: FieldErrors = { pilot_code: null, participant_code: null }
 
-// --------------------------------------------------------------------------
-// Component
-// --------------------------------------------------------------------------
 export function SignInPage() {
   const navigate = useNavigate()
   const { hasConsented, beginSession } = useSession()
@@ -180,9 +138,6 @@ export function SignInPage() {
   const [submitting, setSubmitting] = useState(false)
   const [startedSession, setStartedSession] = useState<SessionResponse | null>(null)
 
-  // No session token is issued, so nothing further is recorded. Every
-  // simulation endpoint accepts an unauthenticated request, so the simulator
-  // itself is unaffected.
   function continueWithoutTracking() {
     navigate(ROUTES.track)
   }
@@ -212,8 +167,6 @@ export function SignInPage() {
 
       beginSession(response)
 
-      // The two notices below are worth reading, so the page stays put when
-      // there is one. With nothing to say, go straight on.
       if (response.is_return_visit || !response.pilot_code_registered) {
         setStartedSession(response)
       } else {
@@ -221,9 +174,6 @@ export function SignInPage() {
       }
     } catch (error) {
       if (error instanceof ApiError) {
-        // 503 is the server saying the analytics database is down; 0 is this
-        // browser failing to reach the server at all. Neither should block the
-        // simulator, which needs no session to run.
         if (error.status === 503 || error.status === 0) {
           setDatabaseUnavailable(true)
         } else {
@@ -237,9 +187,6 @@ export function SignInPage() {
               message !== mapped['pilot_code'] &&
               message !== mapped['participant_code'],
           )
-          // A rejection the server could not attribute to a field is most often
-          // an unregistered pilot code, so say what to check rather than
-          // repeating a status code at the participant.
           setGeneralErrors(
             error.body === null && error.status === 422
               ? [UNATTRIBUTED_REJECTION]
@@ -256,7 +203,6 @@ export function SignInPage() {
     }
   }
 
-  // ---------------------------------------------------------------- consent
   if (!hasConsented) {
     return (
       <div className="sign-in-page">
@@ -275,7 +221,6 @@ export function SignInPage() {
     )
   }
 
-  // ------------------------------------------------------- signed in notices
   if (startedSession !== null) {
     return (
       <div className="sign-in-page">
@@ -310,7 +255,6 @@ export function SignInPage() {
     )
   }
 
-  // ------------------------------------------------------------------- form
   return (
     <div className="sign-in-page">
       <header className="sign-in-page__header">

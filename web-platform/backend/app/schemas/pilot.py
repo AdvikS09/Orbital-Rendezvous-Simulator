@@ -1,11 +1,3 @@
-"""Sessions, feedback, assessments and administrator reporting.
-
-These mirror the anonymity guarantees of the Streamlit platform exactly. In
-particular there is no field anywhere in this module for a name, an email
-address, an age, an IP address or a user agent -- the request models simply do
-not accept them, so a future caller cannot start sending them by accident.
-"""
-
 from __future__ import annotations
 
 from typing import Any, Literal
@@ -19,15 +11,7 @@ Track = Literal["guided", "professional", "free"]
 Phase = Literal["pre", "post"]
 
 
-# Sessions
 class SessionRequest(StrictModel):
-    """Start an anonymous session.
-
-    ``participant_code`` is chosen by the participant and is never stored: the
-    server keeps only an HMAC of it. It is rejected if it looks like personal
-    data (an email address, or anything with spaces).
-    """
-
     pilot_code: str = Field(min_length=1, max_length=40)
     participant_code: str = Field(min_length=3, max_length=40)
     user_type: UserType = "other"
@@ -53,7 +37,6 @@ class SessionResponse(StrictModel):
     pilot_code_registered: bool
     is_return_visit: bool
     consent_version: str
-    #: Runs still available in this session, for the interface to show.
     runs_remaining: int | None = None
 
 
@@ -61,15 +44,7 @@ class TrackSelection(StrictModel):
     track: Track
 
 
-# Feedback
 class FeedbackRequest(StrictModel):
-    """One feedback submission.
-
-    Free text is stored verbatim and capped; the form warns participants not to
-    put personal information in it. That is the single place where personal
-    data could enter the database, and only if someone types it.
-    """
-
     usefulness_rating: int | None = Field(default=None, ge=1, le=5)
     usability_rating: int | None = Field(default=None, ge=1, le=5)
     clarity_rating: int | None = Field(default=None, ge=1, le=5)
@@ -86,14 +61,11 @@ class Acknowledgement(StrictModel):
     message: str = ""
 
 
-# Assessments
 class AssessmentItem(StrictModel):
     id: str
     question: str
     options: list[str]
     topic: str
-    #: The correct answer is withheld until the post-assessment is submitted, so
-    #: the pre-assessment cannot be answered by reading the API.
     correct_index: int | None = None
     explanation: str | None = None
 
@@ -113,8 +85,6 @@ class AssessmentInstrument(StrictModel):
 class AssessmentSubmission(StrictModel):
     instrument_id: str = "orbital_basics"
     phase: Phase
-    #: item id -> chosen option index. Unanswered items may be omitted and are
-    #: scored as incorrect, matching the Streamlit behaviour.
     responses: dict[str, int] = Field(default_factory=dict)
     confidence_rating: int | None = Field(default=None, ge=1, le=5)
 
@@ -126,14 +96,12 @@ class AssessmentResult(StrictModel):
     phase: Phase
     score: int
     max_score: int
-    #: Populated only after the post assessment.
     previous_score: int | None = None
     change: int | None = None
     items: list[AssessmentItem] = Field(default_factory=list)
     caveat: str = ""
 
 
-# Educational activities
 class ActivityStepModel(StrictModel):
     id: str
     title: str
@@ -158,7 +126,6 @@ class ActivityModel(StrictModel):
     steps: list[ActivityStepModel]
 
 
-# Administration
 class ReportQuery(StrictModel):
     start: str | None = None
     end: str | None = None

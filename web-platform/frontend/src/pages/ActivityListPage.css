@@ -1,5 +1,3 @@
-/* The three activities, one card each. */
-
 .activity-list {
   display: flex;
   flex-direction: column;
@@ -42,7 +40,6 @@
   max-width: 76ch;
 }
 
-/* ------------------------------------------------------------- facts */
 .activity-list__facts {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr));
@@ -80,7 +77,6 @@
   color: var(--text-muted);
 }
 
-/* -------------------------------------------------------------- foot */
 .activity-list__foot {
   display: flex;
   flex-wrap: wrap;
